@@ -63,7 +63,10 @@ def build_context(targets):
     return ctx
 
 
-def call_llm(batch, model):
+CURSOR_AGENT = r"C:\Users\xx\AppData\Local\cursor-agent\cursor-agent.cmd"
+
+
+def call_llm(batch, model, engine="claude"):
     parts = []
     for i, (sid, c) in enumerate(batch):
         s = f"#{i} 【{c['title'][:40]}】\n"
@@ -72,7 +75,12 @@ def call_llm(batch, model):
         if c["next"]:
             s += f"  {c['next'][:120]}\n"
         parts.append(s)
-    res = subprocess.run(["claude", "-p", "--model", model], input=PROMPT + "\n".join(parts),
+    prompt = PROMPT + "\n".join(parts)
+    if engine == "cursor":
+        cmd = [CURSOR_AGENT, "-p", "--model", model, "--output-format", "text", "--mode", "ask", "--trust"]
+    else:
+        cmd = ["claude", "-p", "--model", model]
+    res = subprocess.run(cmd, input=prompt,
                          capture_output=True, text=True, encoding="utf-8", timeout=900,
                          shell=sys.platform == "win32")
     m = re.search(r"\[.*\]", res.stdout, re.S)
@@ -92,6 +100,7 @@ def main():
     ap.add_argument("--batch", type=int, default=40)
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--model", default="sonnet")
+    ap.add_argument("--engine", choices=("claude", "cursor"), default="claude")
     ap.add_argument("--min-c", type=int, default=2)
     ap.add_argument("--max-c", type=int, default=3)
     ap.add_argument("--sources", default="", help="逗號分隔，如 mobile01,ptt；空白表示全部")
@@ -110,7 +119,7 @@ def main():
 
     n_ok = n_fail = 0
     with open(OUT, "a", encoding="utf-8") as f, ThreadPoolExecutor(args.workers) as ex:
-        futs = [ex.submit(call_llm, b, args.model) for b in batches]
+        futs = [ex.submit(call_llm, b, args.model, args.engine) for b in batches]
         for fut in as_completed(futs):
             try:
                 for l in fut.result():
