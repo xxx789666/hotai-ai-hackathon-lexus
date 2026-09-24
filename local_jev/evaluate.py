@@ -198,20 +198,30 @@ def disagreements(gold, hyp, sentences, k=10) -> list:
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--jev", default="", help="預測 jsonl；預設 jev_pilot_local.jsonl")
+    ap.add_argument("--metrics", default="", help="指標 JSON 輸出路徑")
+    ap.add_argument("--gold-c", default="", help="流失金標；預設 churn_verified.jsonl")
+    args = ap.parse_args()
     sonnet = last_by_sid(P / "aspect_pilot_sonnet.jsonl")
     haiku = last_by_sid(P / "aspect_pilot_haiku.jsonl")
-    jev = last_by_sid(P / "jev_pilot_local.jsonl")
-    churn = last_by_sid(P / "churn_verified.jsonl")
+    jev = last_by_sid(Path(args.jev) if args.jev else P / "jev_pilot_local.jsonl")
+    churn = last_by_sid(Path(args.gold_c) if args.gold_c else P / "churn_verified.jsonl")
+    if args.gold_c:
+        gold_c = {s: churn[s] for s in jev if s in churn}
+        sonnet = {s: sonnet.get(s, {}) for s in jev}
+    else:
+        gold_c = {s: churn[s] for s in sonnet if s in churn}
     sentences = {}
     with open(P / "sentences.jsonl", encoding="utf-8") as f:
-        need = set(sonnet)
+        need = set(gold_c)
         for line in f:
             r = json.loads(line)
             if r["sid"] in need:
                 sentences[r["sid"]] = r
                 if len(sentences) == len(need):
                     break
-    gold_c = {s: churn[s] for s in sonnet if s in churn}
     thresholds = {}
     for t in (0.3, 0.5, 0.7):
         thresholds[str(t)] = multilabel(sonnet, jev, "a", ASPECTS, "a_p", t)["micro_f1"]
@@ -236,7 +246,7 @@ def main() -> None:
         "examples": disagreements(gold_c, jev, sentences),
     }
     text = json.dumps(out, ensure_ascii=False, indent=2)
-    dest = P / "jev_pilot_metrics.json"
+    dest = Path(args.metrics) if args.metrics else P / "jev_pilot_metrics.json"
     dest.write_text(text, encoding="utf-8")
     print(f"wrote {dest} n_jev={out['n_jev']} sid_match={out['sid_match']}")
     print("churn binary", json.dumps(out["churn_expect"]["binary"], ensure_ascii=False))

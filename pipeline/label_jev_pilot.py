@@ -128,23 +128,6 @@ def to_record(sid: str, response, model_name: str, bits: int, seconds: float) ->
     c_argmax = max(range(4), key=lambda i: churn.probabilities[i])
     c_expect = int(min(3, max(0, round(churn.score))))
     stance = response.choices["stance"]
-    sent = response.scores["sentiment"]
-    mentions = float(response.nouls["mentions_lexus"].noul)
-    aspects = []
-    aspect_p = {}
-    for name in ASPECTS:
-        p = float(response.nouls[f"asp_{name}"].noul)
-        aspect_p[name] = round(p, 6)
-        if p >= 0.5:
-            aspects.append(name)
-    alts = []
-    alt_p = {}
-    for name in ALTS:
-        p = float(response.nouls[f"alt_{name}"].noul)
-        alt_p[name] = round(p, 6)
-        if p >= 0.5:
-            alts.append(name)
-    model_choice = response.choices["model"]
     rec = {
         "sid": sid,
         "c_argmax": c_argmax,
@@ -154,23 +137,48 @@ def to_record(sid: str, response, model_name: str, bits: int, seconds: float) ->
         "churn_p": probs,
         "w": stance.choice,
         "w_p": {k: round(float(v), 6) for k, v in stance.probabilities.items()},
-        "a": aspects,
-        "a_p": aspect_p,
-        "mentions_lexus": round(mentions, 6),
-        "sentiment_score": round(float(sent.score), 6),
-        "sentiment_p": {str(k): round(float(v), 6) for k, v in sent.probabilities.items()},
-        "alt": alts,
-        "alt_p": alt_p,
-        "m_choice": model_choice.choice,
-        "m_p": {k: round(float(v), 6) for k, v in model_choice.probabilities.items()},
         "model": model_name,
         "bits": bits,
         "seconds": round(seconds, 3),
     }
-    if mentions >= 0.5:
-        rec["s"] = int(min(2, max(0, round(sent.score)))) - 1
-    if model_choice.choice != "無":
-        rec["m"] = model_choice.choice
+    if "sentiment" in response.scores and "mentions_lexus" in response.nouls:
+        sent = response.scores["sentiment"]
+        mentions = float(response.nouls["mentions_lexus"].noul)
+        rec["mentions_lexus"] = round(mentions, 6)
+        rec["sentiment_score"] = round(float(sent.score), 6)
+        rec["sentiment_p"] = {str(k): round(float(v), 6) for k, v in sent.probabilities.items()}
+        if mentions >= 0.5:
+            rec["s"] = int(min(2, max(0, round(sent.score)))) - 1
+    if any(f"asp_{name}" in response.nouls for name in ASPECTS):
+        aspects = []
+        aspect_p = {}
+        for name in ASPECTS:
+            if f"asp_{name}" not in response.nouls:
+                continue
+            p = float(response.nouls[f"asp_{name}"].noul)
+            aspect_p[name] = round(p, 6)
+            if p >= 0.5:
+                aspects.append(name)
+        rec["a"] = aspects
+        rec["a_p"] = aspect_p
+    if any(f"alt_{name}" in response.nouls for name in ALTS):
+        alts = []
+        alt_p = {}
+        for name in ALTS:
+            if f"alt_{name}" not in response.nouls:
+                continue
+            p = float(response.nouls[f"alt_{name}"].noul)
+            alt_p[name] = round(p, 6)
+            if p >= 0.5:
+                alts.append(name)
+        rec["alt"] = alts
+        rec["alt_p"] = alt_p
+    if "model" in response.choices:
+        model_choice = response.choices["model"]
+        rec["m_choice"] = model_choice.choice
+        rec["m_p"] = {k: round(float(v), 6) for k, v in model_choice.probabilities.items()}
+        if model_choice.choice != "無":
+            rec["m"] = model_choice.choice
     return rec
 
 
@@ -192,19 +200,32 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--batch-size", type=int, default=4)
     ap.add_argument("--model", default=PRIMARY_MODEL)
+    ap.add_argument("--adapter", default="", help="LoRA adapter 目錄")
+    ap.add_argument("--out", default="", help="輸出 jsonl；預設 jev_pilot_local.jsonl")
+    ap.add_argument("--sids-file", default="", help="每行一個 sid；空白則用 600 句試標集")
+    ap.add_argument("--questions", default="", help="逗號分隔題目，例如 churn,stance；空白＝全部")
     args = ap.parse_args()
 
     from llm2jev import JevRequest, LLM2Jev
 
+    global OUT, LOG
+    if args.out:
+        OUT = Path(args.out)
     questions = build_questions()
-    pilot = load_jsonl(P / "aspect_pilot_sonnet.jsonl")
-    sids = [r["sid"] for r in pilot]
+    if args.questions:
+        keep = {q.strip() for q in args.questions.split(",") if q.strip()}
+        questions = {k: v for k, v in questions.items() if k in keep}
+    if args.sids_file:
+        sids = Path(args.sids_file).read_text(encoding="utf-8").split()
+    else:
+        pilot = load_jsonl(P / "aspect_pilot_sonnet.jsonl")
+        sids = [r["sid"] for r in pilot]
     if args.limit:
         sids = sids[: args.limit]
     done = {r["sid"] for r in load_jsonl(OUT)} if not args.limit else set()
     todo = [s for s in sids if s not in done]
     ctx = build_context(todo)
-    log(f"pilot {len(sids)} todo {len(todo)} context {len(ctx)}")
+    log(f"pilot {len(sids)} todo {len(todo)} context {len(ctx)} out={OUT}")
 
     import torch
     torch.cuda.reset_peak_memory_stats()
@@ -213,6 +234,11 @@ def main() -> None:
     except Exception:
         log("4bit load failed, fallback to Qwen3-1.7B bf16\n" + traceback.format_exc())
         backend = load_backend(FALLBACK_MODEL, False, args.batch_size)
+    if args.adapter:
+        from peft import PeftModel
+        log(f"loading adapter {args.adapter}")
+        backend.model = PeftModel.from_pretrained(backend.model, args.adapter)
+        backend.model.eval()
 
     engine = LLM2Jev(backend=backend)
     t0 = time.perf_counter()
