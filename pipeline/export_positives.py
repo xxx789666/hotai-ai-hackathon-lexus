@@ -16,11 +16,21 @@ def main():
     haiku = {r["sid"]: r["c"] for r in load_jsonl(P / "churn_labels.jsonl")}
     verified = {r["sid"]: r for r in load_jsonl(P / "churn_verified.jsonl")}  # 後寫的覆蓋先寫的
 
+    refined = {}
+    refined_path = P / "churn_other_refined.jsonl"
+    if refined_path.exists():
+        refined = {r["sid"]: r["t2"] for r in load_jsonl(refined_path)}
+
     pos = []
     for sid, v in verified.items():
         if v["c"] >= 2:
-            pos.append({**sents[sid], "c": v["c"], "w": v["w"], "t": v["t"], "r": v["r"],
-                        "haiku_c": haiku.get(sid)})
+            t = v["t"]
+            if t != "其他":
+                t2 = t
+            else:
+                t2 = refined.get(sid, "其他")
+            pos.append({**sents[sid], "c": v["c"], "w": v["w"], "t": t, "r": v["r"],
+                        "haiku_c": haiku.get(sid), "t2": t2})
     pos.sort(key=lambda p: (p["source"], p["doc_id"], p["pos"]))
     with open(P / "churn_positives.jsonl", "w", encoding="utf-8") as f:
         for p in pos:
@@ -28,7 +38,7 @@ def main():
 
     print(f"verified {len(verified)} / positives {len(pos)} / docs {len({p['doc_id'] for p in pos})}")
     for name, key in [("來源", "source"), ("Haiku 原標", "haiku_c"), ("c", "c"), ("立場", "w"),
-                      ("面向", "t"), ("位置", "role")]:
+                      ("面向", "t"), ("細分", "t2"), ("位置", "role")]:
         print(name, Counter(p[key] for p in pos).most_common())
     print("年份", sorted(Counter((p["date"] or "????")[:4] for p in pos).items()))
 
