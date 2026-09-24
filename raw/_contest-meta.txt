@@ -1,0 +1,19 @@
+# 賽事基本資料（API 原始欄位）
+
+抓取時間：2026-09-21 18:48
+來源：https://api.bhuntr.com/tw/cms/contest/81508
+
+------------------------------------------------------------
+contestId: 81508
+alias: y5sf0shclq6c3yn1db
+title: 2026 和泰 AI 黑客松
+prizeTotal: 1030000
+prizeTop: 300000
+startTime: 2026-05-20 01:00
+endTime: 2026-10-14 13:00
+organizerTitle: 和泰AI黑客松賽務小組
+contactEmail: ht-hackathon@bhuntr.com
+contactPhone: 02-66043004#57
+tags: 和泰, 學生競賽, 大學, 高中, 社會人士, 創意, 黑客松, 競賽
+FAQ 條數: 25
+最新快報則數: 10

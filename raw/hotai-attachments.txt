@@ -1,0 +1,26 @@
+# 報名資料下載區（#hotai-attachments）
+
+抓取時間：2026-09-21 18:48
+來源：https://ht-hackathon.tw/tw/home#hotai-attachments
+來源：https://api.bhuntr.com/tw/cms/contest/81508
+
+------------------------------------------------------------
+報名資料下載
+
+===== 報名資料下載區（API attachments） =====
+
+- 2026和泰AI黑客松＿著作財產權授權暨肖像授權同意書.pdf
+  https://cdn.bountyhunter.co/file-presign/3a4a0a9f-ca02-4ec8-b81f-6cad639641a0.pdf
+- 2026和泰AI黑客松＿參賽注意事項.pdf
+  https://cdn.bountyhunter.co/file-presign/23513098-c468-4a37-9e60-4592009711c4.pdf
+- 2026和泰AI黑客松＿法定代理人同意書.pdf
+  https://cdn.bountyhunter.co/file-presign/f64e9f67-258a-4141-88e0-9c9629a58802.pdf
+- 2026和泰AI黑客松＿初賽簡報模板.pptx
+  https://cdn.bountyhunter.co/file-presign/cb242b3e-a683-434b-82ee-8d3c43eb4067.pptx
+- 2026和泰AI黑客松＿企業挑戰題目.pdf
+  https://cdn.bountyhunter.co/file-presign/d382a46c-1ca6-4363-8e03-1481260d5c9f.pdf
+
+===== 指定同意書連結（customTerms） =====
+
+2026和泰AI黑客松 著作財產權授權暨肖像授權同意書
+https://drive.google.com/file/d/1VmSqwxyZKlVuJKXB7exnHt214O2-XEIs/view?usp=sharing

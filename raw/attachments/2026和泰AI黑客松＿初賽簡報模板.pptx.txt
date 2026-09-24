@@ -1,0 +1,104 @@
+# 來源：2026和泰AI黑客松＿初賽簡報模板.pptx（python-pptx 抽取，共 9 頁）
+# 版面尺寸：12192000 x 6858000 EMU (13.33 x 7.50 英吋)
+
+
+--- Slide 1 ---
+[版面配置] TITLE
+[標題] 2026和泰AI黑客松
+[內容]
+[Google Shape;84;p1 (placeholder:CENTER_TITLE (3))]
+  2026和泰AI黑客松
+[Google Shape;85;p1]
+  說明：
+  簡報版面與文字排版可自由設計
+  總頁數限制15頁內，不包含附錄 (*決賽需提交 Prototype 或 Demo 完整版)
+[備註] (無)
+
+--- Slide 2 ---
+[版面配置] SECTION_HEADER
+[標題] 提案摘要
+[內容]
+[Google Shape;90;g3e7e10331f4_0_0]
+  本頁為提案摘要，請以簡短文字填寫各欄位，協助評審快速掌握方案核心。詳細提案內容請於後續頁面展開。
+  ※ 本頁不計入提案簡報 15 頁限制，所有欄位皆為必填。表格樣式可自行美化，但欄位名稱與順序請保持一致。
+[Google Shape;91;g3e7e10331f4_0_0 (placeholder:TITLE (1))]
+  提案摘要
+[表格 Google Shape;92;g3e7e10331f4_0_0]
+  | 團隊名稱 | 請填寫完整團隊名稱 |
+  | 產品/服務名稱 | 請填寫此次提案的產品或服務名稱 |
+  | 企業挑戰題目 | 請選填對應的企業挑戰題目（如:TOYOTA bZ4X 油轉電顧問服務） |
+  | 目標對象 | 一句話描述方案服務的主要使用者或受益對象 |
+  | 解決方案設計重點 (至多3項) | 1. 條列關鍵設計亮點 2. 每項以一句話描述 3. 不需填滿 3 項 |
+  | 運用到的AI技術、 服務或模型等資源 | 列出實際採用的 AI 工具、模型或服務名稱 |
+  | 預期效益簡述 | 說明方案可帶來的具體效益（例:效率提升 30%、降低人力成本、創造新營收） |
+[備註] (無)
+
+--- Slide 3 ---
+[版面配置] SECTION_HEADER
+[標題] 1.提案概述
+[內容]
+[Google Shape;97;p2 (placeholder:TITLE (1))]
+  1.提案概述
+[Google Shape;98;p2 (placeholder:BODY (2))]
+  提案名稱、核心價值主張、要解決的核心問題與目標。
+[備註] (無)
+
+--- Slide 4 ---
+[版面配置] SECTION_HEADER
+[標題] 2.目標對象與痛點分析
+[內容]
+[Google Shape;103;p3 (placeholder:TITLE (1))]
+  2.目標對象與痛點分析
+[Google Shape;104;p3 (placeholder:BODY (2))]
+  使用者輪廓、目標優化單位的現況描述、具體的痛點分析。
+[備註] (無)
+
+--- Slide 5 ---
+[版面配置] SECTION_HEADER
+[標題] 3.解決方案設計
+[內容]
+[Google Shape;109;p4 (placeholder:TITLE (1))]
+  3.解決方案設計
+[Google Shape;110;p4 (placeholder:BODY (2))]
+  整體方案架構、流程設計、體驗規劃或行銷策略架構等。
+[備註] (無)
+
+--- Slide 6 ---
+[版面配置] SECTION_HEADER
+[標題] 4.AI 應用方法
+[內容]
+[Google Shape;115;p5 (placeholder:TITLE (1))]
+  4.AI 應用方法
+[Google Shape;116;p5 (placeholder:BODY (2))]
+  應用的 AI 技術、工具或模型；AI 在方案中扮演的關鍵角色;技術或工具的選用原因。
+[備註] (無)
+
+--- Slide 7 ---
+[版面配置] SECTION_HEADER
+[標題] 5.獨特優勢與差異化
+[內容]
+[Google Shape;121;p6 (placeholder:TITLE (1))]
+  5.獨特優勢與差異化
+[Google Shape;122;p6 (placeholder:BODY (2))]
+  與現有做法的差異、創新點、難以複製的特色。
+[備註] (無)
+
+--- Slide 8 ---
+[版面配置] SECTION_HEADER
+[標題] 6.預期效益與落地評估
+[內容]
+[Google Shape;127;p7 (placeholder:TITLE (1))]
+  6.預期效益與落地評估
+[Google Shape;128;p7 (placeholder:BODY (2))]
+  預期成效指標、效益說明(如效率提升、體驗改善、行銷成效、成本優化等)、落地條件、導入時程與資源需求評估。
+[備註] (無)
+
+--- Slide 9 ---
+[版面配置] SECTION_HEADER
+[標題] 7.補充資料
+[內容]
+[Google Shape;133;p8 (placeholder:TITLE (1))]
+  7.補充資料
+[Google Shape;134;p8 (placeholder:BODY (2))]
+  參考文獻或資料來源和 GitHub 程式碼文檔、概念原型或模擬畫面
+[備註] (無)

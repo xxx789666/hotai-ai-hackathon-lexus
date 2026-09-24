@@ -1,0 +1,12 @@
+# 爬蟲原始資料與標註結果（171 MB，含論壇使用者內容，另以雲端硬碟分享）
+data/
+*.jsonl
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# 暫存
+_buildtest.pdf
+*.log
