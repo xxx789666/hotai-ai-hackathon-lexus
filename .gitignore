@@ -7,6 +7,9 @@ __pycache__/
 *.pyc
 .venv/
 
+# 第三方與模型快取（權重放 D:\hf_cache，不進 worktree）
+vendor/
+
 # 暫存
 _buildtest.pdf
 *.log
