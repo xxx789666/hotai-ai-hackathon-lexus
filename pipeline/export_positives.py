@@ -21,6 +21,11 @@ def main():
     if refined_path.exists():
         refined = {r["sid"]: r["t2"] for r in load_jsonl(refined_path)}
 
+    residual = {}
+    residual_path = P / "churn_residual_split.jsonl"
+    if residual_path.exists():
+        residual = {r["sid"]: r["t3"] for r in load_jsonl(residual_path)}
+
     pos = []
     for sid, v in verified.items():
         if v["c"] >= 2:
@@ -29,8 +34,12 @@ def main():
                 t2 = t
             else:
                 t2 = refined.get(sid, "其他")
-            pos.append({**sents[sid], "c": v["c"], "w": v["w"], "t": t, "r": v["r"],
-                        "haiku_c": haiku.get(sid), "t2": t2})
+            row = {**sents[sid], "c": v["c"], "w": v["w"], "t": t, "r": v["r"],
+                   "haiku_c": haiku.get(sid), "t2": t2}
+            if t2 == "無明確原因" and sid in residual:
+                row["t2_prev"] = t2
+                row["t2"] = residual[sid]
+            pos.append(row)
     pos.sort(key=lambda p: (p["source"], p["doc_id"], p["pos"]))
     with open(P / "churn_positives.jsonl", "w", encoding="utf-8") as f:
         for p in pos:
