@@ -53,6 +53,21 @@ ROUND = {
         "accum": 8,
         "max_seq": 768,
     },
+    4: {
+        "model": "Qwen/Qwen3-4B-Instruct-2507",
+        "out": LORA_ROOT / "qwen3-4b-churn-r4-ep2",
+        "epoch_dirs": [
+            LORA_ROOT / "qwen3-4b-churn-r4-ep1",
+            LORA_ROOT / "qwen3-4b-churn-r4-ep2",
+        ],
+        "batch": 1,
+        "accum": 16,
+        "max_seq": 640,
+        "epochs": 2,
+        "lr": 1e-4,
+        "warmup_ratio": 0.05,
+        "log": P / "jev_lora_r4_train.log",
+    },
 }
 
 
@@ -141,6 +156,24 @@ def subsample_neg_multiple(train_sids, labels, multiple: int, seed: int = 42) ->
 def subsample_round1(train_sids, labels, seed: int = 42) -> list[str]:
     """第一輪：保留全部 c>=2，負例抽到正例的 3 倍。"""
     return subsample_neg_multiple(train_sids, labels, 3, seed)
+
+
+def oversample_pos_fraction(sids, labels, fraction: float, seed: int = 42) -> list[str]:
+    """負例不動，正例重複抽樣到占總句次 fraction。"""
+    pos = [s for s in sids if int(labels[s]["c"]) >= 2]
+    neg = [s for s in sids if int(labels[s]["c"]) < 2]
+    if not pos or not neg or fraction <= 0 or fraction >= 1:
+        return list(sids)
+    target = int(round(fraction / (1.0 - fraction) * len(neg)))
+    target = max(target, len(pos))
+    rng = random.Random(seed)
+    copies = list(pos)
+    extra = target - len(pos)
+    if extra:
+        copies.extend(rng.choices(pos, k=extra))
+    out = neg + copies
+    rng.shuffle(out)
+    return out
 
 
 def oversample(train_sids, labels, seed: int = 42) -> list[str]:
@@ -301,13 +334,16 @@ def batch_loss(model, batch, device):
 def main() -> None:
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--round", type=int, default=1, choices=(1, 2, 3))
+    ap.add_argument("--round", type=int, default=1, choices=(1, 2, 3, 4))
     ap.add_argument("--prepare-only", action="store_true")
     ap.add_argument("--max-steps", type=int, default=0)
     ap.add_argument("--max-seq", type=int, default=0)
     ap.add_argument("--batch", type=int, default=0)
     args = ap.parse_args()
+    global LOG
     cfg = dict(ROUND[args.round])
+    if cfg.get("log"):
+        LOG = cfg["log"]
     if args.max_seq:
         cfg["max_seq"] = args.max_seq
     if args.batch:
@@ -325,13 +361,17 @@ def main() -> None:
     log(f"dist train {c_dist(split['train_sids'], labels)}")
     log(f"dist val {c_dist(split['val_sids'], labels)}")
     log(f"dist test {c_dist(split['test_sids'], labels)}")
-    epochs = 1
+    epochs = int(cfg.get("epochs", 1))
     if args.round == 1:
         sampled = subsample_round1(split["train_sids"], labels, 42)
         recipe = "round1 keep all c>=2, neg=3x pos, epochs=1"
     elif args.round == 2:
         sampled = subsample_neg_multiple(split["train_sids"], labels, 8, 42)
         recipe = "round2 keep all c>=2, neg=8x pos, epochs=1"
+    elif args.round == 4:
+        base = subsample_neg_multiple(split["train_sids"], labels, 3, 42)
+        sampled = oversample_pos_fraction(base, labels, 0.40, 42)
+        recipe = "round4 all c>=2, neg=3x, oversample pos to 40%, epochs=2, lr=1e-4"
     else:
         sampled = oversample(split["train_sids"], labels, 42)
         recipe = "round3 full train, oversample c>=2 to 30%, epochs=1"
@@ -382,10 +422,11 @@ def main() -> None:
     total_steps = steps_per_epoch * epochs
     if args.max_steps:
         total_steps = min(total_steps, args.max_steps)
-    warmup = max(1, int(total_steps * 0.03))
+    lr = float(cfg.get("lr", 2e-4))
+    warmup = max(1, int(total_steps * float(cfg.get("warmup_ratio", 0.03))))
     import bitsandbytes as bnb
     from transformers import get_linear_schedule_with_warmup
-    opt = bnb.optim.AdamW8bit((p for p in model.parameters() if p.requires_grad), lr=2e-4)
+    opt = bnb.optim.AdamW8bit((p for p in model.parameters() if p.requires_grad), lr=lr)
     sched = get_linear_schedule_with_warmup(opt, warmup, total_steps)
     model.train()
     device = "cuda"
@@ -440,11 +481,20 @@ def main() -> None:
             if opt_step >= total_steps:
                 done = True
                 break
+        epoch_dirs = cfg.get("epoch_dirs") or []
+        if epoch <= len(epoch_dirs):
+            dest = epoch_dirs[epoch - 1]
+            dest.mkdir(parents=True, exist_ok=True)
+            model.save_pretrained(dest)
+            tok.save_pretrained(dest)
+            (dest / "split_sids.json").write_text(manifest.read_text(encoding="utf-8"), encoding="utf-8")
+            log(f"saved epoch {epoch} {dest} steps={opt_step}")
         if done:
             break
-    cfg["out"].mkdir(parents=True, exist_ok=True)
-    model.save_pretrained(cfg["out"])
-    tok.save_pretrained(cfg["out"])
+    if not cfg.get("epoch_dirs"):
+        cfg["out"].mkdir(parents=True, exist_ok=True)
+        model.save_pretrained(cfg["out"])
+        tok.save_pretrained(cfg["out"])
     vram = torch.cuda.max_memory_allocated() / (1024 ** 3)
     log(f"saved {cfg['out']} steps={opt_step} elapsed_s={time.perf_counter() - t0:.0f} peak_vram_gb={vram:.2f} stack={stack}")
 

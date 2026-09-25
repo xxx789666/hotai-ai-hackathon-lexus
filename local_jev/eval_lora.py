@@ -28,18 +28,35 @@ LORA = {
         Path(r"D:\hf_cache\lora\qwen3-1.7b-churn-r3"),
         "r3",
     ),
+    4: (
+        "Qwen/Qwen3-4B-Instruct-2507",
+        Path(r"D:\hf_cache\lora\qwen3-4b-churn-r4-ep2"),
+        "r4_ep2",
+    ),
 }
+
+
+def resolve(round_n: int, epoch: int):
+    if round_n == 4 and epoch in (1, 2):
+        tag = f"r4_ep{epoch}"
+        return (
+            "Qwen/Qwen3-4B-Instruct-2507",
+            Path(rf"D:\hf_cache\lora\qwen3-4b-churn-r4-ep{epoch}"),
+            tag,
+        )
+    return LORA[round_n]
 
 
 def main() -> None:
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--round", type=int, default=1, choices=(1, 2, 3))
+    ap.add_argument("--round", type=int, default=1, choices=(1, 2, 3, 4))
+    ap.add_argument("--epoch", type=int, default=0, choices=(0, 1, 2))
     ap.add_argument("--split", choices=("test", "val"), default="test")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--batch-size", type=int, default=4)
     args = ap.parse_args()
-    model, adapter, tag = LORA[args.round]
+    model, adapter, tag = resolve(args.round, args.epoch)
     if args.split == "test":
         out = ROOT / "data" / "processed" / f"jev_lora_{tag}_pilot.jsonl"
         sids_file = ""
