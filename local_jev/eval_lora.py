@@ -15,13 +15,18 @@ PY = ROOT / ".venv" / "Scripts" / "python.exe"
 LORA = {
     1: (
         "Qwen/Qwen3-1.7B",
-        Path(r"D:\hf_cache\lora\qwen3-1.7b-churn-r1"),
-        "r1",
+        Path(r"D:\hf_cache\lora\qwen3-1.7b-churn-r1b"),
+        "r1b",
     ),
     2: (
         "Qwen/Qwen3-4B-Instruct-2507",
         Path(r"D:\hf_cache\lora\qwen3-4b-churn-r2"),
         "r2",
+    ),
+    3: (
+        "Qwen/Qwen3-1.7B",
+        Path(r"D:\hf_cache\lora\qwen3-1.7b-churn-r3"),
+        "r3",
     ),
 }
 
@@ -29,7 +34,7 @@ LORA = {
 def main() -> None:
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--round", type=int, default=1, choices=(1, 2))
+    ap.add_argument("--round", type=int, default=1, choices=(1, 2, 3))
     ap.add_argument("--split", choices=("test", "val"), default="test")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--batch-size", type=int, default=4)

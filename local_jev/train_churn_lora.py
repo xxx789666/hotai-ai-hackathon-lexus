@@ -34,7 +34,7 @@ LORA_ROOT = Path(r"D:\hf_cache\lora")
 ROUND = {
     1: {
         "model": "Qwen/Qwen3-1.7B",
-        "out": LORA_ROOT / "qwen3-1.7b-churn-r1",
+        "out": LORA_ROOT / "qwen3-1.7b-churn-r1b",
         "batch": 2,
         "accum": 8,
         "max_seq": 768,
@@ -45,6 +45,13 @@ ROUND = {
         "batch": 1,
         "accum": 16,
         "max_seq": 640,
+    },
+    3: {
+        "model": "Qwen/Qwen3-1.7B",
+        "out": LORA_ROOT / "qwen3-1.7b-churn-r3",
+        "batch": 2,
+        "accum": 8,
+        "max_seq": 768,
     },
 }
 
@@ -119,16 +126,21 @@ def make_split(seed: int = 42) -> dict:
     }
 
 
-def subsample_round1(train_sids, labels, seed: int = 42) -> list[str]:
-    """第一輪驗證食譜：保留全部 c>=2，負例抽到正例的 3 倍。"""
+def subsample_neg_multiple(train_sids, labels, multiple: int, seed: int = 42) -> list[str]:
+    """保留全部 c>=2，負例抽到正例的 multiple 倍。"""
     pos = [s for s in train_sids if int(labels[s]["c"]) >= 2]
     neg = [s for s in train_sids if int(labels[s]["c"]) < 2]
     rng = random.Random(seed)
-    keep_neg = min(len(neg), 3 * len(pos))
+    keep_neg = min(len(neg), multiple * len(pos))
     picked = rng.sample(neg, keep_neg) if keep_neg else []
     out = pos + picked
     rng.shuffle(out)
     return out
+
+
+def subsample_round1(train_sids, labels, seed: int = 42) -> list[str]:
+    """第一輪：保留全部 c>=2，負例抽到正例的 3 倍。"""
+    return subsample_neg_multiple(train_sids, labels, 3, seed)
 
 
 def oversample(train_sids, labels, seed: int = 42) -> list[str]:
@@ -265,14 +277,15 @@ def load_model(model_name: str, max_seq: int):
 
 
 def collate(batch, pad_id: int):
+    """左側 padding，讓每筆的 yes/no label 落在最後一個位置，而不是 pad。"""
     import torch
     width = max(len(x["input_ids"]) for x in batch)
     input_ids, labels, attn = [], [], []
     for x in batch:
         pad = width - len(x["input_ids"])
-        input_ids.append(x["input_ids"] + [pad_id] * pad)
-        labels.append(x["labels"] + [-100] * pad)
-        attn.append([1] * len(x["input_ids"]) + [0] * pad)
+        input_ids.append([pad_id] * pad + x["input_ids"])
+        labels.append([-100] * pad + x["labels"])
+        attn.append([0] * pad + [1] * len(x["input_ids"]))
     return {
         "input_ids": torch.tensor(input_ids, dtype=torch.long),
         "labels": torch.tensor(labels, dtype=torch.long),
@@ -288,7 +301,7 @@ def batch_loss(model, batch, device):
 def main() -> None:
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--round", type=int, default=1, choices=(1, 2))
+    ap.add_argument("--round", type=int, default=1, choices=(1, 2, 3))
     ap.add_argument("--prepare-only", action="store_true")
     ap.add_argument("--max-steps", type=int, default=0)
     ap.add_argument("--max-seq", type=int, default=0)
@@ -312,13 +325,16 @@ def main() -> None:
     log(f"dist train {c_dist(split['train_sids'], labels)}")
     log(f"dist val {c_dist(split['val_sids'], labels)}")
     log(f"dist test {c_dist(split['test_sids'], labels)}")
-    epochs = 1 if args.round == 1 else 2
+    epochs = 1
     if args.round == 1:
         sampled = subsample_round1(split["train_sids"], labels, 42)
         recipe = "round1 keep all c>=2, neg=3x pos, epochs=1"
+    elif args.round == 2:
+        sampled = subsample_neg_multiple(split["train_sids"], labels, 8, 42)
+        recipe = "round2 keep all c>=2, neg=8x pos, epochs=1"
     else:
         sampled = oversample(split["train_sids"], labels, 42)
-        recipe = "round2 oversample c>=2 to 30%, epochs=2"
+        recipe = "round3 full train, oversample c>=2 to 30%, epochs=1"
     pos = sum(int(labels[s]["c"]) >= 2 for s in sampled)
     log(f"recipe {recipe}")
     log(f"train_used sentences {len(sampled)} c>=2 {pos} rate {pos / len(sampled):.4f} dist {c_dist(sampled, labels)}")
@@ -389,6 +405,7 @@ def main() -> None:
             window.append(float(loss.detach()) * cfg["accum"])
             if micro % cfg["accum"] != 0:
                 continue
+            torch.nn.utils.clip_grad_norm_((p for p in model.parameters() if p.requires_grad), 1.0)
             opt.step()
             sched.step()
             opt.zero_grad(set_to_none=True)
