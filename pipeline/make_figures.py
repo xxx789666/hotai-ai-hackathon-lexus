@@ -1,0 +1,354 @@
+"""T10 圖表初稿。中文用 Microsoft JhengHei，白底，1600×900 以上。
+
+  python pipeline/make_figures.py
+
+F1、F2 的分子分母沿用 reports/T7_stats_tests.md，誤差線為依該表重算的 Wilson 95% CI。
+F6 用 r4 ep2 的 600 句測試集（jev_lora_r4_ep2_pilot.jsonl）。
+"""
+from __future__ import annotations
+
+import json
+import math
+from collections import Counter
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib import font_manager  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+P = ROOT / "data" / "processed"
+FIG = ROOT / "reports" / "figures"
+
+BLUE = "#2F5D8C"
+BLUE_MID = "#5C84B0"
+BLUE_LIGHT = "#A9C3DC"
+RED = "#C0392B"
+RED_MID = "#E07A72"
+RED_LIGHT = "#F3C1BD"
+INK = "#1A1A1A"
+GRID = "#E6E6E6"
+
+# T7 §3 面向 × 流失（有此面向且流失 / 有此面向 n）
+ASPECT_TABLE = [
+    ("價格", 587, 3908),
+    ("技術品質", 287, 3225),
+    ("保固延保", 109, 1521),
+    ("銷售交車", 19, 1367),
+    ("態度", 62, 1306),
+    ("報價透明", 106, 1115),
+    ("零件供應", 139, 803),
+    ("便利設施", 20, 677),
+    ("等待預約", 20, 271),
+]
+# T7 §2 作者層級來源 × 流失
+SOURCE_TABLE = [
+    ("PTT", 315, 2230),
+    ("Mobile01", 504, 2764),
+    ("Dcard", 95, 1400),
+]
+SOURCE_ORDER = ("mobile01", "ptt", "dcard")
+SOURCE_LABEL = {"mobile01": "Mobile01", "ptt": "PTT", "dcard": "Dcard"}
+
+
+def wilson(k: int, n: int, z: float = 1.96):
+    if n <= 0:
+        return 0.0, 0.0, 0.0
+    p = k / n
+    z2 = z * z
+    denom = 1 + z2 / n
+    center = (p + z2 / (2 * n)) / denom
+    margin = z * math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / denom
+    return p, max(0.0, center - margin), min(1.0, center + margin)
+
+
+def png_size(path: Path) -> tuple[int, int]:
+    import struct
+
+    with path.open("rb") as f:
+        if f.read(8) != b"\x89PNG\r\n\x1a\n":
+            raise RuntimeError(f"{path.name} 不是 PNG")
+        f.read(4)
+        if f.read(4) != b"IHDR":
+            raise RuntimeError(f"{path.name} 缺少 IHDR")
+        w, h = struct.unpack(">II", f.read(8))
+    return w, h
+
+
+def setup():
+    hits = [
+        f for f in font_manager.fontManager.ttflist
+        if "jhenghei" in f.name.lower() or Path(f.fname).name.lower().startswith("msjh")
+    ]
+    if not hits:
+        raise RuntimeError("找不到 Microsoft JhengHei")
+    plt.rcParams["font.family"] = "Microsoft JhengHei"
+    plt.rcParams["axes.unicode_minus"] = False
+    plt.rcParams["figure.facecolor"] = "white"
+    plt.rcParams["savefig.facecolor"] = "white"
+    plt.rcParams["axes.facecolor"] = "white"
+    FIG.mkdir(parents=True, exist_ok=True)
+
+
+def new_fig():
+    fig, ax = plt.subplots(figsize=(16, 9), dpi=120)
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.grid(axis="y", color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    return fig, ax
+
+
+def finish(fig, path: Path):
+    fig.tight_layout()
+    fig.savefig(path, dpi=120, facecolor="white")
+    plt.close(fig)
+    w, h = png_size(path)
+    if w < 1600 or h < 900:
+        raise RuntimeError(f"{path.name} 只有 {w}×{h}")
+    print(f"{path.name} {w}×{h}")
+
+
+def load_jsonl(path: Path):
+    rows = []
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
+def f1_aspects():
+    rows = []
+    for name, k, n in ASPECT_TABLE:
+        p, lo, hi = wilson(k, n)
+        rows.append((name, p, lo, hi, k, n))
+    rows.sort(key=lambda r: -r[1])
+    fig, ax = new_fig()
+    labels = [r[0] for r in rows]
+    y = [r[1] * 100 for r in rows]
+    yerr = [[(r[1] - r[2]) * 100 for r in rows], [(r[3] - r[1]) * 100 for r in rows]]
+    colors = [RED if i == 0 else BLUE for i in range(len(rows))]
+    ax.bar(labels, y, color=colors, width=0.72, zorder=3)
+    ax.errorbar(labels, y, yerr=yerr, fmt="none", ecolor=INK, elinewidth=1.1, capsize=4, zorder=4)
+    top = rows[0]
+    ax.set_title(
+        f"{top[0]}流失率最高（{top[1] * 100:.1f}%），銷售交車最低",
+        fontsize=22, color=INK, pad=14,
+    )
+    ax.set_ylabel("流失率（%）")
+    ax.set_ylim(0, max(r[3] for r in rows) * 100 * 1.25)
+    for i, r in enumerate(rows):
+        ax.text(i, r[1] * 100 + 0.6, f"{r[1] * 100:.1f}", ha="center", va="bottom", fontsize=11, color=INK)
+    finish(fig, FIG / "F1.png")
+
+
+def f2_sources():
+    rows = []
+    for name, k, n in SOURCE_TABLE:
+        p, lo, hi = wilson(k, n)
+        rows.append((name, p, lo, hi))
+    fig, ax = new_fig()
+    labels = [r[0] for r in rows]
+    y = [r[1] * 100 for r in rows]
+    yerr = [[(r[1] - r[2]) * 100 for r in rows], [(r[3] - r[1]) * 100 for r in rows]]
+    peak = max(range(len(rows)), key=lambda i: rows[i][1])
+    colors = [RED if i == peak else BLUE for i in range(len(rows))]
+    ax.bar(labels, y, color=colors, width=0.62, zorder=3)
+    ax.errorbar(labels, y, yerr=yerr, fmt="none", ecolor=INK, elinewidth=1.1, capsize=4, zorder=4)
+    hi = rows[peak]
+    dcard = next(r for r in rows if r[0] == "Dcard")
+    ax.set_title(
+        f"{hi[0]} 作者流失率 {hi[1] * 100:.1f}%，高於 Dcard 的 {dcard[1] * 100:.1f}%",
+        fontsize=22, color=INK, pad=14,
+    )
+    ax.set_ylabel("作者流失率（%）")
+    ax.set_ylim(0, max(r[3] for r in rows) * 100 * 1.3)
+    for i, r in enumerate(rows):
+        ax.text(i, r[1] * 100 + 0.4, f"{r[1] * 100:.1f}", ha="center", va="bottom", fontsize=14, color=INK)
+    finish(fig, FIG / "F2.png")
+
+
+def f3_alts():
+    import sys
+    sys.path.insert(0, str(ROOT / "pipeline"))
+    from label_aspects import ALTS
+
+    pos = {r["sid"] for r in load_jsonl(P / "churn_positives.jsonl")}
+    counts = Counter()
+    for rec in load_jsonl(P / "aspect_labels.jsonl"):
+        if rec["sid"] not in pos:
+            continue
+        for name in rec.get("alt") or []:
+            if name in ALTS:
+                counts[name] += 1
+    rows = sorted(((name, counts[name]) for name in ALTS), key=lambda kv: -kv[1])
+    fig, ax = new_fig()
+    labels = [r[0] for r in rows]
+    vals = [r[1] for r in rows]
+    colors = [RED if i == 0 else BLUE for i in range(len(rows))]
+    ax.bar(labels, vals, color=colors, width=0.72, zorder=3)
+    ax.set_title(
+        f"1,671 句流失裡，替代去向以{labels[0]}最多（{vals[0]} 句）",
+        fontsize=22, color=INK, pad=14,
+    )
+    ax.set_ylabel("句數（一句可多選）")
+    ax.set_ylim(0, max(vals) * 1.18)
+    for i, v in enumerate(vals):
+        ax.text(i, v + max(vals) * 0.015, str(v), ha="center", va="bottom", fontsize=13, color=INK)
+    finish(fig, FIG / "F3.png")
+
+
+def f4_risk_source():
+    rows = load_jsonl(P / "authors_risk.jsonl")
+    levels = ("低", "中", "高")
+    stacks = {src: [] for src in SOURCE_ORDER}
+    for lv in levels:
+        sub = [r for r in rows if r["level"] == lv]
+        c = Counter(r["source"] for r in sub)
+        for src in SOURCE_ORDER:
+            stacks[src].append(c.get(src, 0))
+    fig, ax = new_fig()
+    import numpy as np
+
+    x = np.arange(len(levels))
+    bottom = np.zeros(len(levels))
+    palette = {
+        "mobile01": (BLUE_LIGHT, RED_LIGHT),
+        "ptt": (BLUE_MID, RED_MID),
+        "dcard": (BLUE, RED),
+    }
+    for src in SOURCE_ORDER:
+        vals = np.array(stacks[src], dtype=float)
+        colors = [palette[src][0], palette[src][0], palette[src][1]]
+        ax.bar(x, vals, bottom=bottom, color=colors, width=0.62, label=SOURCE_LABEL[src], zorder=3)
+        bottom += vals
+    n_high = sum(stacks[src][2] for src in SOURCE_ORDER)
+    n_all = len(rows)
+    ax.set_title(
+        f"高風險作者 {n_high} 人，占全部作者 {n_high / n_all * 100:.1f}%",
+        fontsize=22, color=INK, pad=14,
+    )
+    ax.set_xticks(x, levels)
+    ax.set_xlabel("風險等級（紅＝高）")
+    ax.set_ylabel("作者數")
+    ax.legend(frameon=False, ncol=3, loc="upper right")
+    ax.set_ylim(0, max(bottom) * 1.18)
+    finish(fig, FIG / "F4.png")
+
+
+def f5_heatmap():
+    risk = {r["author_id"]: r for r in load_jsonl(P / "authors_risk.jsonl")}
+    persona_rows = load_jsonl(P / "authors_persona.jsonl")
+    import sys
+    sys.path.insert(0, str(ROOT / "pipeline"))
+    from label_aspects import ASPECTS
+
+    # 多個群都標「其他」時分開畫，否則態度抱怨會被低訊號多數平均掉。
+    label_of = {
+        0: "過保精算派",
+        1: "其他：態度抱怨",
+        3: "其他：低訊號",
+    }
+    order = [label_of[k] for k in (0, 1, 3)]
+    mat = []
+    for lab, name in ((0, order[0]), (1, order[1]), (3, order[2])):
+        members = [risk[r["author_id"]] for r in persona_rows if r["cluster"] == lab]
+        mat.append([
+            sum(m["aspect_n"][a] / m["n"] for m in members) / len(members)
+            for a in ASPECTS
+        ])
+    import numpy as np
+
+    data = np.array(mat) * 100
+    fig, ax = plt.subplots(figsize=(16, 9), dpi=120)
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+    im = ax.imshow(data, cmap="Blues", aspect="auto")
+    ax.set_xticks(range(len(ASPECTS)), ASPECTS, rotation=30, ha="right")
+    ax.set_yticks(range(len(order)), order)
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            val = data[i, j]
+            color = "white" if val > data.max() * 0.62 else INK
+            ax.text(j, i, f"{val:.0f}", ha="center", va="center", color=color, fontsize=12)
+    # 標出最高的一格，用紅框而不是另做 3D。
+    flat = int(np.argmax(data))
+    i, j = divmod(flat, data.shape[1])
+    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False, edgecolor=RED, linewidth=2.2))
+    ax.set_title(
+        f"{order[i]}最常談到{ASPECTS[j]}（人均 {data[i, j]:.0f}% 的句子）",
+        fontsize=22, color=INK, pad=14,
+    )
+    cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
+    cbar.outline.set_visible(False)
+    cbar.set_label("面向出現比例（%）")
+    fig.tight_layout()
+    path = FIG / "F5.png"
+    fig.savefig(path, dpi=120, facecolor="white")
+    plt.close(fig)
+    w, h = png_size(path)
+    if w < 1600 or h < 900:
+        raise RuntimeError(f"F5 只有 {w}×{h}")
+    print(f"F5.png {w}×{h}")
+
+
+def f6_calibration():
+    gold = {}
+    for rec in load_jsonl(P / "churn_verified.jsonl"):
+        gold[rec["sid"]] = 1 if int(rec["c"]) >= 2 else 0
+    xs, ys = [], []
+    for rec in load_jsonl(P / "jev_lora_r4_ep2_pilot.jsonl"):
+        p = float(rec["churn_p"]["2"]) + float(rec["churn_p"]["3"])
+        xs.append(p)
+        ys.append(gold[rec["sid"]])
+    import numpy as np
+
+    xs, ys = np.array(xs), np.array(ys)
+    edges = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0000001]
+    means, rates, ns = [], [], []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        mask = (xs >= lo) & (xs < hi)
+        if mask.sum() == 0:
+            continue
+        means.append(float(xs[mask].mean()))
+        rates.append(float(ys[mask].mean()))
+        ns.append(int(mask.sum()))
+    fig, ax = new_fig()
+    ax.plot([0, 1], [0, 1], color="#B0B0B0", linewidth=1.2, linestyle="--", zorder=2)
+    colors = [RED if m >= 0.8 else BLUE for m in means]
+    ax.scatter([m * 100 for m in means], [r * 100 for r in rates], s=[max(80, n) for n in ns], c=colors, zorder=3)
+    for m, r, n in zip(means, rates, ns):
+        ax.text(m * 100, r * 100 + 3, f"n={n}", ha="center", va="bottom", fontsize=11, color=INK)
+    hi = max(range(len(means)), key=lambda i: means[i])
+    ax.set_title(
+        f"高分仍偏高：預測接近 {means[hi] * 100:.0f}% 時，實際流失是 {rates[hi] * 100:.0f}%",
+        fontsize=22, color=INK, pad=14,
+    )
+    ax.set_xlabel("桶內平均預測機率（%）")
+    ax.set_ylabel("實際流失比例（%）")
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
+    ax.grid(axis="both", color=GRID, linewidth=0.8)
+    finish(fig, FIG / "F6.png")
+
+
+def main():
+    setup()
+    f1_aspects()
+    f2_sources()
+    f3_alts()
+    f6_calibration()
+    if (P / "authors_risk.jsonl").exists() and (P / "authors_persona.jsonl").exists():
+        f4_risk_source()
+        f5_heatmap()
+    else:
+        print("skip F4 F5：風險表或 persona 尚未產出")
+
+
+if __name__ == "__main__":
+    main()
