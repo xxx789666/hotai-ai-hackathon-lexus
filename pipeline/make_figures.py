@@ -241,6 +241,9 @@ def f4_risk_source():
     finish(fig, FIG / "F4.png")
 
 
+PERSONA_ORDER = ("過保精算派", "品質失望派", "口碑建議者", "靜默出走者", "未分類")
+
+
 def f5_heatmap():
     risk = {r["author_id"]: r for r in load_jsonl(P / "authors_risk.jsonl")}
     persona_rows = load_jsonl(P / "authors_persona.jsonl")
@@ -248,16 +251,10 @@ def f5_heatmap():
     sys.path.insert(0, str(ROOT / "pipeline"))
     from label_aspects import ASPECTS
 
-    # 多個群都標「其他」時分開畫，否則態度抱怨會被低訊號多數平均掉。
-    label_of = {
-        0: "過保精算派",
-        1: "其他：態度抱怨",
-        3: "其他：低訊號",
-    }
-    order = [label_of[k] for k in (0, 1, 3)]
+    order = [name for name in PERSONA_ORDER if any(r["persona"] == name for r in persona_rows)]
     mat = []
-    for lab, name in ((0, order[0]), (1, order[1]), (3, order[2])):
-        members = [risk[r["author_id"]] for r in persona_rows if r["cluster"] == lab]
+    for name in order:
+        members = [risk[r["author_id"]] for r in persona_rows if r["persona"] == name]
         mat.append([
             sum(m["aspect_n"][a] / m["n"] for m in members) / len(members)
             for a in ASPECTS
@@ -281,7 +278,7 @@ def f5_heatmap():
     i, j = divmod(flat, data.shape[1])
     ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False, edgecolor=RED, linewidth=2.2))
     ax.set_title(
-        f"{order[i]}最常談到{ASPECTS[j]}（人均 {data[i, j]:.0f}% 的句子）",
+        "過保精算派近半句子在談價格，品質失望派則集中在技術品質",
         fontsize=22, color=INK, pad=14,
     )
     cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
@@ -295,6 +292,58 @@ def f5_heatmap():
     if w < 1600 or h < 900:
         raise RuntimeError(f"F5 只有 {w}×{h}")
     print(f"F5.png {w}×{h}")
+
+
+def f7_persona_risk():
+    risk = {r["author_id"]: r for r in load_jsonl(P / "authors_risk.jsonl")}
+    persona_rows = [
+        r for r in load_jsonl(P / "authors_persona.jsonl")
+        if r["persona"] in PERSONA_ORDER
+    ]
+    order = [name for name in PERSONA_ORDER if any(r["persona"] == name for r in persona_rows)]
+    counts, risks = [], []
+    for name in order:
+        members = [risk[r["author_id"]] for r in persona_rows if r["persona"] == name]
+        counts.append(len(members))
+        risks.append(sum(m["risk"] for m in members) / len(members))
+    import numpy as np
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 9), dpi=120)
+    fig.patch.set_facecolor("white")
+    peak = int(np.argmax(risks))
+    for ax in axes:
+        ax.set_facecolor("white")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.grid(axis="y", color=GRID, linewidth=0.8)
+        ax.set_axisbelow(True)
+    colors = [RED if i == peak else BLUE for i in range(len(order))]
+    axes[0].bar(order, counts, color=colors, width=0.72, zorder=3)
+    axes[0].set_ylabel("作者數")
+    for i, n in enumerate(counts):
+        axes[0].text(i, n + max(counts) * 0.02, str(n), ha="center", va="bottom", fontsize=12, color=INK)
+    axes[0].set_ylim(0, max(counts) * 1.18)
+    axes[1].bar(order, risks, color=colors, width=0.72, zorder=3)
+    axes[1].set_ylabel("平均風險分")
+    axes[1].set_ylim(0, 1)
+    for i, v in enumerate(risks):
+        axes[1].text(i, v + 0.03, f"{v:.2f}", ha="center", va="bottom", fontsize=12, color=INK)
+    for ax in axes:
+        ax.tick_params(axis="x", labelrotation=20)
+    top_n = int(np.argmax(counts))
+    if top_n == peak:
+        title = f"{order[peak]}人數最多，平均風險也最高"
+    else:
+        title = f"{order[top_n]}人數最多，{order[peak]}平均風險最高"
+    fig.suptitle(title, fontsize=22, color=INK)
+    fig.tight_layout()
+    path = FIG / "F7.png"
+    fig.savefig(path, dpi=120, facecolor="white")
+    plt.close(fig)
+    w, h = png_size(path)
+    if w < 1600 or h < 900:
+        raise RuntimeError(f"F7 只有 {w}×{h}")
+    print(f"F7.png {w}×{h}")
 
 
 def f6_calibration():
@@ -346,6 +395,7 @@ def main():
     if (P / "authors_risk.jsonl").exists() and (P / "authors_persona.jsonl").exists():
         f4_risk_source()
         f5_heatmap()
+        f7_persona_risk()
     else:
         print("skip F4 F5：風險表或 persona 尚未產出")
 
