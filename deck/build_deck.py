@@ -69,12 +69,9 @@ NOTES = [
 ]
 
 SUMMARY_RIGHT = {
-    "team": [[("【待補：團隊名稱】", ORANGE, True)]],
-    "product": [[
-        ("【待補：產品名稱】", ORANGE, True),
-        ("（暫用「Lexus 車主流失預警與智慧關懷」）", INK, False),
-    ]],
-    "challenge": [[("題 3　AI 流失風險洞察與智慧溝通：打造 Lexus 車主忠誠度的終極防線", INK, False)]],
+    "team": [[("回廠率研究所", INK, True)]],
+    "product": [[("Lexus車主流失預警與 AI 溝通系統", INK, True)]],
+    "challenge": [[("AI 流失風險洞察與智慧溝通：打造Lexus車主忠誠度的終極防線", INK, False)]],
     "audience": [[("Lexus 售後服務部門決策者與服務廠客戶關係人員", INK, False)]],
     "design": [
         [("1. 從公開輿情 21,183 句售後語料自動標註流失意圖與九大面向，找出 4 種流失 Persona。", INK, False)],
@@ -945,7 +942,7 @@ def write_readme(prs, placeholders, preview_note: str) -> None:
         "",
         "| 檔案頁 | 代碼 | 章節 | 標題 | 圖 | 報告 |",
         "| --- | --- | --- | --- | --- | --- |",
-        "| 1 | 封面 | — | 2026和泰AI黑客松 | — | 模板封面，未改文字 |",
+        "| 1 | 封面 | — | Lexus車主流失預警與 AI 溝通系統 | — | 模板封面，改作品名／主題／團隊 |",
         "| 2 | 摘要 | 提案摘要 | 提案摘要（表格右欄） | — | 模板表格；數字來自 T1、T7、T8、T10、專案架構 |",
     ]
     for i, meta in enumerate(SLIDES):
@@ -1035,6 +1032,37 @@ def assert_notes() -> None:
             raise SystemExit(f"第 {i} 頁旁白 {n} 字（要 25–35）：{note}")
 
 
+def fill_cover(slide) -> None:
+    """封面：標題改作品名，說明框改主題／團隊／場次。"""
+    texts = [sh for sh in slide.shapes if sh.has_text_frame]
+    title = [sh for sh in texts if sh.text_frame.text.strip().startswith("2026")]
+    note = [sh for sh in texts if "說明" in sh.text_frame.text]
+    if title:
+        tf = title[0].text_frame
+        for para in list(tf.paragraphs)[1:]:
+            para._p.getparent().remove(para._p)
+        run_para = tf.paragraphs[0]
+        for r in list(run_para.runs)[1:]:
+            r._r.getparent().remove(r._r)
+        run_para.runs[0].text = "Lexus車主流失預警與 AI 溝通系統"
+        run_para.runs[0].font.size = Pt(44)
+        run_para.runs[0].font.bold = True
+    if note:
+        tf = note[0].text_frame
+        lines = ["2026 和泰 AI 黑客松｜AI 流失風險洞察與智慧溝通：打造Lexus車主忠誠度的終極防線",
+                 "團隊：回廠率研究所", "初賽提案簡報（v0，2026-09）"]
+        for para in list(tf.paragraphs)[1:]:
+            para._p.getparent().remove(para._p)
+        first = tf.paragraphs[0]
+        for r in list(first.runs)[1:]:
+            r._r.getparent().remove(r._r)
+        first.runs[0].text = lines[0]
+        first.runs[0].font.size = Pt(18)
+        for ln in lines[1:]:
+            para = tf.add_paragraph()
+            run = para.add_run(); run.text = ln; run.font.size = Pt(18)
+
+
 def main() -> None:
     assert_notes()
     prs = Presentation(str(template_path()))
@@ -1042,6 +1070,7 @@ def main() -> None:
         raise SystemExit(f"模板應為 9 頁，實際 {len(prs.slides)}")
     while len(prs.slides) > 2:
         delete_slide(prs, len(prs.slides) - 1)
+    fill_cover(prs.slides[0])
     fill_summary(prs.slides[1])
     set_notes(prs.slides[0], NOTES[0])
     set_notes(prs.slides[1], NOTES[1])
