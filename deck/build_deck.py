@@ -274,6 +274,16 @@ ADVANTAGES = [
 TOUCH_COLS = ["保固到期前 60 天", "回廠間隔拉長", "刪項後首次回廠"]
 PH_SPRINT = "【待補：Sprint 3 生成範例】"
 PH_CRM = "【待補：B 的 PB-08】"
+CRM_MAP = {
+    "R1": "保固到期日（4 年／12 萬）、延保購買狀態：到期前 90 天未購延保",
+    "R2": "工單估價 vs 實收、拒絕估價項目、滿意度價格題：連續 2 次拒項",
+    "R3": "回廠間隔 vs 建議週期、預約取消、App 查據點未預約：逾期 1.5 倍",
+    "R4": "工單自備零件／機油註記、只做換油套餐、金額逐次下降 > 40%",
+    "R5": "零件待料天數、待料改期次數：待料 > 7 天或同車 ≥ 2 次",
+    "R6": "30 天內同項目重複進廠、技術客訴、召回未完成：comeback ≥ 2",
+    "R7": "12 個月無工單、過戶／退出會員、App 長期未開啟（驗證用）",
+    "R8": "NPS 貶損者（0–6）且 12 個月內有客訴、推薦計畫無紀錄",
+}
 PH_WEEKS = "【待補：週數】"
 PH_TARGET = "【待補：目標值】"
 
@@ -672,9 +682,11 @@ def build_p8(slide, y):
         body.append([
             cell_text(code),
             cell_text(signal),
-            cell_text(PH_CRM, ORANGE, True),
+            cell_text(CRM_MAP.get(code.split()[0], PH_CRM), INK if code.split()[0] in CRM_MAP else ORANGE, code.split()[0] not in CRM_MAP),
         ])
-    add_table(slide, ML, y + 2.85, CW, 2.45, body, [1.3, 2.4, 8.72], font=11)
+    add_table(slide, ML, y + 2.85, CW, 2.45, body, [1.3, 2.4, 8.72], font=10)
+    add_text(slide, ML, y + 5.35, CW, 0.35,
+             [[("CRM 欄位為業界通用假設，導入時以和泰 DMS 實際欄位替換；模型輸入由論壇文字改為工單備註與客訴文字，架構不變。", MUTED, False, 10)]], size=10)
 
 
 def build_p9(slide, y):
