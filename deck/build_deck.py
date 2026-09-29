@@ -60,7 +60,7 @@ NOTES = [
     "四種人裡過保精算最多；靜默出走沒有抱怨，分群也單獨撐得住。",
     "高風險七成四真有流失句；輿情訊號怎麼對上 CRM，這格還空著。",
     "兩段式補上漏標，Dcard 換模型複核，重疊句一致率達百分之九十八。",
-    "四Ｂ模型只吐機率、不寫句子，八Ｇ顯卡五小時練完，一句零點七秒。",
+    "大模型標答案、按文章切考卷、四位元微調五小時；人工驗證 F1 零點八二。",
     "別人看不到不抱怨就走的人；我們給規則和機率，每句都能回原句。",
     "四種人配三種進廠時機，十二則已過查核，投遞前仍要人工審。",
     "模型與語料做得到；要守住的是樣本偏誤、個資，還有生成亂編。",
@@ -752,6 +752,24 @@ def build_p10(slide, y):
         size=14,
     )
     pic(slide, "F6.png", ML + 6.40, y, 6.00)
+    # 訓練步驟：五張小卡
+    steps = [
+        ("1 ETL＋弱監督標註", "爬蟲→清洗去重→切句→關鍵詞篩選得 21,183 句；LLM-as-labeler 兩段式：Haiku 初篩、Sonnet／GPT 帶上下文複核"),
+        ("2 資料切分（防洩漏）", "GroupSplit 按 doc_id：600 句 held-out 測試集整篇排除；驗證 1,096、訓練池 9,431"),
+        ("3 任務轉換", "多類別→二元候選：流失四級拆成四個 yes/no 題，prefill-only 只取下一 token 機率"),
+        ("4 監督式微調 SFT", "Qwen3-4B NF4 4-bit QLoRA（r=16）；類別不平衡用過採樣至四成；2 epoch、8 GB VRAM、5 小時"),
+        ("5 評估與校準", "P／R／F1／Cohen's κ；五段 reliability bins；人工金標 300 句：隨機層 F1 0.82、κ 0.81"),
+    ]
+    gap = 0.12
+    cw = (CW - 4 * gap) / 5
+    sy = y + 3.55
+    for i, (head, body) in enumerate(steps):
+        x = ML + i * (cw + gap)
+        add_card(slide, x, sy, cw, 1.35)
+        add_text(slide, x + 0.12, sy + 0.08, cw - 0.24, 1.2,
+                 [[(head, BLUE, True, 11.5)], [(body, INK, False, 9.5)]], size=9.5)
+    add_text(slide, ML, sy + 1.45, CW, 0.5,
+             [[("做法沿用 jev 的 System-One 思路（LLM2Jev 開源框架，prefill-only 只出機率），非 jev 官方模型；機率校準以測試集五段分箱事後驗證（最高信心桶約七成為真正例），尚未達官方宣稱水準。", MUTED, False, 10)]], size=10)
 
 
 def build_p11(slide, y):
