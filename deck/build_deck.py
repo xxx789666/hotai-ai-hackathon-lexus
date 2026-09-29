@@ -62,7 +62,7 @@ NOTES = [
     "兩段式補上漏標，Dcard 換模型複核，重疊句一致率達百分之九十八。",
     "四Ｂ模型只吐機率、不寫句子，八Ｇ顯卡五小時練完，一句零點七秒。",
     "別人看不到不抱怨就走的人；我們給規則和機率，每句都能回原句。",
-    "四種人配三種進廠時機，話還沒寫，價格保固只能引用知識庫。",
+    "四種人配三種進廠時機，十二則已過查核，投遞前仍要人工審。",
     "模型與語料做得到；要守住的是樣本偏誤、個資，還有生成亂編。",
     "延遲和Ｆ１已經有現況，業務回廠率與導入週數都還是空格。",
     "程式在私有庫，報告從Ｔ１到Ｔ１１，畫面截圖等決賽再補。",
@@ -200,9 +200,13 @@ SLIDES = [
     {
         "id": "P12",
         "section": "6 預期效益與落地評估",
-        "title": "先對上是誰、在什麼時候開口；話術範例還等 Sprint 3",
-        "source": "來源：專案架構 §2 L6–L7、knowledge/lexus_aftersales_kb.md（40 條）",
-        "reports": ["專案架構_2026-09-23.md", "knowledge/lexus_aftersales_kb.md"],
+        "title": "先對上是誰、在什麼時候開口；十二則話術已對過知識庫",
+        "source": "來源：knowledge/generated_examples.md、reports/T14_generation_report.md",
+        "reports": [
+            "knowledge/generated_examples.md",
+            "reports/T14_generation_report.md",
+            "knowledge/lexus_aftersales_kb.md",
+        ],
         "figures": [],
     },
     {
@@ -272,7 +276,6 @@ ADVANTAGES = [
 ]
 
 TOUCH_COLS = ["保固到期前 60 天", "回廠間隔拉長", "刪項後首次回廠"]
-PH_SPRINT = "【待補：Sprint 3 生成範例】"
 PH_CRM = "【待補：B 的 PB-08】"
 CRM_MAP = {
     "R1": "保固到期日（4 年／12 萬）、延保購買狀態：到期前 90 天未購延保",
@@ -770,19 +773,68 @@ def build_p11(slide, y):
         )
 
 
+def load_p12_messages() -> list[dict]:
+    """轉抄 generated_examples.md 的逐則區，不在簡報腳本裡重算。"""
+    path = ROOT / "knowledge" / "generated_examples.md"
+    if not path.exists():
+        raise SystemExit(f"缺少 {path}")
+    lines = path.read_text(encoding="utf-8").splitlines()
+    items = []
+    i = 0
+    while i < len(lines):
+        if not lines[i].startswith("### "):
+            i += 1
+            continue
+        head = lines[i][4:]
+        persona, rest = head.split(" × ", 1)
+        touch = rest.split()[0]
+        channel = ""
+        text = ""
+        i += 1
+        while i < len(lines) and not lines[i].startswith("#"):
+            line = lines[i]
+            if line.startswith("- 渠道："):
+                channel = line.split("：", 1)[1].strip()
+            elif line.startswith("- 訊息全文："):
+                i += 1
+                while i < len(lines) and lines[i].strip() == "":
+                    i += 1
+                chunk = []
+                while i < len(lines) and lines[i].strip() and not lines[i].startswith("#"):
+                    chunk.append(lines[i].strip())
+                    i += 1
+                text = "".join(chunk)
+                continue
+            i += 1
+        items.append({"persona": persona.strip(), "touch": touch, "channel": channel, "text": text})
+    if len(items) != 12:
+        raise SystemExit(f"P12 應有 12 則，讀到 {len(items)}")
+    return items
+
+
 def build_p12(slide, y):
+    msgs = {(m["persona"], m["touch"]): m for m in load_p12_messages()}
     header = [cell_text("Persona", WHITE, True)] + [cell_text(c, WHITE, True) for c in TOUCH_COLS]
     rows = [header]
     for name, *_rest in PERSONAS:
-        rows.append([cell_text(name, INK, True)] + [cell_text(PH_SPRINT, ORANGE, True) for _ in TOUCH_COLS])
-    add_table(slide, ML, y, CW, 2.55, rows, [2.15, 3.42, 3.42, 3.43], font=12)
+        row = [cell_text(name, INK, True)]
+        for touch in ("T1", "T2", "T3"):
+            msg = msgs[(name, touch)]
+            compact = re.sub(r"\s+", "", msg["text"])
+            preview = compact[:40] + "…"
+            row.append([
+                [(msg["channel"], BLUE, True)],
+                [(preview, INK, False)],
+            ])
+        rows.append(row)
+    add_table(slide, ML, y, CW, 4.55, rows, [1.62, 3.60, 3.60, 3.60], font=10)
     add_text(
-        slide, ML, y + 2.70, CW, 0.85,
+        slide, ML, y + 4.68, CW, 0.72,
         [
-            [("觸發 → 判 Persona → 生成 → 人工審核 → 投遞 → KPI 回饋。", INK, False, 15)],
-            [("知識庫已備 40 條。價格與保固只引用有 URL 的條目，不能拿口述中位數當官方定價。", INK, False, 14)],
+            [("12 則皆通過知識庫事實查核，人工審核後才投遞。", INK, True, 13)],
+            [("完整文字、引用條目與查核見附錄 knowledge/generated_examples.md。", MUTED, False, 12)],
         ],
-        size=14,
+        size=12,
     )
 
 
@@ -977,7 +1029,7 @@ def write_readme(prs, placeholders, preview_note: str) -> None:
         lines.append(f"| {page} | {pid} | {text} |")
     lines += [
         "",
-        f"共 {len(placeholders)} 處。同一句在 P8 出現 8 次（八條輿情訊號各一格），P12 出現 12 次（四個 Persona × 三個接觸點），P14 的週數出現 5 次。",
+        f"共 {len(placeholders)} 處。P12 的十二則話術已換成查核後的前 40 字，不再占位。P14 的週數出現 {sum(1 for _, pid, text in placeholders if pid == 'P14' and '週數' in text)} 次。",
         "",
         "## 待核（不是占位，但數字來源不一致）",
         "",
