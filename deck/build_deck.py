@@ -720,7 +720,7 @@ def build_p9(slide, y):
     add_card(slide, ML, y + 2.90, CW, 0.85, fill="FDEBD0")
     add_text(
         slide, ML + 0.16, y + 3.02, CW - 0.32, 0.62,
-        [[("【待補：人工標註 300 句 A/B κ 與三模型對人工指標（9/29）】", ORANGE, True, 15)]],
+        [[("人工金標 300 句（9/29）：兩人 κ 0.40，仲裁後隨機層 150 句以人工為準：r4 F1 0.82／κ 0.81 與 Sonnet 相同，Haiku F1 0.50；正例僅 9 句，召回 CI 0.45–0.94", INK, False, 15)]],
         size=15, anchor="ctr",
     )
 
