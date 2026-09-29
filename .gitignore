@@ -13,3 +13,6 @@ vendor/
 # 暫存
 _buildtest.pdf
 *.log
+
+# 外部學習資料，不進 repo
+AI應用規劃師*.pdf
