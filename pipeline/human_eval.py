@@ -200,12 +200,10 @@ def calib():
             continue
         n += 1
         text = A[s]["row"][5]
-        print(f"
-#{i} {s}｜{text}")
+        print(f"\n#{i} {s}｜{text}")
         print(f"   A：流失={A[s]['row'][7]}  面向={';'.join(sorted(A[s]['aspects'])) or '無'}  備註={A[s]['note']}")
         print(f"   B：流失={B[s]['row'][7]}  面向={';'.join(sorted(B[s]['aspects'])) or '無'}  備註={B[s]['note']}")
-    print(f"
-不一致 {n} 句。討論後把結論寫進 標註指引_2026-09-29.md 第四節。")
+    print(f"\n不一致 {n} 句。討論後把結論寫進 標註指引_2026-09-29.md 第四節。")
 
 
 if __name__ == "__main__":
