@@ -128,15 +128,21 @@ def stage1():
 
 
 def stage2():
-    ws = load_workbook(P / "human_labels_arbitration.xlsx", data_only=True)["仲裁"]
+    src = P / "human_labels_arbitration_v2.xlsx"
+    if not src.exists():
+        src = P / "human_labels_arbitration.xlsx"
+    ws = load_workbook(src, data_only=True)["仲裁"]
+    hdr = [c.value for c in ws[1]]
+    i_sid, i_c, i_a = hdr.index("sid"), hdr.index("最終流失(是/否)"), hdr.index("最終面向")
     final = {}
     for r in ws.iter_rows(min_row=2, values_only=True):
-        if not r or not r[0]:
+        if not r or not r[i_sid]:
             continue
-        c = norm_churn(r[13])
+        c = norm_churn(r[i_c])
         if c is None:
             continue
-        final[str(r[0])] = {"churn": c, "aspects": norm_aspects(r[14])}
+        final[str(r[i_sid])] = {"churn": c, "aspects": norm_aspects(r[i_a])}
+    print(f"讀取 {src.name}")
     manifest = {m["sid"]: m for m in load_jsonl(P / "human_label_manifest.jsonl")}
     r4 = {}
     for name in ("jev_lora_r4_ep2_pilot.jsonl", "jev_lora_r4_ep2_val.jsonl"):
