@@ -25,7 +25,7 @@
 | 11 | P9 | 4 AI 應用方法 | 先寬鬆抓住，再帶上下文複核；九個面向已經全量標完 | — | `專案架構_2026-09-23.md`、`reports/T1_dcard_verify_report.md`、`reports/T2_other_refine_report.md`、`reports/T3_residual_split_report.md` |
 | 12 | P10 | 4 AI 應用方法 | 本機 4B 比雲端 Haiku 更會把流失句找回來，而且不生成文字 | F6.png | `reports/T8_r4_report.md`、`專案架構_2026-09-23.md` |
 | 13 | P11 | 5 獨特優勢與差異化 | 靜默出走別隊看不到；分數說得出是哪條規則，也能回到原句 | — | `reports/T10_risk_persona_report.md`、`reports/T8_r4_report.md`、`專案架構_2026-09-23.md` |
-| 14 | P12 | 6 預期效益與落地評估 | 先對上是誰、在什麼時候開口；話術範例還等 Sprint 3 | — | `專案架構_2026-09-23.md`、`knowledge/lexus_aftersales_kb.md` |
+| 14 | P12 | 6 預期效益與落地評估 | 先對上是誰、在什麼時候開口；十二則話術已對過知識庫 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md`、`knowledge/lexus_aftersales_kb.md` |
 | 15 | P13 | 6 預期效益與落地評估 | 技術與語料已在手上；要守的是代表性、個資，和生成亂編 | — | `iPAS導入對照_2026-09-25.md` |
 | 16 | P14 | 6 預期效益與落地評估 | 延遲和判準已有現況；業務目標與導入週數都還沒填 | — | `iPAS導入對照_2026-09-25.md`、`reports/T8_r4_report.md`、`reports/T10_risk_persona_report.md` |
 | 17 | P15 | 7 補充資料 | 報告、模型紀錄與程式都在；畫面截圖留到決賽 | — | `reports/` |
@@ -37,18 +37,6 @@
 | 檔案頁 | 代碼 | 占位 |
 | --- | --- | --- |
 | 2 | 摘要 | 【待補：KPI 目標值】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
-| 14 | P12 | 【待補：Sprint 3 生成範例】 |
 | 15 | P13 | 【待補：成本與回收期】 |
 | 16 | P14 | 【待補：可用率現況】 |
 | 16 | P14 | 【待補：目標值】 |
@@ -62,7 +50,7 @@
 | 16 | P14 | 【待補：週數】 |
 | 17 | P15 | 【待補：Prototype 畫面截圖（決賽）】 |
 
-共 25 處。同一句在 P8 出現 8 次（八條輿情訊號各一格），P12 出現 12 次（四個 Persona × 三個接觸點），P14 的週數出現 5 次。
+共 13 處。P12 的十二則話術已換成查核後的前 40 字，不再占位。P14 的週數出現 5 次。
 
 ## 待核（不是占位，但數字來源不一致）
 
