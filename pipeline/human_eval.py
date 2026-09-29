@@ -1,5 +1,6 @@
 """Sprint 1 PB-06：讀兩位標註者的 xlsx，算一致性，產生仲裁表，仲裁後算各模型對人工金標的指標。
 
+  python pipeline/human_eval.py --calib    # 校準 30 句：並排兩人答案，只列不一致
   python pipeline/human_eval.py            # 讀 human_labeling_A.xlsx / _B.xlsx 的「正式300」，算 A/B κ，輸出仲裁表
   python pipeline/human_eval.py --final    # 讀 human_labels_arbitration.xlsx 的「最終」欄，算模型 vs 人工
 
@@ -182,8 +183,39 @@ def stage2():
     print("\n".join(lines))
 
 
+def calib():
+    """校準 30 句：並排兩人答案，只列不一致，順便算一致率與 κ。"""
+    A = read_sheet(P / "human_labeling_A.xlsx", "校準30")
+    B = read_sheet(P / "human_labeling_B.xlsx", "校準30")
+    sids = [s for s in A if s in B]
+    pairs = [(A[s]["churn"], B[s]["churn"]) for s in sids if A[s]["churn"] is not None and B[s]["churn"] is not None]
+    k, agree = kappa(pairs)
+    print(f"校準 30：兩人都標了 {len(pairs)} 句；流失一致率 {agree:.0%}，κ {k:.2f}")
+    print("A 未標", sum(1 for s in sids if A[s]["churn"] is None), "句；B 未標", sum(1 for s in sids if B[s]["churn"] is None), "句")
+    n = 0
+    for i, s in enumerate(sids, 1):
+        dc = A[s]["churn"] != B[s]["churn"]
+        da = A[s]["aspects"] != B[s]["aspects"]
+        if not (dc or da):
+            continue
+        n += 1
+        text = A[s]["row"][5]
+        print(f"
+#{i} {s}｜{text}")
+        print(f"   A：流失={A[s]['row'][7]}  面向={';'.join(sorted(A[s]['aspects'])) or '無'}  備註={A[s]['note']}")
+        print(f"   B：流失={B[s]['row'][7]}  面向={';'.join(sorted(B[s]['aspects'])) or '無'}  備註={B[s]['note']}")
+    print(f"
+不一致 {n} 句。討論後把結論寫進 標註指引_2026-09-29.md 第四節。")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--final", action="store_true")
+    ap.add_argument("--calib", action="store_true", help="只看校準 30 句的分歧")
     args = ap.parse_args()
-    stage2() if args.final else stage1()
+    if args.calib:
+        calib()
+    elif args.final:
+        stage2()
+    else:
+        stage1()

@@ -155,7 +155,7 @@ def main():
             dv = DataValidation(type="list", formula1='"是,否"', allow_blank=True)
             ws.add_data_validation(dv)
             dv.add(f"H2:H{len(group) + 1}")
-            ws.freeze_panes = "F2"
+            ws.freeze_panes = "A2"
 
         ws1 = wb.create_sheet("校準30")
         fill(ws1, C)
