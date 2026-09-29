@@ -134,6 +134,8 @@ def stage2():
     ws = load_workbook(src, data_only=True)["仲裁"]
     hdr = [c.value for c in ws[1]]
     i_sid, i_c, i_a = hdr.index("sid"), hdr.index("最終流失(是/否)"), hdr.index("最終面向")
+    i_aa = hdr.index("A面向") if "A面向" in hdr else None
+    i_ba = hdr.index("B面向") if "B面向" in hdr else None
     final = {}
     for r in ws.iter_rows(min_row=2, values_only=True):
         if not r or not r[i_sid]:
@@ -141,7 +143,13 @@ def stage2():
         c = norm_churn(r[i_c])
         if c is None:
             continue
-        final[str(r[i_sid])] = {"churn": c, "aspects": norm_aspects(r[i_a])}
+        rec = {"churn": c, "aspects": norm_aspects(r[i_a])}
+        if i_aa is not None:
+            aa, ba = norm_aspects(r[i_aa]), norm_aspects(r[i_ba])
+            rec["aspect_agree"] = aa == ba
+            if not str(r[i_a] or "").strip() and aa == ba:
+                rec["aspects"] = aa  # 最終面向空白但兩人一致，沿用
+        final[str(r[i_sid])] = rec
     print(f"讀取 {src.name}")
     manifest = {m["sid"]: m for m in load_jsonl(P / "human_label_manifest.jsonl")}
     r4 = {}
@@ -168,10 +176,11 @@ def stage2():
             lines.append(f"| {name} " + fmt(d))
         lines.append("")
     # 面向：Sonnet vs 人工
-    lines += ["## 面向：Sonnet 標註 vs 人工（全部句）", "", "| 面向 | 人工有 | Sonnet 有 | P | R | F1 |", "| --- | ---: | ---: | ---: | ---: | ---: |"]
+    asp_sids = [s for s in final if final[s].get("aspect_agree", True)]
+    lines += [f"## 面向：Sonnet 標註 vs 人工（只用兩人面向一致的 {len(asp_sids)} 句，未仲裁面向）", "", "| 面向 | 人工有 | Sonnet 有 | P | R | F1 |", "| --- | ---: | ---: | ---: | ---: | ---: |"]
     micro = Counter()
     for asp in ASPECTS:
-        pairs = [(int(asp in final[s]["aspects"]), int(asp in set(manifest[s]["gold_a"]))) for s in final]
+        pairs = [(int(asp in final[s]["aspects"]), int(asp in set(manifest[s]["gold_a"]))) for s in asp_sids]
         d = prf(pairs)
         micro["tp"] += d["tp"]; micro["fp"] += d["fp"]; micro["fn"] += d["fn"]
         lines.append(f"| {asp} | {sum(g for g, _ in pairs)} | {sum(p for _, p in pairs)} | {d['P']:.2f} | {d['R']:.2f} | {d['F1']:.2f} |")
@@ -179,7 +188,7 @@ def stage2():
     lines.append(f"\nSonnet 面向 micro F1 = {2 * mp * mr / max(mp + mr, 1e-9):.3f}（P {mp:.2f}，R {mr:.2f}）")
     if haiku_asp:
         micro = Counter()
-        sids_h = [s for s in final if s in haiku_asp]
+        sids_h = [s for s in asp_sids if s in haiku_asp]
         for asp in ASPECTS:
             pairs = [(int(asp in final[s]["aspects"]), int(asp in haiku_asp[s])) for s in sids_h]
             d = prf(pairs); micro["tp"] += d["tp"]; micro["fp"] += d["fp"]; micro["fn"] += d["fn"]
