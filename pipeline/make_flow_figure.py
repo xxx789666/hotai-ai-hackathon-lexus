@@ -71,8 +71,8 @@ def main():
         ("去重・去識別", "作者雜湊、店名\n人名遮蔽（L1）", PROC, BLUE),
         ("資料庫 B", "原始輿情\n去識別版，可溯源", DB_FILL, DB_EDGE),
         ("流失判斷 L3–L5", "r4 逐句判流失、面向\n→ 風險分數 → Persona", PROC, BLUE),
-        ("LLM 洞察日報", "車型 × 問題討論量\n週增 200% 亮紅燈", PROC, BLUE),
-        ("資料庫 A", "報告池\n車型、風險、Persona 篩", DB_FILL, DB_EDGE),
+        ("洞察報告", "日報・週報・季報\n趨勢分析、200% 預警", PROC, BLUE),
+        ("資料庫 A", "報告池\n日／週／季報、預警紀錄", DB_FILL, DB_EDGE),
         ("Dashboard 1–3", "1 戰情總覽\n2 報告池・3 原始輿情", PROC, BLUE),
     ]
     for x, (head, body, f, e) in zip(xs, top):
