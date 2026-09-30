@@ -66,6 +66,7 @@ NOTES = [
     "模型與語料做得到；要守住的是樣本偏誤、個資，還有生成亂編。",
     "延遲和Ｆ１已經有現況，業務回廠率與導入週數都還是空格。",
     "程式在私有庫，報告從Ｔ１到Ｔ１１，畫面截圖等決賽再補。",
+    "附錄術語表：每個名詞一句定義、一句本案用法，評審追問時翻這頁。",
 ]
 
 SUMMARY_RIGHT = {
@@ -980,7 +981,39 @@ def build_p15(slide, y):
     )
 
 
-BUILDERS = [build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15]
+SLIDES.append({
+    "id": "A1",
+    "section": "附錄 術語表（不計入 15 頁）",
+    "title": "本案用到的技術名詞：定義與在本案的用法",
+    "source": "來源：reports/T8_r4_report.md、T9_human_eval.md、T10_risk_persona_report.md",
+    "reports": ["reports/T8_r4_report.md", "reports/T9_human_eval.md", "reports/T10_risk_persona_report.md"],
+    "figures": [],
+})
+
+
+def build_a1(slide, y):
+    rows = [
+        ("ETL", "Extract-Transform-Load：擷取、清洗轉換、載入。與 ELT（先載入再轉換）不同", "爬蟲擷取→去重、切句、售後關鍵詞篩選→寫入 jsonl；23.6 萬句留 21,183 句"),
+        ("弱監督標註（LLM-as-labeler）", "用模型而非人工產生訓練標籤，事後以人工樣本驗證品質", "Haiku 初篩＋Sonnet／GPT 帶上下文複核；人工 300 句驗證"),
+        ("監督式學習／監督式微調 SFT", "用「輸入＋正確答案」訓練；SFT 是在預訓練模型上以標籤資料微調，非從零訓練", "以 21,183 句 LLM 標籤微調 Qwen3-4B"),
+        ("QLoRA（NF4 4-bit、LoRA r=16）", "把基底模型量化成 4 位元，只訓練低秩附加參數，省顯存", "8 GB 顯卡 5 小時完成；adapter 約數十 MB"),
+        ("GroupSplit／資料洩漏", "依群組（文章）切分訓練與測試，避免同篇句子兩邊都出現而高估", "600 句測試集所在 421 篇整篇排除訓練"),
+        ("類別不平衡／過採樣", "正例太少時重複抽樣正例，避免模型全猜負例", "流失句 7.9% → 訓練時提高到四成"),
+        ("Prefill-only（System-One 決策）", "只讀 prompt 取下一個 token 在候選選項上的機率，不生成文字，快且可控", "流失四級與立場各成 yes/no 候選題；每句 0.7 秒"),
+        ("Precision／Recall／F1", "報流失的句子有多少是真的／真的流失有多少被抓到／兩者調和平均", "r4 隨機層 P 0.88、R 0.78、F1 0.82"),
+        ("Cohen's κ", "扣掉瞎猜也會對的部分後的一致程度；0.6 以上算好", "人工兩人 κ 0.40（仲裁後成金標）；r4 對人工 κ 0.81"),
+        ("校準（reliability bins）", "把預測機率分箱，看每箱實際正例比例是否接近機率", "最高信心桶約七成為真正例，方向對、尚未完全校準"),
+        ("χ²、Cramér's V、Wilson CI", "類別關聯檢定、其效果量、比例的信賴區間", "來源流失率差異 χ²=99.5、V=0.125；九面向勝算比"),
+        ("RAG（檢索增強生成）", "先從知識庫檢索相關條目，再讓模型只依這些內容生成", "72 條官網＋手冊條目；12 則話術每則附引用與查核"),
+        ("K-means／silhouette／ARI", "分群法、分群品質指標、兩種分群結果的一致度", "驗證四個 Persona：只有靜默出走者被資料獨立支持"),
+    ]
+    body = [[cell_text(h, WHITE, True) for h in ("名詞", "定義", "本案用法")]]
+    for a, b, c in rows:
+        body.append([cell_text(a, INK, True), cell_text(b), cell_text(c)])
+    add_table(slide, ML, y, CW, 5.6, body, [2.6, 5.0, 4.82], font=9.5)
+
+
+BUILDERS = [build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15, build_a1]
 
 
 def set_notes(slide, text: str) -> None:
@@ -1106,7 +1139,7 @@ def export_preview(pptx_path: Path) -> str:
 
 
 def assert_notes() -> None:
-    if len(NOTES) != 17 or len(SLIDES) != 15 or len(BUILDERS) != 15:
+    if len(NOTES) != 18 or len(SLIDES) != 16 or len(BUILDERS) != 16:
         raise SystemExit("NOTES / SLIDES / BUILDERS 數量不一致")
     for i, note in enumerate(NOTES, 1):
         n = zi(note)
@@ -1161,9 +1194,9 @@ def main() -> None:
         slide, y = new_content_slide(prs, meta, page)
         builder(slide, y)
         set_notes(slide, NOTES[page - 1])
-    if len(prs.slides) != 17:
-        raise SystemExit(f"頁數應為 17，實際 {len(prs.slides)}")
-    content = len(prs.slides) - 2
+    if len(prs.slides) != 18:
+        raise SystemExit(f"頁數應為 18，實際 {len(prs.slides)}")
+    content = sum(1 for m in SLIDES if not m["id"].startswith("A"))
     if content > 15:
         raise SystemExit(f"內容頁 {content} 超過 15")
     for i, slide in enumerate(prs.slides, 1):
@@ -1173,7 +1206,7 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     prs.save(str(OUT))
     check = Presentation(str(OUT))
-    if len(check.slides) != 17:
+    if len(check.slides) != 18:
         raise SystemExit("重開後頁數不對")
     table = next(shape.table for shape in check.slides[1].shapes if shape.has_table)
     left = [table.cell(i, 0).text for i in range(7)]

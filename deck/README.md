@@ -29,6 +29,7 @@
 | 15 | P13 | 6 預期效益與落地評估 | 技術與語料已在手上；要守的是代表性、個資，和生成亂編 | — | `iPAS導入對照_2026-09-25.md` |
 | 16 | P14 | 6 預期效益與落地評估 | 延遲和判準已有現況；業務目標與導入週數都還沒填 | — | `iPAS導入對照_2026-09-25.md`、`reports/T8_r4_report.md`、`reports/T10_risk_persona_report.md` |
 | 17 | P15 | 7 補充資料 | 報告、模型紀錄與程式都在；畫面截圖留到決賽 | — | `reports/` |
+| 18 | A1 | 附錄 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
 
 圖檔只用現成的 `reports/figures/`。本版用到 F1、F2、F3、F4、F6。F5、F7 沒有放上投影片。
 
@@ -69,6 +70,6 @@ python deck/build_deck.py
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v0.pdf` 與 slide-01.png–slide-17.png。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v0.pdf` 與 slide-01.png–slide-18.png。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
