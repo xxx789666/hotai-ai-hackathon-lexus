@@ -19,7 +19,7 @@
 | 5 | P3 | 2 目標對象與痛點分析 | 等料和價格才把人送走；態度抱怨很多，人卻很少真的離開 | F1.png | `reports/T7_stats_tests.md` |
 | 6 | P4 | 2 目標對象與痛點分析 | 人主要去一般外廠；過保之後，口述價差把人推出去 | F3.png | `reports/T10_risk_persona_report.md`、`專案架構_2026-09-23.md`、`reports/T11_kb_prices_report.md` |
 | 7 | P5 | 2 目標對象與痛點分析 | 三站售後語料已經齊，品質門檻過了，句子也去過識別 | — | `題目選擇分析_2026-09-22.md`、`reports/T7_data_quality.md`、`reports/T7_deid_report.md` |
-| 8 | P6 | 3 解決方案設計 | 從蒐集到接觸點都在本機：判斷不用上雲，資料也不出門 | — | `專案架構_2026-09-23.md` |
+| 8 | P6 | 3 解決方案設計 | 兩個迴路：洞察每日進報告池；關懷由事件觸發，人工核准後才投遞 | F8.png | `L7運作流程_2026-09-30.md`、`專案架構_2026-09-23.md` |
 | 9 | P7 | 3 解決方案設計 | 四種流失樣貌裡，最多的是過保之後還在算價格的人 | — | `reports/T10_risk_persona_report.md` |
 | 10 | P8 | 3 解決方案設計 | 高風險作者七成四真的有流失句，低風險只有百分之一點八 | F4.png | `reports/T10_risk_persona_report.md` |
 | 11 | P9 | 4 AI 應用方法 | 先寬鬆抓住，再帶上下文複核；九個面向已經全量標完 | — | `專案架構_2026-09-23.md`、`reports/T1_dcard_verify_report.md`、`reports/T2_other_refine_report.md`、`reports/T3_residual_split_report.md` |

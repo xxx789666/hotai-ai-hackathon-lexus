@@ -56,7 +56,7 @@ NOTES = [
     "真正送走人的是等料和價格，態度罵很多，人卻還留著。",
     "出口在一般外廠；定保口述中位原廠九千、外廠三千五，不是公告價。",
     "三站切完是二十三萬句，售後兩萬一千句，遮蔽五百多次、抽查沒漏。",
-    "八層從爬文走到接觸點，判斷在自己的顯卡上，資料不用出門。",
+    "兩個迴路：洞察每天進報告池，關懷由事件觸發，人審核過才投遞。",
     "四種人裡過保精算最多；靜默出走沒有抱怨，分群也單獨撐得住。",
     "高風險七成四真有流失句；輿情訊號怎麼對上 CRM，這格還空著。",
     "兩段式補上漏標，Dcard 換模型複核，重疊句一致率達百分之九十八。",
@@ -144,10 +144,10 @@ SLIDES = [
     {
         "id": "P6",
         "section": "3 解決方案設計",
-        "title": "從蒐集到接觸點都在本機：判斷不用上雲，資料也不出門",
-        "source": "來源：專案架構_2026-09-23.md §2",
-        "reports": ["專案架構_2026-09-23.md"],
-        "figures": [],
+        "title": "兩個迴路：洞察每日進報告池；關懷由事件觸發，人工核准後才投遞",
+        "source": "來源：L7運作流程_2026-09-30.md、專案架構_2026-09-23.md §2；圖 F8",
+        "reports": ["L7運作流程_2026-09-30.md", "專案架構_2026-09-23.md"],
+        "figures": ["reports/figures/F8.png"],
     },
     {
         "id": "P7",
@@ -624,23 +624,11 @@ def build_p5(slide, y):
 
 
 def build_p6(slide, y):
-    gap_x, gap_y = 0.14, 0.14
-    card_w = (CW - 3 * gap_x) / 4
-    card_h = 2.15
-    for i, (code, name, sentence) in enumerate(LAYERS):
-        col, row = i % 4, i // 4
-        x = ML + col * (card_w + gap_x)
-        yy = y + row * (card_h + gap_y)
-        add_card(slide, x, yy, card_w, card_h)
-        add_text(
-            slide, x + 0.12, yy + 0.16, card_w - 0.24, card_h - 0.28,
-            [
-                [(code, BLUE, True, 18)],
-                [(name, INK, True, 16)],
-                [(sentence, NAVY, False, 13)],
-            ],
-            size=13,
-        )
+    # F8：兩個迴路、四個資料庫、五個 Dashboard（L7運作流程_2026-09-30.md）。八層 L0–L7 併成下方一行。
+    pic_w = 11.6
+    h = pic(slide, "F8.png", ML + (CW - pic_w) / 2, y - 0.08, pic_w)
+    strip = "　".join(f"{code} {name}" for code, name, _ in LAYERS)
+    add_text(slide, ML, y + h - 0.02, CW, 0.34, [[("八層對應：" + strip, MUTED, False, 11)]], size=11, align=PP_ALIGN.CENTER)
 
 
 def build_p7(slide, y):
