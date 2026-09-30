@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -35,6 +36,19 @@ BANNED = (
     "過保精算派", "品質失望派", "口碑建議者", "靜默出走者",
     "我們知道", "外廠比較", "1.5 倍", "1.5倍", "60 天", "60天",
 )
+
+# --style colloquial 時加在每則提示詞。數字句仍須照條款，只改開頭與串接。
+COLLOQUIAL = """口語化（本輪共同要求）：
+- 開頭與串接語改成對車主說話的口語。示範：「您好，提醒您，愛車的新車保固快到期了。新車基本保證是自交車日起 4 年或 120,000 公里，以先到者為準。」
+- 年限、里程、次數、日期、金額這些數字句保留條款用詞，數字照你引用的條目原文，不要換算、不要改成國字。
+- 不推銷、不威脅。不要寫「失去資格」。
+- 不要把「條目」、id 或內部觸發門檻寫進正文。
+- 不要寫定保價格、折扣、價目表，也不要寫建議售價。
+"""
+
+NOTES: dict = {}
+STYLE = ""
+_CONFIGURED = False
 
 
 def char_len(text: str) -> int:
@@ -141,6 +155,111 @@ def retrieve(query: str, vecs, idf, k: int = 5) -> list[dict]:
         item["score"] = round(score, 4)
         out.append(item)
     return out
+
+
+def load_notes(path: str) -> dict:
+    file = Path(path)
+    if not file.is_file():
+        file = ROOT / path
+    data = json.loads(file.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"notes 必須是物件：{file}")
+    return data
+
+
+def configure(notes_path: str = "", style: str = "") -> None:
+    """載入 --notes 與 --style。factcheck 重生成前也要呼叫，否則逐則指示不會進提示詞。"""
+    global NOTES, STYLE, _CONFIGURED
+    STYLE = style or ""
+    NOTES = load_notes(notes_path) if notes_path else {}
+    _CONFIGURED = True
+
+
+def ensure_config() -> None:
+    """沒有人呼叫 configure 時，改看環境變數，讓 factcheck 子流程沿用同一組指示。"""
+    if _CONFIGURED:
+        return
+    configure(os.environ.get("LEXUS_MSG_NOTES", ""), os.environ.get("LEXUS_MSG_STYLE", ""))
+
+
+def note_for(persona: str, touchpoint: str) -> dict:
+    ensure_config()
+    bucket = NOTES.get(persona) or {}
+    note = bucket.get(touchpoint) or {}
+    return note if isinstance(note, dict) else {}
+
+
+def specified_ids(note: dict) -> list[str]:
+    """notes 指定、必須能被模型看見的條目。必引用與條件式引用都算。"""
+    ids: list[str] = []
+    for key in ("force_ids", "required_ids"):
+        for value in note.get(key) or []:
+            ids.append(norm_id(value))
+    rule = note.get("mention_rule") or {}
+    for value in rule.get("then_required_ids") or []:
+        ids.append(norm_id(value))
+    return list(dict.fromkeys(i for i in ids if i))
+
+
+def retrieve_with_required(query: str, vecs, idf, force_ids: list[str], k: int = 5) -> list[dict]:
+    """一般檢索取前 k 條；notes 指定的 id 若落在後面，拉進前 k 條並擠掉分數較低的。"""
+    hits = retrieve(query, vecs, idf, k=max(k, len(vecs)))
+    by_id = {hit["id"]: hit for hit in hits}
+    for row, _weight, _norm in vecs:
+        if row["id"] not in by_id:
+            item = dict(row)
+            item["score"] = 0.0
+            by_id[row["id"]] = item
+    ordered: list[dict] = []
+    seen: set[str] = set()
+    for fid in force_ids:
+        fid = norm_id(fid)
+        if fid in by_id and fid not in seen:
+            ordered.append(by_id[fid])
+            seen.add(fid)
+    for hit in hits:
+        if len(ordered) >= k:
+            break
+        if hit["id"] in seen:
+            continue
+        ordered.append(hit)
+        seen.add(hit["id"])
+    return ordered[:k]
+
+
+def compact_text(text: str) -> str:
+    text = re.sub(r"\s+", "", text)
+    return text.replace(",", "").replace("，", "")
+
+
+def note_errors(text: str, cited_ids: list[str], note: dict) -> list[str]:
+    """逐則指示沒寫到，就當成本地錯誤，讓查核迴圈重生成。"""
+    if not note:
+        return []
+    errors = []
+    compact = compact_text(text)
+    missing_ids = [i for i in (norm_id(x) for x in (note.get("required_ids") or [])) if i not in cited_ids]
+    if missing_ids:
+        errors.append("未引用指定條目：" + "、".join(missing_ids))
+    for phrase in note.get("must_include") or []:
+        if compact_text(phrase) not in compact:
+            errors.append(f"缺少必要語句：{phrase}")
+    any_of = note.get("must_include_any") or []
+    if any_of and not any(compact_text(phrase) in compact for phrase in any_of):
+        errors.append("至少要出現其中一個：" + "、".join(any_of))
+    for phrase in note.get("forbid") or []:
+        if compact_text(phrase) in compact:
+            errors.append(f"不應出現：{phrase}")
+    rule = note.get("mention_rule") or {}
+    triggers = rule.get("if_any") or []
+    if triggers and any(compact_text(phrase) in compact for phrase in triggers):
+        for phrase in rule.get("then_must_include") or []:
+            if compact_text(phrase) not in compact:
+                errors.append(f"提到相關內容時缺少：{phrase}")
+        for fid in (norm_id(x) for x in (rule.get("then_required_ids") or [])):
+            if fid and fid not in cited_ids:
+                errors.append(f"提到相關內容時未引用條目 {fid}")
+    return errors
 
 
 PERSONAS = [
@@ -294,6 +413,7 @@ def cells() -> list[dict]:
     for persona in PERSONAS:
         for tp in TOUCHPOINTS:
             channel, kpi, query, style = GRID[(persona["name"], tp["id"])]
+            note = note_for(persona["name"], tp["id"])
             out.append({
                 "persona": persona["name"],
                 "definition": persona["definition"],
@@ -305,6 +425,7 @@ def cells() -> list[dict]:
                 "kpi": kpi,
                 "query": query,
                 "channel_style": style,
+                "note": note,
             })
     return out
 
@@ -357,10 +478,31 @@ Persona：{cell['persona']}
 渠道：{cell['channel']}
 {cell['channel_style']}
 期望 KPI：{cell['kpi']}
-
+{style_block()}{note_block(cell)}
 可用條目：
 {chr(10).join(entries)}
 {extra}"""
+
+
+def style_block() -> str:
+    if STYLE != "colloquial":
+        return ""
+    return "\n" + COLLOQUIAL
+
+
+def note_block(cell: dict) -> str:
+    note = cell.get("note") or {}
+    instruction = str(note.get("instruction") or "").strip()
+    if not instruction:
+        return ""
+    req = [norm_id(x) for x in (note.get("required_ids") or [])]
+    lines = [
+        "本則額外指示（必須遵守；若與渠道寫法或上面任一條通用規則衝突，以這段為準）：",
+        instruction,
+    ]
+    if req:
+        lines.append("cited_ids 必須包含：" + "、".join(req) + "。")
+    return "\n".join(lines) + "\n"
 
 
 def extract_json(text: str) -> dict:
@@ -458,9 +600,11 @@ def local_errors(text: str, cited_ids: list[str], hits: list[dict], kpi: str, ex
 
 
 def generate_cell(cell: dict, kb_index, feedback: str | None = None, attempt: int = 1) -> dict:
+    ensure_config()
     vecs, idf = kb_index
-    hits = retrieve(cell["query"], vecs, idf, 5)
-    prompt = build_prompt(cell, hits, feedback)
+    cell_note = cell.get("note") or note_for(cell["persona"], cell["touchpoint"])
+    hits = retrieve_with_required(cell["query"], vecs, idf, specified_ids(cell_note), 5)
+    prompt = build_prompt({**cell, "note": cell_note}, hits, feedback)
     tag = f"{cell['persona']}-{cell['touchpoint']}-a{attempt}"
     obj = call_llm(prompt, tag)
     text = re.sub(r"\s+", " ", str(obj.get("text") or "")).strip()
@@ -469,6 +613,7 @@ def generate_cell(cell: dict, kb_index, feedback: str | None = None, attempt: in
     note = re.sub(r"\s+", " ", str(obj.get("design_note") or "")).strip()
     kpi = str(obj.get("kpi") or "").strip()
     errors = local_errors(text, cited, hits, kpi, cell["kpi"])
+    errors.extend(note_errors(text, cited, cell_note))
     return {
         "persona": cell["persona"],
         "touchpoint": cell["touchpoint"],
@@ -497,7 +642,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--retrieve-only", action="store_true")
     ap.add_argument("--only", default="", help="例如 過保精算派:T1")
+    ap.add_argument("--notes", default="", help="逐則額外指示 JSON（persona → touchpoint）")
+    ap.add_argument("--style", default="", choices=["", "colloquial"], help="colloquial：開頭與串接改口語")
     args = ap.parse_args()
+    configure(args.notes, args.style)
     rows = load_kb()
     kb_index = index_kb(rows)
     chosen = cells()
@@ -506,7 +654,9 @@ def main() -> None:
         chosen = [c for c in chosen if c["persona"] == name and c["touchpoint"] == tp]
     if args.retrieve_only:
         for cell in chosen:
-            hits = retrieve(cell["query"], kb_index[0], kb_index[1], 5)
+            hits = retrieve_with_required(
+                cell["query"], kb_index[0], kb_index[1], specified_ids(cell.get("note") or {}), 5,
+            )
             tops = " | ".join(f"{h['id']}:{h['topic']}:{h['score']}" for h in hits)
             print(f"{cell['persona']} {cell['touchpoint']} {cell['channel']} -> {tops}", flush=True)
         return

@@ -246,7 +246,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="")
     ap.add_argument("--recheck", action="store_true", help="對既有 jsonl 用目前的查核提示重查，未過者重生成")
+    ap.add_argument("--notes", default="", help="轉傳給 generate_messages，逐則額外指示")
+    ap.add_argument("--style", default="", choices=["", "colloquial"], help="轉傳給 generate_messages")
     args = ap.parse_args()
+    gen.configure(args.notes, args.style)
     if args.recheck:
         kb = gen.load_kb()
         kb_by_id = {row["id"]: row for row in kb}
