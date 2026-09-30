@@ -1,0 +1,14 @@
+# L3 自訓模型（local_jev/、pipeline/label_jev_pilot.py、pipeline/r4_infer_all.py）
+# 需要 NVIDIA GPU（CUDA 12.4，8 GB VRAM 以上）；Mac 與無 GPU 機器不用裝，模型推論由 A 的機器負責。
+# 安裝順序：
+#   python -m pip install -r requirements.txt
+#   python -m pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+#   python -m pip install -r requirements-ml.txt
+#   git clone https://github.com/Yinsongxu/LLM2Jev.git vendor/LLM2Jev && python -m pip install -e vendor/LLM2Jev
+# 模型權重與 LoRA adapter 不在 repo（D:\hf_cache），需要時向 A 索取。
+transformers>=5.5
+peft>=0.21
+bitsandbytes>=0.50; sys_platform != "darwin"
+accelerate>=1.14
+datasets>=4.0
+safetensors>=0.8

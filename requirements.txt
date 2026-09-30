@@ -1,0 +1,17 @@
+# 基本環境：爬蟲、前處理、標註後處理、統計、圖表、簡報、人工標註 xlsx（Mac / Windows / Linux 皆可）
+# 安裝：python -m pip install -r requirements.txt   （Python 3.12）
+numpy>=2.0
+pandas>=2.2
+scipy>=1.14
+scikit-learn>=1.5
+statsmodels>=0.14
+matplotlib>=3.9
+requests>=2.32
+beautifulsoup4>=4.12
+lxml>=5.0
+openpyxl>=3.1
+python-pptx>=1.0
+markdown>=3.6
+
+# 只在 Windows 用：deck/build_deck.py 用 PowerPoint COM 匯出 preview PNG／PDF，其他平台自動略過
+pywin32>=306; sys_platform == "win32"
