@@ -4,7 +4,7 @@
 
 ## 頁數怎麼算
 
-- 投影片共 19 張：封面 1、提案摘要 1、內容 15（P1–P15）、附錄 2（A1 術語表、A2 補充圖表）。
+- 投影片共 20 張：封面 1、提案摘要 1、內容 15（P1–P15）、附錄 3（A1 術語表、A2 補充圖表、A3 待料通知話術）。
 - 模板寫明提案摘要不計入 15 頁上限。附錄也不計。內容頁剛好 15，所以沒有把 P5 併進 P2。
 - 若評審把封面也算進 15 頁，合計會是 16。那時再把 P5 的兩張表併進 P2。
 
@@ -14,7 +14,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | 封面 | — | Lexus車主流失預警與 AI 溝通系統 | — | 模板封面，改作品名／主題／團隊 |
 | 2 | 摘要 | 提案摘要 | 提案摘要（表格右欄） | — | 會議記錄 §四；模型現況見 T8、T9 |
-| 3 | P1 | 1 提案概述 | 每 6 位在論壇談 Lexus 售後的車主，就有 1 位已在找出口，而且大多沒有抱怨 | — | `reports/T7_stats_tests.md`、`reports/T3_residual_split_report.md` |
+| 3 | P1 | 1 提案概述 | 每 6 位有 1 位在找出口，多數沒抱怨 | — | `reports/T7_stats_tests.md`、`reports/T3_residual_split_report.md` |
 | 4 | P2 | 2 目標對象與痛點分析 | 售後現在是人走了才知道，公開輿情可以把時間往前拉 | — | `reports/T7_stats_tests.md` |
 | 5 | P3 | 2 目標對象與痛點分析 | 等料和價格才把人送走；態度抱怨很多，人卻很少真的離開 | F1.png | `reports/T7_stats_tests.md` |
 | 6 | P4 | 2 目標對象與痛點分析 | 人主要去一般外廠；過保之後，口述價差把人推出去 | F3.png | `reports/T10_risk_persona_report.md`、`專案架構_2026-09-23.md`、`reports/T11_kb_prices_report.md` |
@@ -31,6 +31,7 @@
 | 17 | P15 | 7 補充資料 | 流程圖在左；右邊是溝通審核佇列線框，決賽再給可操作版 | F8.png | `L7運作流程_2026-09-30.md` |
 | 18 | A1 | 附錄 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
 | 19 | A2 | 附錄 補充圖表（不計入 15 頁） | 來源差異、風險分布、校準曲線，與季趨勢 | F2.png、F4.png、F6.png、F9.png | `reports/T7_stats_tests.md`、`reports/T10_risk_persona_report.md`、`reports/T8_r4_report.md`、`reports/T15_trend_reports.md` |
+| 20 | A3 | 附錄 待料通知話術（不計入 15 頁） | 待料逾 7 天就主動通知，話術不寫到貨日 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md` |
 
 圖檔只用現成的 `reports/figures/`。洞察頁用 F1、F3、F5、F7。P6 與 P15 用 F8。附錄 A2 放 F2、F4、F6、F9。
 
@@ -60,6 +61,6 @@ python deck/build_deck.py
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v0.pdf` 與 slide-01.png–slide-19.png。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v0.pdf` 與 slide-01.png–slide-20.png。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。

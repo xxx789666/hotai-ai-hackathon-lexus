@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """L6：四個 Persona × 三個接觸點，各生成一則 Lexus 售後訊息。
 
+第四個接觸點「待料通知」只排過保精算派與品質失望派，其他 Persona 不生成。
+
 檢索用字元 bigram 的 TF-IDF（知識庫 jsonl，條目 id 對齊 md 的 1..72）。
 生成只呼叫 cursor-agent 的 gpt-5.6-sol-high，prompt 從 stdin 進入。
 事實查核與重生成在 factcheck_messages.py。
@@ -341,6 +343,15 @@ TOUCHPOINTS = [
             "不要猜測被刪的是哪一個零件，不要報價，不要寫定保價格。"
         ),
     },
+    {
+        "id": "T4",
+        "label": "待料通知",
+        "situation": (
+            "零件待料超過 7 天，或同一台車待料至少 2 次。7 天和 2 次是內部觸發，正文不要寫。"
+            "主動說明目前還在等料，並說會再聯繫；不要寫到貨日期、星期或幾天後到。"
+            "不要寫價格、折扣或定保價。零件保證與代步車、取送車只能照下面條目原文，沒有條目就不要提。"
+        ),
+    },
 ]
 
 # (persona, touchpoint) -> channel, kpi, 檢索用語, 渠道寫法
@@ -405,6 +416,16 @@ GRID = {
         "20 分鐘|1 天|正廠零件|50,000|自備油品|消耗性零件",
         "Email：書面、可稍後再看。說明零件保證與預約保留時間，把決定權留下。",
     ),
+    ("過保精算派", "T4"): (
+        "LINE 官方帳號推播", "點擊",
+        "正廠零件|50,000|2 年|顧客服務專線|0800-036-036|零件保證",
+        "LINE 官方帳號：兩小段，不要表情符號。先講目前還在等料、會再聯繫，不要寫到貨日。再講正廠零件保證，並給一個可查進度的官方方式。",
+    ),
+    ("品質失望派", "T4"): (
+        "服務廠專員電話腳本", "回廠",
+        "代步車|72 小時|零件缺料|取送車|0800-036-036|服務專員|調度",
+        "電話腳本：服務廠專員第一人稱，先為等待致歉，再說明目前還在等料。代步車或取送車只在條目有寫時才提，並帶上條目裡的條件。留下可再聯繫的窗口。不要舞台指示。",
+    ),
 }
 
 
@@ -412,7 +433,10 @@ def cells() -> list[dict]:
     out = []
     for persona in PERSONAS:
         for tp in TOUCHPOINTS:
-            channel, kpi, query, style = GRID[(persona["name"], tp["id"])]
+            key = (persona["name"], tp["id"])
+            if key not in GRID:
+                continue
+            channel, kpi, query, style = GRID[key]
             note = note_for(persona["name"], tp["id"])
             out.append({
                 "persona": persona["name"],

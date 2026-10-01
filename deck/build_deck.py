@@ -4,7 +4,7 @@
 重跑：python deck/build_deck.py
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_v0.pptx、deck/README.md；若本機有 PowerPoint，另匯 deck/preview/
-檔名沿用 v0；內容是 2026-09-30 定案後的 v1（19 張：封面、摘要、P1–P15、A1、A2）。
+檔名沿用 v0；內容是 2026-09-30 定案後的 v1（20 張：封面、摘要、P1–P15、A1–A3）。
 """
 
 from __future__ import annotations
@@ -69,6 +69,7 @@ NOTES = [
     "左邊是兩個迴路；右邊審核佇列是線框，決賽再給可操作版。",
     "附錄術語表：每個名詞一句定義、一句本案用法，評審追問時翻這頁。",
     "附錄四張圖：來源差異、風險分布、校準曲線，和季趨勢預警。",
+    "附錄待料通知兩則：進度不承諾到貨日，代步車只照知識庫條件。",
 ]
 
 SUMMARY_RIGHT = {
@@ -99,7 +100,7 @@ SLIDES = [
     {
         "id": "P1",
         "section": "1 提案概述",
-        "title": "每 6 位在論壇談 Lexus 售後的車主，就有 1 位已在找出口，而且大多沒有抱怨",
+        "title": "每 6 位有 1 位在找出口，多數沒抱怨",
         "source": "來源：reports/T7_stats_tests.md、reports/T3_residual_split_report.md",
         "reports": ["reports/T7_stats_tests.md", "reports/T3_residual_split_report.md"],
         "figures": [],
@@ -278,10 +279,10 @@ SIGNALS = [
 ]
 
 ADVANTAGES = [
-    ("靜默出走者", "別隊若只看客訴，看不到這群沒抱怨就離開的人。"),
-    ("機率可解釋", "輸出各等級機率，並標出命中的規則，不是一顆黑箱分數。"),
-    ("本機就能跑", "CRM 資料不能出門。8 GB 顯卡可訓可推，零 API 費。"),
-    ("數字回得去", "每個比率有檢定或區間，也能回到去識別原句。"),
+    ("靜默出走者", "只看客訴，看不到沒抱怨就走的人。"),
+    ("機率可解釋", "輸出各級機率，並標出命中規則。不是黑箱分數。"),
+    ("本機就能跑", "CRM 資料不能出門。8 GB 可訓可推，零 API 費。"),
+    ("數字回得去", "每個比率有檢定或區間。也能回到去識別原句。"),
 ]
 
 TOUCH_COLS = ["保固到期前 60 天", "回廠間隔拉長", "刪項後首次回廠"]
@@ -620,9 +621,14 @@ def build_p3(slide, y):
         "態度負面 61%，流失卻只有 4.7%：抱怨多，不等於人會走。",
     ]
     add_text(
-        slide, ML, y + h + 0.02, CW, 1.15,
+        slide, ML, y + h + 0.02, CW, 1.05,
         [[(line, INK, False, 15)] for line in lines],
         size=15,
+    )
+    add_text(
+        slide, ML, y + h + 1.08, CW, 0.32,
+        [[("對應接觸點：待料通知（R5），話術見附錄 A3", MUTED, False, 12)]],
+        size=12,
     )
 
 
@@ -753,8 +759,9 @@ def build_p9(slide, y):
             size=13,
         )
     lines = [
-        "同時標九個面向、替代選項，和車主特徵（車型、是否過保）。",
-        "流失原因裡標成「其他」的 396 句再細分；真正沒有原因的殘餘剩 4 句。",
+        "先寬鬆抓可能流失的句子。",
+        "再帶上上下文複核。",
+        "九面向已全量標完；其他 396 句，殘餘剩 4 句。",
     ]
     add_text(
         slide, ML, y + 1.90, CW, 0.85,
@@ -798,11 +805,11 @@ def build_p10(slide, y):
     )
     # 訓練步驟：五張小卡
     steps = [
-        ("1 ETL＋弱監督標註", "爬蟲→清洗去重→切句→關鍵詞篩選得 21,183 句；LLM-as-labeler 兩段式：Haiku 初篩、Sonnet／GPT 帶上下文複核"),
-        ("2 資料切分（防洩漏）", "GroupSplit 按 doc_id：600 句 held-out 測試集整篇排除；驗證 1,096、訓練池 9,431"),
-        ("3 任務轉換", "多類別→二元候選：流失四級拆成四個 yes/no 題，prefill-only 只取下一 token 機率"),
-        ("4 監督式微調 SFT", "Qwen3-4B NF4 4-bit QLoRA（r=16）；類別不平衡用過採樣至四成；2 epoch、8 GB VRAM、5 小時"),
-        ("5 評估與校準", "P／R／F1／Cohen's κ；五段 reliability bins；人工金標 300 句：隨機層 F1 0.82、κ 0.81"),
+        ("1 ETL＋弱監督標註", "篩出 21,183 句售後語料。先寬鬆標，再帶上下文複核。"),
+        ("2 資料切分（防洩漏）", "GroupSplit 整篇排除測試 600 句。驗證 1,096 句，訓練池 9,431 句。"),
+        ("3 任務轉換", "流失四級拆成四個是非題。Prefill-only 只取下一詞機率。"),
+        ("4 監督式微調 SFT", "Qwen3-4B 用 QLoRA r=16。過採樣到四成；2 epoch、8 GB、5 小時。"),
+        ("5 評估與校準", "金標 300 句：F1 0.82、κ 0.81。另看 P、R 與五段校準。"),
     ]
     gap = 0.12
     cw = (CW - 4 * gap) / 5
@@ -813,7 +820,7 @@ def build_p10(slide, y):
         add_text(slide, x + 0.12, sy + 0.08, cw - 0.24, 1.2,
                  [[(head, BLUE, True, 11.5)], [(body, INK, False, 9.5)]], size=9.5)
     add_text(slide, ML, sy + 1.45, CW, 0.5,
-             [[("做法沿用 jev 的 System-One 思路（LLM2Jev 開源框架，prefill-only 只出機率），非 jev 官方模型；機率校準以測試集五段分箱事後驗證（最高信心桶約七成為真正例），尚未達官方宣稱水準。", MUTED, False, 10)]], size=10)
+             [[("沿用 jev（LLM2Jev），非官方模型。只出機率。最高桶約七成，未達宣稱。", MUTED, False, 11)]], size=11)
 
 
 def build_p11(slide, y):
@@ -869,6 +876,7 @@ def load_p12_messages() -> list[dict]:
                 continue
             i += 1
         items.append({"persona": persona.strip(), "touch": touch, "channel": channel, "text": text})
+    items = [it for it in items if it["touch"] in ("T1", "T2", "T3")]
     if len(items) != 12:
         raise SystemExit(f"P12 應有 12 則，讀到 {len(items)}")
     return items
@@ -889,12 +897,13 @@ def build_p12(slide, y):
                 [(preview, INK, False)],
             ])
         rows.append(row)
-    add_table(slide, ML, y, CW, 4.55, rows, [1.62, 3.60, 3.60, 3.60], font=10)
+    add_table(slide, ML, y, CW, 4.35, rows, [1.62, 3.60, 3.60, 3.60], font=10)
     add_text(
-        slide, ML, y + 4.68, CW, 0.72,
+        slide, ML, y + 4.42, CW, 0.95,
         [
             [("12 則皆通過知識庫事實查核，人工審核後才投遞。", INK, True, 13)],
             [("完整文字、引用條目與查核見附錄 knowledge/generated_examples.md。", MUTED, False, 12)],
+            [("零件等料（R5）逾 7 天主動通知，範例見附錄 A3", MUTED, False, 12)],
         ],
         size=12,
     )
@@ -1094,6 +1103,14 @@ SLIDES.append({
         "reports/figures/F9.png",
     ],
 })
+SLIDES.append({
+    "id": "A3",
+    "section": "附錄 待料通知話術（不計入 15 頁）",
+    "title": "待料逾 7 天就主動通知，話術不寫到貨日",
+    "source": "來源：knowledge/generated_examples.md、reports/T14_generation_report.md",
+    "reports": ["knowledge/generated_examples.md", "reports/T14_generation_report.md"],
+    "figures": [],
+})
 
 
 def build_a1(slide, y):
@@ -1141,7 +1158,68 @@ def build_a2(slide, y):
         )
 
 
-BUILDERS = [build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15, build_a1, build_a2]
+def load_a3_messages() -> list[dict]:
+    path = ROOT / "knowledge" / "generated_examples.md"
+    lines = path.read_text(encoding="utf-8").splitlines()
+    items = []
+    i = 0
+    while i < len(lines):
+        if not (lines[i].startswith("### ") and "待料通知" in lines[i]):
+            i += 1
+            continue
+        persona = lines[i][4:].split(" × ", 1)[0].strip()
+        channel = cites = check = text = ""
+        i += 1
+        while i < len(lines) and not lines[i].startswith("#"):
+            line = lines[i]
+            if line.startswith("- 渠道："):
+                channel = line.split("：", 1)[1].strip()
+            elif line.startswith("- 引用條目："):
+                cites = line.split("：", 1)[1].strip()
+            elif line.startswith("- 查核："):
+                check = line.split("：", 1)[1].strip()
+            elif line.startswith("- 訊息全文："):
+                i += 1
+                while i < len(lines) and lines[i].strip() == "":
+                    i += 1
+                chunk = []
+                while i < len(lines) and lines[i].strip() and not lines[i].startswith("#") and not lines[i].startswith("- "):
+                    chunk.append(lines[i].strip())
+                    i += 1
+                text = "".join(chunk)
+                continue
+            i += 1
+        items.append({
+            "persona": persona,
+            "channel": channel,
+            "cites": cites,
+            "check": check,
+            "text": text,
+        })
+    if len(items) != 2:
+        raise SystemExit(f"A3 應有 2 則待料通知，讀到 {len(items)}")
+    return items
+
+
+def build_a3(slide, y):
+    msgs = load_a3_messages()
+    card_h = 2.55
+    for i, msg in enumerate(msgs):
+        yy = y + i * (card_h + 0.14)
+        add_card(slide, ML, yy, CW, card_h)
+        add_text(
+            slide, ML + 0.16, yy + 0.08, CW - 0.32, card_h - 0.14,
+            [
+                [(f"{msg['persona']} × 待料通知", BLUE, True, 16)],
+                [(f"渠道：{msg['channel']}　　引用條目：{msg['cites']}", NAVY, False, 12)],
+                [(msg["text"], INK, False, 13)],
+                [(f"查核：{msg['check']}", MUTED, False, 12)],
+            ],
+            size=13,
+        )
+
+
+BUILDERS = [build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15, build_a1, build_a2, build_a3]
 
 
 def set_notes(slide, text: str) -> None:
@@ -1177,7 +1255,7 @@ def write_readme(prs, placeholders, preview_note: str) -> None:
         "",
         "## 頁數怎麼算",
         "",
-        "- 投影片共 19 張：封面 1、提案摘要 1、內容 15（P1–P15）、附錄 2（A1 術語表、A2 補充圖表）。",
+        "- 投影片共 20 張：封面 1、提案摘要 1、內容 15（P1–P15）、附錄 3（A1 術語表、A2 補充圖表、A3 待料通知話術）。",
         "- 模板寫明提案摘要不計入 15 頁上限。附錄也不計。內容頁剛好 15，所以沒有把 P5 併進 P2。",
         "- 若評審把封面也算進 15 頁，合計會是 16。那時再把 P5 的兩張表併進 P2。",
         "",
@@ -1269,7 +1347,7 @@ def export_preview(pptx_path: Path) -> str:
 
 
 def assert_notes() -> None:
-    if len(NOTES) != 19 or len(SLIDES) != 17 or len(BUILDERS) != 17:
+    if len(NOTES) != 20 or len(SLIDES) != 18 or len(BUILDERS) != 18:
         raise SystemExit(
             f"NOTES / SLIDES / BUILDERS 數量不一致：{len(NOTES)} / {len(SLIDES)} / {len(BUILDERS)}"
         )
@@ -1326,8 +1404,8 @@ def main() -> None:
         slide, y = new_content_slide(prs, meta, page)
         builder(slide, y)
         set_notes(slide, NOTES[page - 1])
-    if len(prs.slides) != 19:
-        raise SystemExit(f"頁數應為 19，實際 {len(prs.slides)}")
+    if len(prs.slides) != 20:
+        raise SystemExit(f"頁數應為 20，實際 {len(prs.slides)}")
     content = sum(1 for m in SLIDES if not m["id"].startswith("A"))
     if content != 15:
         raise SystemExit(f"內容頁應為 15，實際 {content}")
@@ -1338,8 +1416,8 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     prs.save(str(OUT))
     check = Presentation(str(OUT))
-    if len(check.slides) != 19:
-        raise SystemExit("重開後頁數不對")
+    if len(check.slides) != 20:
+        raise SystemExit("重開後頁數不是 20")
     table = next(shape.table for shape in check.slides[1].shapes if shape.has_table)
     left = [table.cell(i, 0).text for i in range(7)]
     expected = [
