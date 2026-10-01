@@ -88,6 +88,8 @@ def check_once(rec: dict, kb_by_id: dict) -> dict:
             f"{rec['persona']}-{rec['touchpoint']}-fc{rec.get('attempt', 1)}",
         )
         claims = normalize_claims(obj, cited_ids)
+        # T20：專員占位不是知識庫主張，不計入 supported 分母。其餘判定不變。
+        claims = [c for c in claims if "由專員填入" not in (c.get("claim") or "")]
     except Exception as exc:
         fc_error = str(exc)
     supported = sum(1 for c in claims if c["status"] == "supported")
@@ -208,7 +210,7 @@ def write_examples(rows: list[dict]) -> None:
     header += ["", "## 逐則", ""]
     for persona in gen.PERSONAS:
         for tp in gen.TOUCHPOINTS:
-            if tp["id"] == "T4":
+            if tp["id"] in ("T4", "C"):
                 continue
             rec = by_key.get((persona["name"], tp["id"]))
             if not rec:
@@ -260,6 +262,42 @@ def write_examples(rows: list[dict]) -> None:
                 claim_lines.append("  - （無）")
             header += [
                 f"### {rec.get('persona')} × 待料通知",
+                "",
+                f"- 渠道：{rec.get('channel')}",
+                f"- KPI：{rec.get('kpi')}",
+                f"- 引用條目：{'、'.join(rec.get('cited_ids') or []) or '—'}",
+                f"- 檢索前 5：{'、'.join(rec.get('retrieved_ids') or []) or '—'}",
+                f"- 設計說明：{rec.get('design_note') or '—'}",
+                f"- 查核：{'通過' if fc.get('passed') else '未通過'}；"
+                f"supported {fc.get('supported', 0)}/{fc.get('total', 0)}；"
+                f"重生成 {rec.get('regen_count', 0)} 次；生成次數 {rec.get('attempt', 1)}",
+                "- 主張：",
+                *claim_lines,
+                "- 訊息全文：",
+                "",
+                rec.get("text") or "（無）",
+                "",
+            ]
+    complaint = [r for r in rows if r.get("touchpoint") == "C"]
+    if complaint:
+        header += [
+            "## 客訴結案後 7 天回訪（C 觸發，T20 新增）",
+            "",
+            "觸發是客訴結案第 7 天。7 天是內部規則，正文不寫。客訴回訪不計入行銷頻率上限。改善做法保留「【改善做法，由專員填入】」，模型不編寫；這段占位不算主張。",
+            "",
+        ]
+        for rec in complaint:
+            fc = rec.get("factcheck") or {}
+            claims = fc.get("claims") or []
+            claim_lines = []
+            for c in claims:
+                claim_lines.append(
+                    f"  - {c.get('kind', '')}／{c.get('status', '')}：{c.get('claim', '')}（條目 {c.get('evidence_id') or '—'}）"
+                )
+            if not claim_lines:
+                claim_lines.append("  - （無）")
+            header += [
+                f"### {rec.get('persona')} × 客訴結案後 7 天回訪",
                 "",
                 f"- 渠道：{rec.get('channel')}",
                 f"- KPI：{rec.get('kpi')}",
