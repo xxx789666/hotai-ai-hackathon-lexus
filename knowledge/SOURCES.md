@@ -74,3 +74,7 @@
 | https://www.lexus.com.tw/upload/ownbnr/202503/202503261430195N88FQST.pdf | `lexus_bev_owner_handbook_202503.txt` | 20 頁（第 19–20 頁空白） | Lexus BEV 車主權益手冊，版本代碼 202411-BEV0100 |
 
 抽取注意：服務廠一覽表（一般手冊 PDF 第 13 頁、BEV 手冊第 12 頁）為多欄表格，抽取後欄位錯位，知識庫只引用據點名稱與經銷商資料，不引用逐廠營業時間。加購價原文印為「25, 900」，知識庫寫 25,900。兩本手冊的車主刊物條件不一致（四年／八年），見條目 67。
+
+## 官方解題資源（2026-10-01 取得）
+
+主辦方於 2026-10-01 寄來解題資源，包內只有《2026 LEXUS 車主權益手冊.pdf》（20 頁，PDF 建立日 2026-01-20，版本代碼 202601-15000）。檔案在 `data/official/`（`.gitignore` 排除），僅限本競賽使用、不得外流，沒有複製進會被 commit 的路徑。知識庫條目 41–76 可引用其內容與頁碼。官方包沒有 BEV 版，也沒有 CRM 資料。與 2025 年 6 月版的逐行 diff 在 `data/official/handbook_diff_202506_vs_official.txt`。對齊過程見 `reports/T19_official_handbook_update.md`。

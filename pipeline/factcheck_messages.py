@@ -208,6 +208,8 @@ def write_examples(rows: list[dict]) -> None:
     header += ["", "## 逐則", ""]
     for persona in gen.PERSONAS:
         for tp in gen.TOUCHPOINTS:
+            if tp["id"] == "T4":
+                continue
             rec = by_key.get((persona["name"], tp["id"]))
             if not rec:
                 continue
@@ -222,6 +224,42 @@ def write_examples(rows: list[dict]) -> None:
                 claim_lines.append("  - （無）")
             header += [
                 f"### {persona['name']} × {tp['id']} {labels[tp['id']]}",
+                "",
+                f"- 渠道：{rec.get('channel')}",
+                f"- KPI：{rec.get('kpi')}",
+                f"- 引用條目：{'、'.join(rec.get('cited_ids') or []) or '—'}",
+                f"- 檢索前 5：{'、'.join(rec.get('retrieved_ids') or []) or '—'}",
+                f"- 設計說明：{rec.get('design_note') or '—'}",
+                f"- 查核：{'通過' if fc.get('passed') else '未通過'}；"
+                f"supported {fc.get('supported', 0)}/{fc.get('total', 0)}；"
+                f"重生成 {rec.get('regen_count', 0)} 次；生成次數 {rec.get('attempt', 1)}",
+                "- 主張：",
+                *claim_lines,
+                "- 訊息全文：",
+                "",
+                rec.get("text") or "（無）",
+                "",
+            ]
+    t4 = [r for r in rows if r.get("touchpoint") == "T4"]
+    if t4:
+        header += [
+            "## 待料通知（R5，T18 新增）",
+            "",
+            "觸發是零件待料超過 7 天，或同一台車待料至少 2 次。7 天和 2 次是內部規則，正文不寫。數字只來自被引用條目。沒有到貨日，也沒有價格。",
+            "",
+        ]
+        for rec in t4:
+            fc = rec.get("factcheck") or {}
+            claims = fc.get("claims") or []
+            claim_lines = []
+            for c in claims:
+                claim_lines.append(
+                    f"  - {c.get('kind', '')}／{c.get('status', '')}：{c.get('claim', '')}（條目 {c.get('evidence_id') or '—'}）"
+                )
+            if not claim_lines:
+                claim_lines.append("  - （無）")
+            header += [
+                f"### {rec.get('persona')} × 待料通知",
                 "",
                 f"- 渠道：{rec.get('channel')}",
                 f"- KPI：{rec.get('kpi')}",
