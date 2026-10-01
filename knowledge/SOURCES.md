@@ -78,3 +78,5 @@
 ## 官方解題資源（2026-10-01 取得）
 
 主辦方於 2026-10-01 寄來解題資源，包內只有《2026 LEXUS 車主權益手冊.pdf》（20 頁，PDF 建立日 2026-01-20，版本代碼 202601-15000）。檔案在 `data/official/`（`.gitignore` 排除），僅限本競賽使用、不得外流，沒有複製進會被 commit 的路徑。知識庫條目 41–76 可引用其內容與頁碼。官方包沒有 BEV 版，也沒有 CRM 資料。與 2025 年 6 月版的逐行 diff 在 `data/official/handbook_diff_202506_vs_official.txt`。對齊過程見 `reports/T19_official_handbook_update.md`。
+
+話術正文數字以 2026 手冊為準；僅官網的數字只保留在知識庫，不進正文。
