@@ -1,8 +1,10 @@
 """檢查簡報形狀是否交疊，或超出頁面、壓到頁尾來源列。
 
-  python deck/check_layout.py deck/初賽簡報_v2.9.pptx
+  python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 
 包含關係（文字框在卡片裡、小標在大方塊裡）不算重疊。
+卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，
+低於 0.7 的列出來。高度不到 0.7 吋的小卡、頁尾與頁首標籤不列入。
 若同版預覽圖存在，另外印出每張的 PIL 空白比例：
 內容區（約 1.05 吋到 7.05 吋）裡 R、G、B 都 ≥ 250 的像素占比。
 淺底色卡片不算白。
@@ -102,6 +104,99 @@ def check_slide(slide, index: int, slide_w: float, slide_h: float):
     return overlaps, outside
 
 
+def _pt(run) -> float:
+    size = run.font.size
+    return float(size.pt) if size is not None else 14.0
+
+
+def _char_width(ch: str, pt: float) -> float:
+    o = ord(ch)
+    if ch.isspace():
+        return pt / 72.0 * 0.33
+    if o > 0x2E00 or ch in "，。、；：？！（）「」『』％":
+        return pt / 72.0
+    return pt / 72.0 * 0.55
+
+
+def glyph_height(shape) -> float:
+    """依字級、邊界與換行估算文字高度（吋），不含文字框多餘的空白。"""
+    if not getattr(shape, "has_text_frame", False):
+        return 0.0
+    tf = shape.text_frame
+    width = inches(shape.width) - inches(tf.margin_left or 0) - inches(tf.margin_right or 0)
+    if width < 0.25:
+        return 0.0
+    height = inches(tf.margin_top or 0) + inches(tf.margin_bottom or 0)
+    for para in tf.paragraphs:
+        text = "".join(run.text or "" for run in para.runs)
+        if not text.strip():
+            continue
+        sizes = [_pt(run) for run in para.runs if (run.text or "").strip()]
+        pt = max(sizes) if sizes else 14.0
+        lines = 1
+        used = 0.0
+        for ch in text:
+            w = _char_width(ch, pt)
+            if used + w > width and used > 0:
+                lines += 1
+                used = w
+            else:
+                used += w
+        height += lines * (pt / 72.0 * 1.15) + (2.0 / 72.0)
+    return height
+
+
+def card_fill(items):
+    """一張卡片裡，上下堆疊的文字高度（並排取較高者）除以卡片高度。"""
+    cards = []
+    texts = []
+    for shape, rect, text in items:
+        h = rect[3] - rect[1]
+        if shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE and h >= 0.70 and rect[1] < FOOTER_Y - 0.05:
+            cards.append(rect)
+            continue
+        if not text.strip():
+            continue
+        if shape.shape_type == MSO_SHAPE_TYPE.TEXT_BOX and h >= 0.30:
+            texts.append((rect, glyph_height(shape), text))
+    flagged = []
+    frames = []
+    for card in cards:
+        if any(
+            other is not card and contains(card, other, tol=0.02) and (other[3] - other[1]) >= 0.45
+            for other in cards
+        ):
+            frames.append(card)
+    for card in cards:
+        if card in frames:
+            continue
+        ch = card[3] - card[1]
+        inside = [(rect, gh, text) for rect, gh, text in texts if contains(card, rect, tol=0.08)]
+        if not inside:
+            continue
+        inside.sort(key=lambda item: item[0][1])
+        bands = []
+        for rect, gh, text in inside:
+            placed = False
+            for band in bands:
+                if rect[1] < band["bottom"] - 0.05 and rect[3] > band["top"] + 0.05:
+                    band["gh"] = max(band["gh"], gh)
+                    band["top"] = min(band["top"], rect[1])
+                    band["bottom"] = max(band["bottom"], rect[3])
+                    if len(text) > len(band["text"]):
+                        band["text"] = text
+                    placed = True
+                    break
+            if not placed:
+                bands.append({"top": rect[1], "bottom": rect[3], "gh": gh, "text": text})
+        used = sum(band["gh"] for band in bands)
+        ratio = used / ch if ch else 1.0
+        if ratio < 0.70:
+            label = bands[0]["text"].replace("\n", " ")[:22]
+            flagged.append((ratio, used, ch, label))
+    return flagged
+
+
 def whitespace(png: Path, slide_w: float, slide_h: float) -> float:
     im = Image.open(png).convert("RGB")
     px_per_in = im.width / slide_w
@@ -140,18 +235,32 @@ def main() -> int:
     slide_h = inches(prs.slide_height)
     overlap_n = 0
     outside_n = 0
+    card_n = 0
     for i, slide in enumerate(prs.slides, start=1):
         overlaps, outside = check_slide(slide, i, slide_w, slide_h)
+        items = []
+        for shape in walk(slide.shapes):
+            try:
+                items.append((shape, box_of(shape), shape_text(shape)))
+            except (TypeError, AttributeError):
+                continue
+        sparse = card_fill(items)
         overlap_n += len(overlaps)
         outside_n += len(outside)
-        if not overlaps and not outside:
+        card_n += len(sparse)
+        if not overlaps and not outside and not sparse:
             continue
         print(f"第 {i} 頁")
         for a, b, iw, ih in overlaps:
             print(f"  重疊 {iw:.2f}x{ih:.2f} 吋  {a}  /  {b}")
         for name, reason, rect in outside:
             print(f"  {reason}  {name}  ({rect[0]:.2f},{rect[1]:.2f})-({rect[2]:.2f},{rect[3]:.2f})")
-    print(f"重疊 {overlap_n} 處，超出或壓線 {outside_n} 處，共 {len(prs.slides)} 頁")
+        for ratio, used, ch, label in sparse:
+            print(f"  卡片內 {ratio:.2f}  文字 {used:.2f} / 卡片 {ch:.2f}  {label}")
+    print(
+        f"重疊 {overlap_n} 處，超出或壓線 {outside_n} 處，"
+        f"卡片內低於 0.7 共 {card_n} 處，共 {len(prs.slides)} 頁"
+    )
     folder = preview_dir(path)
     if folder is None:
         print("找不到預覽圖，略過 PIL 空白")
