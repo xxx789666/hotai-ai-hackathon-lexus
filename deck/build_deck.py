@@ -8,7 +8,7 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v2.8（封面、摘要、大綱、P1–P15、附錄）。大綱與提案摘要一樣不計入 15 頁內容。
+內容是 v2.9（封面、摘要、大綱、P1–P15、附錄）。大綱與提案摘要一樣不計入 15 頁內容。
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "2.8"
+DECK_VERSION = "2.9"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -940,9 +940,11 @@ def build_p5(slide, y):
 
 
 def build_p6(slide, y):
-    fig_h = fit_pic(slide, "F8.png", ML, y, CW, 4.05)
-    legend_y = y + fig_h + 0.06
-    legend_h = 1.05
+    fig_h = fit_pic(slide, "F8.png", ML, y, CW, 4.74)
+    legend_y = y + fig_h + 0.05
+    bar_h = 0.36
+    bar_y = 7.02 - bar_h
+    legend_h = bar_y - 0.06 - legend_y
     gap = 0.08
     cell_w = (CW - 7 * gap) / 8
     brief = {
@@ -959,20 +961,19 @@ def build_p6(slide, y):
         x = ML + i * (cell_w + gap)
         add_card(slide, x, legend_y, cell_w, legend_h)
         add_text(
-            slide, x + 0.04, legend_y + 0.08, cell_w - 0.06, legend_h - 0.12,
+            slide, x + 0.04, legend_y + 0.04, cell_w - 0.06, legend_h - 0.06,
             [
-                [(code, BLUE, True, 16)],
-                [(brief[code], INK, True, 13)],
-                [(name if code != "L5" else "客群輪廓", MUTED, False, 12)],
+                [(code, BLUE, True, 14)],
+                [(brief[code], INK, True, 12)],
+                [(name if code != "L5" else "客群輪廓", MUTED, False, 11)],
             ],
             size=12,
         )
-    bar_y = legend_y + legend_h + 0.06
-    add_card(slide, ML, bar_y, CW, 7.02 - bar_y, fill="EAF1F8")
+    add_card(slide, ML, bar_y, CW, bar_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.12, bar_y + 0.04, CW - 0.22, 7.02 - bar_y - 0.06,
-        [[("先讀上帶產出 1（左到右），再讀下帶產出 2。外緣 L# 對下面八格。KPI 回頭校正門檻，再訓練 r4。", INK, False, 16)]],
-        size=16,
+        slide, ML + 0.12, bar_y + 0.02, CW - 0.22, bar_h - 0.04,
+        [[("先讀上帶產出 1（左到右），再讀下帶產出 2。外緣 L# 對下面八格。KPI 回頭校正門檻，再訓練 r4。", INK, False, 14)]],
+        size=14,
     )
 
 
@@ -1096,54 +1097,82 @@ def build_p10(slide, y):
     rows = []
     for i, row in enumerate((headers, haiku, r4)):
         rows.append([cell_text(v, WHITE, True) if i == 0 else cell_text(v, INK, c == 0) for c, v in enumerate(row)])
-    add_table(slide, ML, y, 6.15, 1.35, rows, [2.15, 1.0, 1.0, 1.0, 1.0], font=13)
-    add_card(slide, ML, y + 1.42, 6.15, 1.16)
+    table_h = 1.08
+    add_table(slide, ML, y, 6.15, table_h, rows, [2.15, 1.0, 1.0, 1.0, 1.0], font=13)
+    note_y = y + table_h + 0.10
+    note_h = 0.58
+    add_card(slide, ML, note_y, 6.15, note_h)
     add_text(
-        slide, ML, y + 1.48, 6.15, 0.55,
+        slide, ML + 0.12, note_y + 0.04, 5.90, note_h - 0.08,
         [
-            [("同一 600 句測試集比較。", MUTED, False, 12)],
-            [("校準曲線見附錄 A2b。", MUTED, False, 13)],
+            [("同一 600 句測試集比較。", MUTED, False, 14)],
+            [("校準曲線見附錄 A2b。", MUTED, False, 14)],
         ],
-        size=11,
+        size=14,
     )
     lines = [
         "Prefill-only：只輸出各等級機率，不生成文字。",
         "8 GB 顯卡可訓（約 5 小時）、可推（每句 0.7 秒）。",
         "資料不出門，推論零 API 費。",
     ]
-    add_card(slide, ML + 6.40, y, 6.02, 2.55)
+    prefill_x, prefill_w = ML + 6.40, 6.02
+    prefill_h = note_y + note_h - y
+    add_card(slide, prefill_x, y, prefill_w, prefill_h)
     add_text(
-        slide, ML + 6.56, y + 0.14, 5.70, 2.28,
+        slide, prefill_x + 0.16, y + 0.08, prefill_w - 0.30, 1.05,
         [[(line, INK, False, 16)] for line in lines],
         size=16,
     )
-    # 訓練步驟：五張小卡
+    # 小流程用頁上已有的說法：只取下一詞機率、只輸出各等級機率。
+    chips = [("輸入", 1.05), ("只取下一詞機率", 2.05), ("各等級機率", 1.55)]
+    chip_gap = 0.28
+    chip_h = 0.42
+    chip_y = y + prefill_h - chip_h - 0.10
+    chip_x = prefill_x + 0.16
+    for label, chip_w in chips:
+        add_card(slide, chip_x, chip_y, chip_w, chip_h, fill="EAF1F8")
+        add_text(
+            slide, chip_x, chip_y + 0.04, chip_w, chip_h - 0.06,
+            [[(label, BLUE, True, 13)]],
+            size=13, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.02,
+        )
+        chip_x += chip_w
+        if label != chips[-1][0]:
+            add_text(
+                slide, chip_x, chip_y, chip_gap, chip_h,
+                [[("→", BLUE, True, 16)]],
+                size=16, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.0,
+            )
+            chip_x += chip_gap
     steps = [
         ("1 ETL＋弱監督標註", "篩出 21,183 句售後語料。先寬鬆標，再帶上下文複核。"),
-        ("2 資料切分（防洩漏）", "GroupSplit 整篇排除測試 600 句。驗證 1,096 句，訓練池 9,431 句。"),
+        ("2 資料切分\n（防洩漏）", "GroupSplit 整篇排除測試 600 句。驗證 1,096 句，訓練池 9,431 句。"),
         ("3 任務轉換", "流失四級拆成四個是非題。Prefill-only 只取下一詞機率。"),
         ("4 監督式微調 SFT", "Qwen3-4B 用 QLoRA r=16。過採樣到四成；2 epoch、8 GB、5 小時。"),
         ("5 評估與校準", "金標 300 句：F1 0.82、κ 0.81。另看 P、R 與五段校準。"),
     ]
     gap = 0.10
     cw = (CW - 4 * gap) / 5
-    sy = y + 2.55
-    step_h = 1.62
+    sy = note_y + note_h + 0.14
+    bar_h = 1.08
+    bar_y = 7.02 - bar_h
+    step_h = bar_y - 0.12 - sy
     for i, (head, body) in enumerate(steps):
         x = ML + i * (cw + gap)
         add_card(slide, x, sy, cw, step_h)
-        add_text(slide, x + 0.08, sy + 0.08, cw - 0.14, step_h - 0.12,
-                 [[(head, BLUE, True, 15)], [(body, INK, False, 15)]], size=15)
-    bar_y = sy + step_h + 0.06
-    add_card(slide, ML, bar_y, CW, 7.02 - bar_y, fill="EAF1F8")
+        blocks = [[(line, BLUE, True, 16)] for line in head.split("\n")]
+        blocks.append([(body, INK, False, 16)])
+        add_text(slide, x + 0.08, sy + 0.06, cw - 0.14, step_h - 0.10,
+                 blocks, size=16, anchor="ctr")
+    add_card(slide, ML, bar_y, CW, bar_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.10, bar_y + 0.04, CW - 0.18, 7.02 - bar_y - 0.04,
+        slide, ML + 0.12, bar_y + 0.06, CW - 0.22, bar_h - 0.10,
         [
             [("架構沿用開源 LLM2Jev。8 GB 可訓可推，推論零 API 費。", INK, False, 16)],
             [("最高信心桶 n=71、實際約 68%（約七成），見附錄 A2b。", INK, False, 16)],
             [("同一 600 句測試集：r4 F1 0.685，高於 Haiku 零樣本的 F1 0.58。", INK, False, 16)],
         ],
-        size=16,
+        size=16, anchor="ctr",
     )
 
 
@@ -1379,7 +1408,7 @@ def build_p15(slide, y):
         size=14, anchor="ctr", margin=0.0,
     )
     add_text(
-        slide, rx + 0.16, mock_y + 0.42, 4.3, rh - 0.50,
+        slide, rx + 0.16, mock_y + 0.42, 4.3, rh - 0.96,
         [
             [("車主 H-7F3A　風險 高", INK, True, 16)],
             [("Persona　過保精算派　觸發 R1 過保", INK, False, 14)],
@@ -1744,6 +1773,14 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "需要 Python 3.12 與 python-pptx。`--note` 必填。腳本開官方模板，保留封面與摘要左欄，刪掉七張章節分隔頁，再依 `SLIDES` 與各頁 builder 重畫。改文案請改本檔前半的 dict，不要改投影片後再存，否則重跑會蓋掉。同版號已存在時加上 `--force` 才會覆寫。",
         "",
         "本機若裝了 PowerPoint，腳本會用 pywin32 把每頁匯出成 PNG，並把整份匯出成 PDF，放在 `deck/preview/` 的版號檔與 `vX.Y/` 資料夾。",
+        "",
+        "建置後檢查重疊與空白：",
+        "",
+        "```text",
+        "python deck/check_layout.py deck/初賽簡報_vX.Y.pptx",
+        "```",
+        "",
+        "腳本列出非包含關係的形狀重疊、超出頁面或壓到頁尾來源列的形狀，以及每張預覽圖的 PIL 空白比例。文字放在卡片上、標籤放在方塊內這種包含關係不算重疊。",
         "",
         "## 預覽",
         "",
