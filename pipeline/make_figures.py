@@ -31,6 +31,7 @@ RED_MID = "#E07A72"
 RED_LIGHT = "#F3C1BD"
 INK = "#1A1A1A"
 GRID = "#E6E6E6"
+PAPER = "#F4F7FB"
 
 # T7 §3 面向 × 流失（有此面向且流失 / 有此面向 n）
 ASPECT_TABLE = [
@@ -87,16 +88,16 @@ def setup():
         raise RuntimeError("找不到 Microsoft JhengHei")
     plt.rcParams["font.family"] = "Microsoft JhengHei"
     plt.rcParams["axes.unicode_minus"] = False
-    plt.rcParams["figure.facecolor"] = "white"
-    plt.rcParams["savefig.facecolor"] = "white"
-    plt.rcParams["axes.facecolor"] = "white"
+    plt.rcParams["figure.facecolor"] = PAPER
+    plt.rcParams["savefig.facecolor"] = PAPER
+    plt.rcParams["axes.facecolor"] = PAPER
     FIG.mkdir(parents=True, exist_ok=True)
 
 
 def new_fig():
     fig, ax = plt.subplots(figsize=(16, 9), dpi=120)
-    fig.patch.set_facecolor("white")
-    ax.set_facecolor("white")
+    fig.patch.set_facecolor(PAPER)
+    ax.set_facecolor(PAPER)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.grid(axis="y", color=GRID, linewidth=0.8)
@@ -106,7 +107,7 @@ def new_fig():
 
 def finish(fig, path: Path):
     fig.tight_layout()
-    fig.savefig(path, dpi=120, facecolor="white")
+    fig.savefig(path, dpi=120, facecolor=PAPER)
     plt.close(fig)
     w, h = png_size(path)
     if w < 1600 or h < 900:
@@ -264,8 +265,8 @@ def f5_heatmap():
 
     data = np.array(mat) * 100
     fig, ax = plt.subplots(figsize=(16, 9), dpi=120)
-    fig.patch.set_facecolor("white")
-    ax.set_facecolor("white")
+    fig.patch.set_facecolor(PAPER)
+    ax.set_facecolor(PAPER)
     im = ax.imshow(data, cmap="Blues", aspect="auto")
     ax.set_xticks(range(len(ASPECTS)), ASPECTS, rotation=30, ha="right")
     ax.set_yticks(range(len(order)), order)
@@ -287,7 +288,7 @@ def f5_heatmap():
     cbar.set_label("面向出現比例（%）")
     fig.tight_layout()
     path = FIG / "F5.png"
-    fig.savefig(path, dpi=120, facecolor="white")
+    fig.savefig(path, dpi=120, facecolor=PAPER)
     plt.close(fig)
     w, h = png_size(path)
     if w < 1600 or h < 900:
@@ -310,10 +311,10 @@ def f7_persona_risk():
     import numpy as np
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 9), dpi=120)
-    fig.patch.set_facecolor("white")
+    fig.patch.set_facecolor(PAPER)
     peak = int(np.argmax(risks))
     for ax in axes:
-        ax.set_facecolor("white")
+        ax.set_facecolor(PAPER)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.grid(axis="y", color=GRID, linewidth=0.8)
@@ -339,7 +340,7 @@ def f7_persona_risk():
     fig.suptitle(title, fontsize=22, color=INK)
     fig.tight_layout()
     path = FIG / "F7.png"
-    fig.savefig(path, dpi=120, facecolor="white")
+    fig.savefig(path, dpi=120, facecolor=PAPER)
     plt.close(fig)
     w, h = png_size(path)
     if w < 1600 or h < 900:
@@ -391,10 +392,10 @@ def f_pipeline():
     """資料處理鏈。數字轉抄簡報 P5 與 T7 品質報告，不重算。不進 main()，避免連動重畫 F1–F7。"""
     from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
-    fig, ax = plt.subplots(figsize=(16, 4.4), dpi=120)
-    fig.patch.set_facecolor("white")
+    fig, ax = plt.subplots(figsize=(16, 3.2), dpi=120)
+    fig.patch.set_facecolor(PAPER)
     ax.set_xlim(0, 160)
-    ax.set_ylim(0, 44)
+    ax.set_ylim(0, 32)
     ax.axis("off")
     ax.set_position([0, 0, 1, 1])
     nodes = [
@@ -404,7 +405,7 @@ def f_pipeline():
         ("五指標品質檢查", "超過 78 字只標記"),
         ("進入標註", "供模型與報告"),
     ]
-    w, h, y = 26, 22, 11
+    w, h, y = 26, 24, 4
     gap = 6.2
     xs = [3 + i * (w + gap) for i in range(5)]
     for i, ((title, sub), x) in enumerate(zip(nodes, xs)):
@@ -420,7 +421,7 @@ def f_pipeline():
                                          arrowstyle="-|>", mutation_scale=16, color=BLUE, lw=1.6))
     FIG.mkdir(parents=True, exist_ok=True)
     path = FIG / "F9_pipeline.png"
-    fig.savefig(path, dpi=120, facecolor="white")
+    fig.savefig(path, dpi=120, facecolor=PAPER)
     plt.close(fig)
     print(f"F9_pipeline.png {png_size(path)[0]}×{png_size(path)[1]}")
 

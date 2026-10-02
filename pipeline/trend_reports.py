@@ -117,6 +117,9 @@ def style(ax):
 
 def fig_quarterly(qs, g, ea):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7.5), gridspec_kw={"width_ratios": [1.1, 1]})
+    fig.patch.set_facecolor("#F4F7FB")
+    ax1.set_facecolor("#F4F7FB")
+    ax2.set_facecolor("#F4F7FB")
     x = list(range(len(qs)))
     ax1.bar(x, g["n"], color=BLUE_LIGHT, label="售後句數")
     ax1.set_ylabel("售後句數（三站）")
@@ -143,7 +146,7 @@ def fig_quarterly(qs, g, ea):
     style(ax2)
     fig.text(0.01, 0.01, "母體是三站論壇發言者，最後一季只到 9/19；季報上線後改用 CRM／DMS 資料。", fontsize=10, color=GREY)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
-    fig.savefig(FIG / "F9.png", dpi=120, facecolor="white")
+    fig.savefig(FIG / "F9.png", dpi=120, facecolor="#F4F7FB")
     plt.close(fig)
 
 
