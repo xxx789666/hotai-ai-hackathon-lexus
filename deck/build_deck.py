@@ -25,7 +25,8 @@ from pathlib import Path
 from lxml import etree
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.dml import MSO_LINE
+from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
@@ -984,14 +985,172 @@ def build_p5(slide, y):
     fit_pic(slide, "F9_pipeline.png", ML, fig_y, CW, 7.02 - fig_y)
 
 
+# 第 9 頁（P6）用原生形狀重畫 F8：方塊、L# 標籤、連接線都是 pptx 物件，投影不會糊。
+# 文字逐字對齊 pipeline/make_flow_figure.py；只重排換行，不刪字。
+F8_PROC, F8_DB, F8_DB_EDGE = "EAF1F8", "F6EFE3", RGBColor(0x8A, 0x6D, 0x3B)
+F8_HUMAN, F8_HUMAN_EDGE = "F3C1BD", RGBColor(0xC0, 0x39, 0x2B)
+F8_BAND_TOP, F8_BAND_BOT = "F7F9FC", "FBF7F7"
+F8_GREY = RGBColor(0x5C, 0x65, 0x70)
+F8_BODY = RGBColor(0x3C, 0x46, 0x53)
+F8_FONT = 13
+
+
+def add_pill(slide, x, y, w, h, text, size=12):
+    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
+    try:
+        shape.adjustments[0] = 0.3
+    except Exception:
+        pass
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = BLUE
+    shape.line.fill.background()
+    tf = shape.text_frame
+    for side in ("margin_left", "margin_right", "margin_top", "margin_bottom"):
+        setattr(tf, side, Inches(0.01))
+    set_tf(tf, [[(text, WHITE, True, size)]], size, align=PP_ALIGN.CENTER, anchor="ctr")
+    return shape
+
+
+def add_flow_box(slide, x, y, w, h, head, body, fill=F8_PROC, edge=BLUE, tag=None, dashed=False, thick=False, size=F8_FONT):
+    """方塊＋粗體標題＋置中內文；L# 標籤貼右上角內緣，標題框讓出標籤寬度。"""
+    card = add_card(slide, x, y, w, h, fill=fill, line=edge)
+    card.line.width = Pt(2.0 if thick else 1.25)
+    if dashed:
+        card.line.dash_style = MSO_LINE.DASH
+    # 標題與內文同一個文字框：標題靠左，內文置中；標籤最後畫，壓在右上角。
+    box = add_text(
+        slide, x + 0.02, y + 0.04, w - 0.04, h - 0.06,
+        [[(head, INK, True, size)]] + [[(line, F8_BODY, False, size)] for line in body],
+        size=size,
+    )
+    for para in box.text_frame.paragraphs[1:]:
+        para.alignment = PP_ALIGN.CENTER
+    if tag:
+        pill_w = 0.42 if len(tag) <= 2 else 0.92
+        add_pill(slide, x + w - pill_w - 0.06, y + 0.07, pill_w, 0.24, tag)
+    return card
+
+
+def add_arrow(slide, x1, y1, x2, y2, color=BLUE, width=1.5, head=True, both=False):
+    line = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x1), Inches(y1), Inches(x2), Inches(y2))
+    line.line.color.rgb = color
+    line.line.width = Pt(width)
+    ln = line.line._get_or_add_ln()
+    if both:
+        ln.append(ln.makeelement(qn("a:headEnd"), {"type": "triangle", "w": "med", "len": "med"}))
+    if head or both:
+        ln.append(ln.makeelement(qn("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}))
+    return line
+
+
 def build_p6(slide, y):
-    fig_h = fit_pic(slide, "F8.png", ML, y, CW, 4.74)
-    legend_y = y + fig_h + 0.05
-    bar_h = 0.36
+    gap = 0.10
+    size = F8_FONT
+    # ---- 上帶：產出 1，七個方塊，欄寬依內文最長一行配置 ----
+    top_y, top_h = y, 1.66
+    add_card(slide, ML, top_y, CW, top_h, fill=F8_BAND_TOP)
+    add_text(slide, ML + 0.10, top_y + 0.05, CW - 0.2, 0.26,
+             [[("產出 1：AI 網路輿情洞察系統架構與報告", BLUE, True, size)]], size=size)
+    add_text(slide, ML + 0.10, top_y + 0.29, CW - 0.2, 0.25,
+             [[("洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", BLUE, False, 12)]], size=12)
+    tw = [1.46, 1.74, 1.68, 2.00, 1.96, 1.42, 1.56]
+    top = [
+        ("論壇爬蟲", ["每日抓新留言", "三站公開論壇"], F8_PROC, BLUE, "L0", False),
+        ("去重・去識別", ["作者雜湊、店名", "人名遮蔽（L1）"], F8_PROC, BLUE, "L1", False),
+        ("資料庫 B", ["原始輿情", "去識別版，可溯源"], F8_DB, F8_DB_EDGE, "L2", False),
+        ("流失判斷", ["r4 逐句判流失、面向", "→ 風險分數 →", "Persona（客群輪廓）"], F8_PROC, BLUE, "L3·L4·L5", False),
+        ("洞察報告", ["日報・週報・季報", "趨勢分析、200% 預警"], F8_PROC, BLUE, None, False),
+        ("資料庫 A", ["報告池", "日／週／季報、", "預警紀錄"], F8_DB, F8_DB_EDGE, None, False),
+        ("Dashboard 1–3", ["1 戰情總覽", "2 報告池・", "3 原始輿情"], F8_PROC, BLUE, None, True),
+    ]
+    box_y, box_h = top_y + 0.56, 1.06
+    xs = []
+    x = ML
+    for w in tw:
+        xs.append(x)
+        x += w + gap
+    for bx, w, (head, body, fill, edge, tag, dashed) in zip(xs, tw, top):
+        add_flow_box(slide, bx, box_y, w, box_h, head, body, fill=fill, edge=edge, tag=tag, dashed=dashed)
+    for bx, w in zip(xs[:-1], tw[:-1]):
+        add_arrow(slide, bx + w, box_y + 0.50, bx + w + gap, box_y + 0.50)
+    risk_x = xs[3] + tw[3] / 2  # 流失判斷底緣中點
+
+    # ---- 兩帶之間：風險升為高 → 觸發 ----
+    mid_y = top_y + top_h + 0.16
+    bot_y = top_y + top_h + 0.32
+    gut_x = ML + 0.10  # 直向線走帶內左緣
+    bot_box_y, bot_box_h = bot_y + 0.56, 1.06
+    bot_h = 7.02 - 0.94 - bot_y  # 留給圖例與說明列；底卡先畫，灰線與紅線才不會被蓋住
+    add_card(slide, ML, bot_y, CW, bot_h, fill=F8_BAND_BOT)
+    add_arrow(slide, risk_x, box_y + box_h, risk_x, mid_y, color=F8_GREY, width=1.25, head=False)
+    add_arrow(slide, risk_x, mid_y, gut_x, mid_y, color=F8_GREY, width=1.25, head=False)
+    add_arrow(slide, gut_x, mid_y, gut_x, bot_box_y + 0.30, color=F8_GREY, width=1.25, head=False)
+    add_arrow(slide, gut_x, bot_box_y + 0.30, ML + 0.22, bot_box_y + 0.30, color=F8_GREY, width=1.25)
+    lab = add_text(slide, (xs[1] + xs[2] + tw[2]) / 2 - 0.9, mid_y - 0.13, 1.8, 0.26,
+                   [[("風險升為高 → 觸發", F8_GREY, False, 12)]], size=12, align=PP_ALIGN.CENTER)
+    lab.fill.solid()
+    lab.fill.fore_color.rgb = WHITE
+
+    # ---- 下帶：產出 2，六個方塊＋資料庫列 ----
+    add_text(slide, ML + 0.26, bot_y + 0.05, CW - 0.36, 0.26,
+             [[("產出 2：針對目標 Persona（客群輪廓）的 AI 溝通計畫與系統流程", F8_HUMAN_EDGE, True, size)]], size=size)
+    add_text(slide, ML + 0.26, bot_y + 0.29, CW - 0.36, 0.25,
+             [[("溝通迴路｜事件觸發：CRM 訊號・客訴結案 → Persona（客群輪廓）→ RAG 話術 → 人工核准 → 投遞 → KPI 回饋", F8_HUMAN_EDGE, False, 12)]], size=12)
+    bw = [2.81, 1.80, 2.05, 1.79, 1.61, 1.74]
+    bot = [
+        ("觸發事件", ["CRM 命中 R1–R8（含 R5 待料）", "客訴結案 → 第 7 天回訪", "或風險分數升為高"], F8_PROC, BLUE, "L4", False),
+        ("判定 Persona", ["（客群輪廓）", "四類之一", "未分類 → 觀察名單"], F8_PROC, BLUE, "L5", False),
+        ("RAG 生成話術", ["檢索條款 → 生成", "→ 第二輪事實查核"], F8_PROC, BLUE, "L6", False),
+        ("人工審核", ["Dashboard 5 ", "審核佇列", "核准或改寫才投遞"], F8_HUMAN, F8_HUMAN_EDGE, None, True),
+        ("投遞", ["LINE・App", "Email・專員電話"], F8_PROC, BLUE, "L7", False),
+        ("KPI 回饋", ["點擊・預約・回廠", "寫回 CRM"], F8_PROC, BLUE, "L7", False),
+    ]
+    bxs = []
+    x = ML + 0.22
+    for w in bw:
+        bxs.append(x)
+        x += w + 0.08
+    for bx, w, (head, body, fill, edge, tag, thick) in zip(bxs, bw, bot):
+        add_flow_box(slide, bx, bot_box_y, w, bot_box_h, head, body, fill=fill, edge=edge, tag=tag, thick=thick)
+    for bx, w in zip(bxs[:-1], bw[:-1]):
+        add_arrow(slide, bx + w, bot_box_y + 0.50, bx + w + 0.08, bot_box_y + 0.50)
+
+    db_y = bot_box_y + bot_box_h + 0.16
+    db_h = 0.98
+    # 第 1 欄：灰字註記（觸發事件下方）
+    add_text(slide, bxs[0], db_y, bw[0], db_h,
+             [[("客訴回訪不計頻率上限；", F8_GREY, False, size)], [("觀察名單車主也回訪", F8_GREY, False, size)]], size=size)
+    # 第 2 欄：紅色回饋說明，貼近底部紅線
+    add_text(slide, bxs[1], db_y, bw[1], db_h,
+             [[("回頭校正觸發門檻，", F8_HUMAN_EDGE, False, size)], [("再訓練 r4", F8_HUMAN_EDGE, False, size)]], size=size, anchor="b")
+    # 第 3、4 欄：資料庫 C、D
+    add_flow_box(slide, bxs[2], db_y, bw[2], db_h, "資料庫 C", ["知識庫 76 條・保固條款", "Dashboard 4 可查閱"], fill=F8_DB, edge=F8_DB_EDGE)
+    add_arrow(slide, bxs[2] + bw[2] / 2, db_y, bxs[2] + bw[2] / 2, bot_box_y + bot_box_h, color=F8_DB_EDGE)
+    add_flow_box(slide, bxs[3], db_y, bw[3], db_h, "資料庫 D", ["溝通佇列：草稿、", "審核狀態、投遞結果"], fill=F8_DB, edge=F8_DB_EDGE)
+    add_arrow(slide, bxs[3] + bw[3] / 2, bot_box_y + bot_box_h, bxs[3] + bw[3] / 2, db_y, color=F8_DB_EDGE, both=True)
+    # 第 5–6 欄：內網說明；右側留 0.28 吋給紅線直向段
+    note_w = bw[4] + 0.08 + bw[5] - 0.28
+    add_text(slide, bxs[4], db_y, note_w, db_h, [
+        [("資料庫與模型都在和泰內網，不出門；", F8_BODY, False, size)],
+        [("論壇文字只作研究語料，", F8_BODY, False, size)],
+        [("上線後輸入改為工單與客訴文字。", F8_BODY, False, size)],
+    ], size=size)
+
+    # ---- 紅色回饋迴路：KPI 回饋 → 帶底 → 左緣 → 觸發事件 ----
+    red_x = bxs[5] + bw[5] - 0.14
+    red_y = db_y + db_h + 0.08
+    add_arrow(slide, red_x, bot_box_y + bot_box_h, red_x, red_y, color=F8_HUMAN_EDGE, width=1.5, head=False)
+    add_arrow(slide, red_x, red_y, gut_x, red_y, color=F8_HUMAN_EDGE, width=1.5, head=False)
+    add_arrow(slide, gut_x, red_y, gut_x, bot_box_y + bot_box_h - 0.30, color=F8_HUMAN_EDGE, width=1.5, head=False)
+    add_arrow(slide, gut_x, bot_box_y + bot_box_h - 0.30, ML + 0.22, bot_box_y + bot_box_h - 0.30, color=F8_HUMAN_EDGE, width=1.5)
+
+    # ---- 八層圖例 ----
+    legend_y = bot_y + bot_h + 0.06
+    bar_h = 0.30
     bar_y = 7.02 - bar_h
     legend_h = bar_y - 0.06 - legend_y
-    gap = 0.08
-    cell_w = (CW - 7 * gap) / 8
+    lgap = 0.08
+    cell_w = (CW - 7 * lgap) / 8
     brief = {
         "L0": "三站已爬完",
         "L1": "切句去重",
@@ -1003,22 +1162,21 @@ def build_p6(slide, y):
         "L7": "核准才投遞",
     }
     for i, (code, name, _desc) in enumerate(LAYERS):
-        x = ML + i * (cell_w + gap)
+        x = ML + i * (cell_w + lgap)
         add_card(slide, x, legend_y, cell_w, legend_h)
         add_text(
-            slide, x + 0.04, legend_y + 0.04, cell_w - 0.06, legend_h - 0.06,
+            slide, x + 0.04, legend_y + 0.03, cell_w - 0.06, legend_h - 0.04,
             [
-                [(code, BLUE, True, 14)],
-                [(brief[code], INK, True, 12)],
-                [(name if code != "L5" else "客群輪廓", MUTED, False, 11)],
+                [(code, BLUE, True, 13), ("  " + brief[code], INK, True, 13)],
+                [(name if code != "L5" else "客群輪廓", MUTED, False, 12)],
             ],
-            size=12,
+            size=13,
         )
     add_card(slide, ML, bar_y, CW, bar_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.12, bar_y + 0.02, CW - 0.22, bar_h - 0.04,
+        slide, ML + 0.12, bar_y + 0.01, CW - 0.22, bar_h - 0.02,
         [[("先讀上帶產出 1（左到右），再讀下帶產出 2。外緣 L# 對下面八格。KPI 回頭校正門檻，再訓練 r4。", INK, False, 14)]],
-        size=14,
+        size=14, anchor="ctr",
     )
 
 
