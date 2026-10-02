@@ -1,11 +1,11 @@
-# 初賽簡報 v2.9
+# 初賽簡報 v3.0
 
-和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v2.9.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
+和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.0.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
 
 ## 版本
 
-- 目前版號：v2.9。
-- 檔名規則：`deck/初賽簡報_v2.9.pptx`、`deck/preview/初賽簡報_v2.9.pdf`、`deck/preview/v2.9/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
+- 目前版號：v3.0。
+- 檔名規則：`deck/初賽簡報_v3.0.pptx`、`deck/preview/初賽簡報_v3.0.pdf`、`deck/preview/v3.0/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
 - 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。
 - 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。
 - 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。
@@ -24,12 +24,12 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | 封面 | — | Lexus車主流失預警與 AI 溝通系統 | — | 模板封面，改作品名／主題／團隊 |
 | 2 | 摘要 | 提案摘要 | 提案摘要（表格右欄） | — | 會議記錄 §四；模型現況見 T8、T9 |
-| 3 | TOC | 大綱（不計入內容頁，同提案摘要） | 七個章節、兩大產出，對照頁碼 | — | `raw/bh-challenge.txt` |
+| 3 | TOC | 大綱 | 七個章節、兩大產出，對照頁碼 | — | `raw/bh-challenge.txt` |
 | 4 | P1 | 1 提案概述 | 提案是兩份產出：輿情洞察，以及對準客群的溝通 | — | `raw/bh-challenge.txt`、`reports/T7_stats_tests.md`、`reports/T3_residual_split_report.md` |
-| 5 | P2 | 2 目標對象與痛點分析 | 售後是人走了才知道；輿情能提前預警 | — | `reports/T7_stats_tests.md` |
+| 5 | P2 | 2 目標對象與痛點分析 | 售後是人走了才知道；輿情能提前預警 | — | `reports/T7_stats_tests.md`、`專案架構_2026-09-23.md`、`reports/T10_risk_persona_report.md`、`輿情訊號對應CRM欄位_草稿_2026-09-28.md` |
 | 6 | P3 | 2 目標對象與痛點分析 | 等料和價格送走人；態度抱怨多，卻少有人走 | F1.png | `reports/T7_stats_tests.md` |
 | 7 | P4 | 2 目標對象與痛點分析 | 出口是一般外廠；過保後價差把人推走 | F3.png | `reports/T10_risk_persona_report.md`、`專案架構_2026-09-23.md`、`reports/T11_kb_prices_report.md` |
-| 8 | P5 | 2 目標對象與痛點分析 | 2.1 萬句售後語料，品質過關、全數去識別 | F9_pipeline.png | `題目選擇分析_2026-09-22.md`、`reports/T7_data_quality.md`、`reports/T7_deid_report.md` |
+| 8 | P5 | 2 目標對象與痛點分析 | 2.1 萬句售後語料，品質過關、全數去識別 | F9_pipeline.png | `題目選擇分析_2026-09-22.md`、`reports/T7_data_quality.md`、`reports/T7_deid_report.md`、`reports/T15_trend_reports.md` |
 | 9 | P6 | 3 解決方案設計 | 洞察每日產出；關懷由事件觸發、人工核准才發 | F8.png | `L7運作流程_2026-09-30.md`、`專案架構_2026-09-23.md` |
 | 10 | P7 | 3 解決方案設計 | 四種流失車主，過保精算派最多（511 人） | F5.png | `reports/T10_risk_persona_report.md`、`會議記錄_2026-09-30.md` |
 | 11 | P8 | 3 解決方案設計 | 高風險車主 74% 確有流失句，分級可信 | F7.png | `reports/T10_risk_persona_report.md` |
@@ -85,9 +85,10 @@ python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 ```
 
 腳本列出非包含關係的形狀重疊、超出頁面或壓到頁尾來源列的形狀，以及每張預覽圖的 PIL 空白比例。文字放在卡片上、標籤放在方塊內這種包含關係不算重疊。
+另列卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，低於 0.7 的會印出來。第 12–18 頁要以這個比例把卡片內空白壓到約兩成以內。
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v2.9.pdf` 與 `deck/preview/v2.9/slide-01.png`–`slide-24.png`。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.0.pdf` 與 `deck/preview/v3.0/slide-01.png`–`slide-24.png`。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
