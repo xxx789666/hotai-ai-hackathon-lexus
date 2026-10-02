@@ -1,15 +1,23 @@
 # -*- coding: utf-8 -*-
-"""初賽簡報 v2。文案與數字集中在本檔前半；不要在這裡重算統計。
+"""初賽簡報。文案與數字集中在本檔前半；不要在這裡重算統計。
 
-重跑：python deck/build_deck.py
+版號見 DECK_VERSION。每次改動要升號：小改 +0.1，PO 審過的里程碑升整數。
+可用 --version X.Y 覆蓋；--note 必填，寫進 deck/CHANGELOG.md。
+
+重跑：python deck/build_deck.py --version X.Y --note "一句變更說明"
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
-輸出：deck/初賽簡報_v0.pptx、deck/README.md；若本機有 PowerPoint，另匯 deck/preview/
-檔名沿用 v0；內容是 T20 的 v2（22 張：封面、摘要、P1–P15、A1–A5）。
+輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
+若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
+內容是 v2.3（22 張：封面、摘要、P1–P15、A1–A5）。
 """
 
 from __future__ import annotations
 
+import argparse
 import re
+import shutil
+import subprocess
+from datetime import date
 from pathlib import Path
 
 from lxml import etree
@@ -21,9 +29,13 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "deck" / "初賽簡報_v0.pptx"
+# 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
+# --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
+DECK_VERSION = "2.3"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
+VERSIONS = ROOT / "deck" / "versions"
+CHANGELOG = ROOT / "deck" / "CHANGELOG.md"
 FIG = ROOT / "reports" / "figures"
 
 # 模板配色（theme1.xml）。占位用較深的橘，白底上才讀得清楚。
@@ -1382,11 +1394,21 @@ def collect_placeholders(prs):
     return found
 
 
-def write_readme(prs, placeholders, preview_note: str) -> None:
+def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
     lines = [
-        "# 初賽簡報 v2",
+        f"# 初賽簡報 v{version}",
         "",
-        "和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。檔名仍是 `初賽簡報_v0.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。",
+        "和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。"
+        f"本版檔名是 `初賽簡報_v{version}.pptx`，最新複本是 `初賽簡報_latest.pptx`。"
+        "占位若還有，是橘色字，形式為 `【待補：說明】`。",
+        "",
+        "## 版本",
+        "",
+        f"- 目前版號：v{version}。",
+        f"- 檔名規則：`deck/初賽簡報_v{version}.pptx`、`deck/preview/初賽簡報_v{version}.pdf`、`deck/preview/v{version}/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。",
+        "- 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。",
+        "- 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。",
+        "- 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。",
         "",
         "## 頁數怎麼算",
         "",
@@ -1439,12 +1461,12 @@ def write_readme(prs, placeholders, preview_note: str) -> None:
         "## 重新產生",
         "",
         "```text",
-        "python deck/build_deck.py",
+        "python deck/build_deck.py --version X.Y --note \"一句變更說明\"",
         "```",
         "",
-        "需要 Python 3.12 與 python-pptx。腳本開官方模板，保留封面與摘要左欄，刪掉七張章節分隔頁，再依 `SLIDES` 與各頁 builder 重畫。改文案請改本檔前半的 dict，不要改投影片後再存，否則重跑會蓋掉。",
+        "需要 Python 3.12 與 python-pptx。`--note` 必填。腳本開官方模板，保留封面與摘要左欄，刪掉七張章節分隔頁，再依 `SLIDES` 與各頁 builder 重畫。改文案請改本檔前半的 dict，不要改投影片後再存，否則重跑會蓋掉。同版號已存在時加上 `--force` 才會覆寫。",
         "",
-        "本機若裝了 PowerPoint，腳本會用 pywin32 把每頁匯出成 PNG，並把整份匯出成 PDF，放在 `deck/preview/`。",
+        "本機若裝了 PowerPoint，腳本會用 pywin32 把每頁匯出成 PNG，並把整份匯出成 PDF，放在 `deck/preview/` 的版號檔與 `vX.Y/` 資料夾。",
         "",
         "## 預覽",
         "",
@@ -1456,14 +1478,16 @@ def write_readme(prs, placeholders, preview_note: str) -> None:
     README.write_text("\n".join(lines), encoding="utf-8")
 
 
-def export_preview(pptx_path: Path) -> str:
+def export_preview(pptx_path: Path, version: str) -> str:
     try:
         import pythoncom
         import win32com.client
     except ImportError:
         return "本機沒有 pywin32，略過 PowerPoint 匯出。預覽資料夾未產生。"
     PREVIEW.mkdir(parents=True, exist_ok=True)
-    pdf_path = (PREVIEW / "初賽簡報_v0.pdf").resolve()
+    png_dir = PREVIEW / f"v{version}"
+    png_dir.mkdir(parents=True, exist_ok=True)
+    pdf_path = (PREVIEW / f"初賽簡報_v{version}.pdf").resolve()
     app = None
     pres = None
     try:
@@ -1475,9 +1499,12 @@ def export_preview(pptx_path: Path) -> str:
         pres.SaveAs(str(pdf_path), 32)
         n = pres.Slides.Count
         for i in range(1, n + 1):
-            png = (PREVIEW / f"slide-{i:02d}.png").resolve()
+            png = (png_dir / f"slide-{i:02d}.png").resolve()
             pres.Slides(i).Export(str(png), "PNG", 1920, 1080)
-        return f"已用 PowerPoint 匯出 `deck/preview/初賽簡報_v0.pdf` 與 slide-01.png–slide-{n:02d}.png。"
+        return (
+            f"已用 PowerPoint 匯出 `deck/preview/初賽簡報_v{version}.pdf`"
+            f" 與 `deck/preview/v{version}/slide-01.png`–`slide-{n:02d}.png`。"
+        )
     except Exception as exc:
         return f"PowerPoint 匯出失敗，略過預覽：{exc}"
     finally:
@@ -1485,6 +1512,84 @@ def export_preview(pptx_path: Path) -> str:
             pres.Close()
         if app is not None:
             app.Quit()
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="產生初賽簡報。每次改動要升版號。")
+    parser.add_argument("--version", default=DECK_VERSION, help="版號 X.Y，預設 DECK_VERSION")
+    parser.add_argument("--note", required=True, help="一句變更說明，寫進 CHANGELOG")
+    parser.add_argument("--force", action="store_true", help="同版號已在 versions/ 時仍覆寫")
+    return parser.parse_args()
+
+
+def deck_pptx(version: str) -> Path:
+    return ROOT / "deck" / f"初賽簡報_v{version}.pptx"
+
+
+def archive_pptx(version: str) -> Path:
+    return VERSIONS / f"初賽簡報_v{version}.pptx"
+
+
+def preview_pdf(version: str) -> Path:
+    return PREVIEW / f"初賽簡報_v{version}.pdf"
+
+
+def ensure_version_available(version: str, force: bool) -> None:
+    path = archive_pptx(version)
+    if path.exists() and not force:
+        raise SystemExit(
+            f"版本已存在：deck/versions/初賽簡報_v{version}.pptx。"
+            "請升號（小改 +0.1，PO 審過的里程碑升整數），或加上 --force 覆寫。"
+        )
+
+
+def git_short_head() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "--short", "HEAD"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise SystemExit(result.stderr.strip() or "git rev-parse 失敗")
+    return result.stdout.strip()
+
+
+def prepend_changelog(version: str, slides: int, content: int, note: str) -> None:
+    safe = " ".join(note.split()).replace("|", "｜")
+    row = (
+        f"| v{version} | {date.today().isoformat()} | {git_short_head()} "
+        f"| {slides}／{content} | {safe} | — |"
+    )
+    if not CHANGELOG.exists():
+        CHANGELOG.write_text(
+            "\n".join([
+                "# 初賽簡報變更紀錄",
+                "",
+                row,
+                "",
+            ]),
+            encoding="utf-8",
+        )
+        return
+    lines = CHANGELOG.read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        if line.startswith("| ---"):
+            lines.insert(i + 1, row)
+            CHANGELOG.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            return
+    raise SystemExit("CHANGELOG.md 找不到表格分隔列，無法插入紀錄")
+
+
+def publish_copies(version: str) -> None:
+    src = deck_pptx(version)
+    VERSIONS.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, ROOT / "deck" / "初賽簡報_latest.pptx")
+    shutil.copy2(src, archive_pptx(version))
+    pdf = preview_pdf(version)
+    if pdf.exists() and pdf.stat().st_size > 0:
+        shutil.copy2(pdf, PREVIEW / "初賽簡報_latest.pdf")
+        shutil.copy2(pdf, VERSIONS / f"初賽簡報_v{version}.pdf")
 
 
 def assert_notes() -> None:
@@ -1530,6 +1635,15 @@ def fill_cover(slide) -> None:
 
 
 def main() -> None:
+    args = parse_args()
+    version = args.version.strip()
+    if version.startswith("v") or version.startswith("V"):
+        version = version[1:]
+    if not version:
+        raise SystemExit("請用 --version 指定版號，例如 2.4。")
+    if not args.note or not args.note.strip():
+        raise SystemExit("請用 --note 寫一句變更說明，否則無法寫入變更紀錄。")
+    ensure_version_available(version, args.force)
     assert_notes()
     prs = Presentation(str(template_path()))
     if len(prs.slides) != 9:
@@ -1554,9 +1668,10 @@ def main() -> None:
         note = slide.notes_slide.notes_text_frame.text.strip()
         if not note:
             raise SystemExit(f"第 {i} 頁沒有備註")
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    prs.save(str(OUT))
-    check = Presentation(str(OUT))
+    out = deck_pptx(version)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    prs.save(str(out))
+    check = Presentation(str(out))
     if len(check.slides) != 22:
         raise SystemExit("重開後頁數不是 22")
     table = next(shape.table for shape in check.slides[1].shapes if shape.has_table)
@@ -1573,9 +1688,11 @@ def main() -> None:
     if left != expected:
         raise SystemExit(f"摘要左欄與模板不一致：{left!r}")
     placeholders = collect_placeholders(check)
-    preview_note = export_preview(OUT)
-    write_readme(check, placeholders, preview_note)
-    print(f"slides={len(check.slides)} content={content} placeholders={len(placeholders)}")
+    preview_note = export_preview(out, version)
+    publish_copies(version)
+    prepend_changelog(version, len(check.slides), content, args.note.strip())
+    write_readme(check, placeholders, preview_note, version)
+    print(f"version={version} slides={len(check.slides)} content={content} placeholders={len(placeholders)}")
     print(preview_note)
     for page, pid, text in placeholders:
         print(f"  p{page} {pid} {text}")
