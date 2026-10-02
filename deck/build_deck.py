@@ -2201,10 +2201,11 @@ def build_a2(slide, y):
 
 
 def build_a2b(slide, y):
-    cap_h = 0.56
+    # F6 原生散點在上；F9 季趨勢 PNG 依本格尺寸重畫（12.42×2.62 吋），貼進來不縮放、填滿整格。
+    cap_h = 0.50
     gap = 0.08
     f6 = figv()["F6"]["bins"]
-    chart_h = 2.24
+    chart_h = 2.08
     hi = max(f6, key=lambda b: b["mean"])
     chart_scatter(
         slide, ML, y, CW, chart_h,
@@ -2214,7 +2215,9 @@ def build_a2b(slide, y):
     )
     caption_bar(slide, y + chart_h + gap, cap_h, "F6", "校準曲線。", "　最高信心桶 n=71，實際流失 68%。高分仍偏高，方向對。")
     y2 = y + chart_h + gap + cap_h + gap
-    fig_h = fit_pic(slide, "F9.png", ML, y2, CW, BOT - cap_h - gap - y2)
+    fig_h = BOT - cap_h - gap - y2
+    add_card(slide, ML, y2, CW, fig_h, fill=CHART_FILL, name="chart:F9:card")
+    fit_pic(slide, "F9.png", ML, y2, CW, fig_h)
     caption_bar(slide, BOT - cap_h, cap_h, "F9", "季趨勢預警。", "　討論量達前 4 週平均 3 倍且至少 5 句就亮燈。")
 
 
