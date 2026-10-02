@@ -8,8 +8,10 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.2（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
-第 9 頁（P6）自 v3.2 起用原生形狀畫雙迴路，不再貼 F8.png；F8.png 只剩附錄 A0 線框頁使用。
+內容是 v3.3（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+v3.3 全頁版面重做：第 3–24 頁的卡片、字級、標籤位置統一；F1–F7 與資料處理鏈改用 pptx 原生形狀畫，
+數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only）；F8 在第 9 頁與附錄 A0
+都用原生形狀（draw_f8）；只有 F9 季趨勢仍貼 PNG。封面與摘要左欄是模板，不動。
 計入 15 頁的是大綱 1 張加內容頁 14 張（第 4–17 頁）。附錄 7 張（第 18–24 頁，含 A0）不計入。
 封面是否計入尚待向主辦方確認，封面不動。
 """
@@ -17,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -35,7 +38,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.2"
+DECK_VERSION = "3.3"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -83,7 +86,7 @@ NOTES = [
     "四種人配三種進廠時機，十二則已過查核，投遞前仍要人工審。",
     "人工篩選工時省九成以上（估），五項風險都已有對策。",
     "每季三百句金標、兩人共五小時，審核回饋持續再訓練。",
-    "左邊是兩個迴路；右邊審核佇列是線框，決賽再給可操作版。",
+    "上方是兩個迴路；下方審核佇列是線框，決賽再給可操作版。",
     "附錄術語表：每個名詞一句定義、一句本案用法，評審追問時翻這頁。",
     "附錄前兩張圖：三站發言者流失率，以及高中低風險分布。",
     "附錄後兩張圖：校準曲線五個信心桶，以及季趨勢預警。",
@@ -378,7 +381,7 @@ def style_run(run, size_pt: float, bold: bool, color: RGBColor) -> None:
         el.set("typeface", face)
 
 
-def set_tf(tf, blocks, size: float, align=None, anchor: str = "t") -> None:
+def set_tf(tf, blocks, size: float, align=None, anchor: str = "t", space_after: float = 2) -> None:
     tf.clear()
     tf.word_wrap = True
     body_pr = tf._txBody.bodyPr
@@ -388,7 +391,7 @@ def set_tf(tf, blocks, size: float, align=None, anchor: str = "t") -> None:
         if align is not None:
             p.alignment = align
         p.space_before = Pt(0)
-        p.space_after = Pt(2)
+        p.space_after = Pt(space_after)
         p.line_spacing = 1.0
         for item in runs:
             text, color, bold = item[0], item[1], item[2]
@@ -398,23 +401,38 @@ def set_tf(tf, blocks, size: float, align=None, anchor: str = "t") -> None:
             style_run(run, sz, bold, color)
 
 
-def add_text(slide, x, y, w, h, blocks, size=14, align=None, anchor="t", margin=0.04):
+def add_text(slide, x, y, w, h, blocks, size=14, align=None, anchor="t", margin=0.04, name=None, space_after=2):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = box.text_frame
     tf.margin_left = Inches(margin)
     tf.margin_right = Inches(margin)
     tf.margin_top = Inches(0.02)
     tf.margin_bottom = Inches(0.02)
-    set_tf(tf, blocks, size, align, anchor)
+    set_tf(tf, blocks, size, align, anchor, space_after=space_after)
+    if name:
+        box.name = name
     return box
 
 
-def add_card(slide, x, y, w, h, fill="F4F7FB", line=None):
+def add_vtext(slide, x, y, w, h, text, size=14, color=MUTED, name=None):
+    """直排（由下往上讀）的文字框，給圖表的縱軸標籤用。框本身仍是窄而高的矩形。"""
+    box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+    tf = box.text_frame
+    for side in ("margin_left", "margin_right", "margin_top", "margin_bottom"):
+        setattr(tf, side, Inches(0.02))
+    set_tf(tf, [[(text, color, False, size)]], size, align=PP_ALIGN.CENTER, anchor="ctr")
+    tf._txBody.bodyPr.set("vert", "vert270")
+    if name:
+        box.name = name
+    return box
+
+
+def add_card(slide, x, y, w, h, fill="F4F7FB", line=None, name=None, radius=0.08):
     shape = slide.shapes.add_shape(
         MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h)
     )
     try:
-        shape.adjustments[0] = 0.08
+        shape.adjustments[0] = radius
     except Exception:
         pass
     shape.fill.solid()
@@ -424,7 +442,37 @@ def add_card(slide, x, y, w, h, fill="F4F7FB", line=None):
     else:
         shape.line.color.rgb = line
         shape.line.width = Pt(1.25)
+    if name:
+        shape.name = name
     return shape
+
+
+def add_rect(slide, x, y, w, h, fill=None, line=None, width=1.0, name=None, dashed=False):
+    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
+    if fill is None:
+        shape.fill.background()
+    else:
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = RGBColor.from_string(fill) if isinstance(fill, str) else fill
+    if line is None:
+        shape.line.fill.background()
+    else:
+        shape.line.color.rgb = line
+        shape.line.width = Pt(width)
+        if dashed:
+            shape.line.dash_style = MSO_LINE.DASH
+    if name:
+        shape.name = name
+    return shape
+
+
+def card_text(slide, x, y, w, h, blocks, size=16, fill="F4F7FB", line=None,
+              pad_x=0.14, pad_y=0.06, anchor="t", align=None, name=None):
+    """卡片＋同一組內距的文字框。全冊卡片內文統一用這個：左右 0.14、上下 0.06。"""
+    card = add_card(slide, x, y, w, h, fill=fill, line=line, name=name)
+    add_text(slide, x + pad_x, y + pad_y, w - 2 * pad_x, h - 2 * pad_y, blocks,
+             size=size, anchor=anchor, align=align)
+    return card
 
 
 def set_cell_fill(cell, hex_color: str) -> None:
@@ -442,20 +490,26 @@ def paint_cell(cell, blocks, size, fill, align=None) -> None:
     cell.vertical_anchor = MSO_ANCHOR.MIDDLE
     cell.margin_left = Inches(0.08)
     cell.margin_right = Inches(0.06)
-    cell.margin_top = Inches(0.04)
+    cell.margin_top = Inches(0.03)
     cell.margin_bottom = Inches(0.03)
     set_tf(cell.text_frame, blocks, size, align, anchor="ctr")
     set_cell_fill(cell, fill)
     cell.text_frame.word_wrap = True
 
 
-def add_table(slide, x, y, w, h, rows, col_w, font=12, header=True):
-    """rows: list of list of blocks (each cell is a list of paragraphs)."""
+def add_table(slide, x, y, w, h, rows, col_w, font=12, header=True, row_h=None):
+    """rows: list of list of blocks (each cell is a list of paragraphs).
+    row_h：每列高度（吋）清單；沒給就平均分。PowerPoint 只會把列撐高，不會縮矮。"""
     n_r, n_c = len(rows), len(rows[0])
     graphic = slide.shapes.add_table(n_r, n_c, Inches(x), Inches(y), Inches(w), Inches(h))
     table = graphic.table
     for i, cw in enumerate(col_w):
         table.columns[i].width = Inches(cw)
+    if row_h is not None:
+        if len(row_h) != n_r:
+            raise SystemExit(f"row_h 應有 {n_r} 列，給了 {len(row_h)}")
+        for i, rh in enumerate(row_h):
+            table.rows[i].height = Inches(rh)
     for r, row in enumerate(rows):
         for c, blocks in enumerate(row):
             header_cell = header and r == 0
@@ -475,6 +529,45 @@ def add_table(slide, x, y, w, h, rows, col_w, font=12, header=True):
                 fill = "F4F7FB"
             paint_cell(table.cell(r, c), blocks, font, "44546A" if header_cell else fill)
     return graphic
+
+
+def est_lines(text: str, width_in: float, pt: float) -> int:
+    """估算一段文字在某寬度、字級下的行數（與 check_layout 同一套字寬）。"""
+    width = max(width_in, 0.3)
+    lines, used = 1, 0.0
+    for ch in text:
+        o = ord(ch)
+        if ch.isspace():
+            cw = pt / 72.0 * 0.33
+        elif o > 0x2E00 or ch in "，。、；：？！（）「」『』％":
+            cw = pt / 72.0
+        else:
+            cw = pt / 72.0 * 0.55
+        if used + cw > width and used > 0:
+            lines += 1
+            used = cw
+        else:
+            used += cw
+    return lines
+
+
+def table_row_heights(rows, col_w, font, header_h=0.40, pad=0.10, min_h=0.30):
+    """依每格最長段落估行數，給 add_table 的 row_h。回傳 (heights, total)。"""
+    heights = []
+    for r, row in enumerate(rows):
+        if r == 0:
+            heights.append(header_h)
+            continue
+        need = 0.0
+        for c, blocks in enumerate(row):
+            cell_lines = 0
+            for para in blocks:
+                text = "".join(run[0] for run in para)
+                pt = max((run[3] if len(run) > 3 else font) for run in para) if para else font
+                cell_lines += est_lines(text, col_w[c] - 0.14, pt)
+            need = max(need, cell_lines * (font / 72.0 * 1.2))
+        heights.append(max(min_h, need + pad))
+    return heights, sum(heights)
 
 
 def cell_text(text, color=INK, bold=False):
@@ -557,6 +650,9 @@ def page_span(ids: list[str]) -> str:
 OUT1_IDS = ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10"]
 OUT2_IDS = ["P6", "P12", "P13", "P14", "A0", "A3", "A4", "A5"]
 
+# 內容區：標題下緣 1.08 吋到頁尾來源列上方 7.02 吋。
+BOT = 7.02
+
 
 def new_content_slide(prs, meta: dict, page: int):
     slide = prs.slides.add_slide(blank_layout(prs))
@@ -606,7 +702,7 @@ def pic(slide, name: str, x, y, w) -> float:
 
 
 def fit_pic(slide, name: str, x, y, max_w, max_h) -> float:
-    """依圖檔實際比例放入方框，水平置中。F1–F7 是 1920×1080，F8／F9 是 1920×900。"""
+    """依圖檔實際比例放入方框，水平置中。"""
     path = FIG / name
     try:
         from PIL import Image
@@ -626,6 +722,328 @@ def fit_pic(slide, name: str, x, y, max_w, max_h) -> float:
     return h
 
 
+# ---------------------------------------------------------------------------
+# 原生圖表。數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only），
+# 與 F1–F7 畫上去的值相同；這裡只畫，不重算。形狀名稱以 chart 開頭，check_layout 不把圖區當文字卡。
+# ---------------------------------------------------------------------------
+RED = RGBColor(0xC0, 0x39, 0x2B)
+RED_MID = RGBColor(0xE0, 0x7A, 0x72)
+RED_LIGHT = RGBColor(0xF3, 0xC1, 0xBD)
+BLUE_MID = RGBColor(0x5C, 0x84, 0xB0)
+BLUE_LIGHT = RGBColor(0xA9, 0xC3, 0xDC)
+GRID = RGBColor(0xD9, 0xDF, 0xE6)
+AXIS = RGBColor(0x8A, 0x94, 0x9E)
+CHART_FILL = "F4F7FB"
+_FIGV = None
+
+
+def figv() -> dict:
+    global _FIGV
+    if _FIGV is None:
+        path = FIG / "figure_values.json"
+        if not path.exists():
+            raise SystemExit(f"缺少 {path}：先跑 python pipeline/make_figures.py --values-only")
+        _FIGV = json.loads(path.read_text(encoding="utf-8"))
+    return _FIGV
+
+
+def fmt_int(n) -> str:
+    return f"{int(round(n)):,}"
+
+
+def add_line(slide, x1, y1, x2, y2, color=GRID, width=0.75, dashed=False, name="chart-line"):
+    line = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x1), Inches(y1), Inches(x2), Inches(y2))
+    line.line.color.rgb = color
+    line.line.width = Pt(width)
+    if dashed:
+        line.line.dash_style = MSO_LINE.DASH
+    line.name = name
+    return line
+
+
+def nice_ticks(ymax: float, n: int = 4):
+    """回傳 0 到 ymax 的等距刻度值（含 0，不含超過 ymax 的）。"""
+    import math
+
+    raw = ymax / n
+    mag = 10 ** math.floor(math.log10(raw)) if raw > 0 else 1
+    for step in (1, 2, 2.5, 5, 10):
+        if raw <= step * mag:
+            step *= mag
+            break
+    ticks = []
+    v = 0.0
+    while v <= ymax + 1e-9:
+        ticks.append(v)
+        v += step
+    return ticks
+
+
+def chart_bars(slide, x, y, w, h, cats, vals, *, errs=None, highlight=None, title=None,
+               ylabel=None, fmt="{:.1f}", ymax=None, ticks=True, tick_fmt=None,
+               label_size=15, value_size=16, title_size=16, color=BLUE, hi_color=RED,
+               name="chart", card=True, bar_frac=0.62, pad=0.14):
+    """長條圖：方塊、數值標籤、類別標籤、刻度與縱軸標籤都是 pptx 物件。
+    errs：每根的 (lo, hi) 絕對值，畫成誤差線。highlight：要標紅的索引。"""
+    if card:
+        add_card(slide, x, y, w, h, fill=CHART_FILL, name=f"{name}:card")
+    top = y + 0.08
+    y_top = top  # 縱軸標籤框從標題頂端起算，標題框左緣讓出 0.40 吋給它
+    if title:
+        add_text(slide, x + pad + 0.40, top, w - 2 * pad - 0.40, 0.32, [[(title, INK, True, title_size)]],
+                 size=title_size, align=PP_ALIGN.CENTER, anchor="ctr", name=f"{name}:title")
+        top += 0.36
+    cat_h = 0.34
+    py = top + 0.32  # 最高那根上方留給數值標籤
+    ph = y + h - 0.10 - cat_h - py
+    left = x + pad
+    if ylabel:
+        ylabel_box(slide, left, y_top, py + ph + cat_h - y_top, ylabel, name)
+        left += 0.36
+    tick_w = 0.0
+    hi_vals = [e[1] for e in errs] if errs else vals
+    data_max = max(max(vals), max(hi_vals))
+    ymax = ymax or data_max * 1.06
+    tick_vals = nice_ticks(ymax, max(2, int(ph / 0.42))) if ticks else []
+    if ticks:
+        tick_w = 0.55 if max(tick_vals) >= 1000 else 0.42
+    px = left + tick_w + 0.04
+    pw = x + w - pad - 0.04 - px
+
+    def ypos(v):
+        return py + ph - ph * v / ymax
+
+    for t in tick_vals:
+        yy = ypos(t)
+        add_line(slide, px, yy, px + pw, yy, color=GRID, width=0.75)
+        if ticks:
+            label = (tick_fmt or (lambda v: f"{v:g}"))(t)
+            add_text(slide, left, yy - 0.12, tick_w, 0.24, [[(label, MUTED, False, 13)]],
+                     size=13, align=PP_ALIGN.RIGHT, anchor="ctr", margin=0.0, name=f"{name}:tick")
+    add_line(slide, px, py + ph, px + pw, py + ph, color=AXIS, width=1.0)
+    n = len(cats)
+    slot = pw / n
+    bw = slot * bar_frac
+    lab_w = min(bw + 0.5, slot - 0.02)
+    for i, (cat, v) in enumerate(zip(cats, vals)):
+        bx = px + i * slot + (slot - bw) / 2
+        by = ypos(v)
+        c = hi_color if (highlight is not None and i == highlight) else color
+        if by < py + ph - 0.005:
+            add_rect(slide, bx, by, bw, py + ph - by, fill=c, name=f"{name}:bar")
+        label_bottom = by
+        if errs:
+            lo, hi = errs[i]
+            y_lo, y_hi = ypos(lo), ypos(hi)
+            cx = bx + bw / 2
+            add_line(slide, cx, y_hi, cx, y_lo, color=INK, width=1.25)
+            add_line(slide, cx - 0.08, y_hi, cx + 0.08, y_hi, color=INK, width=1.25)
+            add_line(slide, cx - 0.08, y_lo, cx + 0.08, y_lo, color=INK, width=1.25)
+            label_bottom = min(by, y_hi)
+        lx = bx + bw / 2 - lab_w / 2
+        add_text(slide, lx, label_bottom - 0.30, lab_w, 0.28,
+                 [[(fmt.format(v), INK, True, value_size)]], size=value_size,
+                 align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:value")
+        add_text(slide, lx, py + ph + 0.03, lab_w, cat_h - 0.03,
+                 [[(cat, INK, False, label_size)]], size=label_size,
+                 align=PP_ALIGN.CENTER, anchor="t", margin=0.0, name=f"{name}:cat")
+    return py + ph
+
+
+def ylabel_box(slide, left, top, avail_h, text, name):
+    """縱軸標籤：直排一欄。字數乘字高放得下就用 13pt，否則 12pt；框高拉到類別標籤底，避免折成兩欄。"""
+    size = 13 if len(text) * 13 / 72 + 0.1 <= avail_h else 12
+    add_vtext(slide, left, top, 0.34, avail_h, text, size=size, name=f"{name}:ylabel")
+
+
+def chart_stacked(slide, x, y, w, h, cats, series, colors_by_cat, *, title=None, ylabel=None,
+                  legend=None, totals=True, name="chart", pad=0.14):
+    """堆疊長條：series = [(label, [v per cat]), ...] 由下往上疊；colors_by_cat[cat_index][series_index]。"""
+    add_card(slide, x, y, w, h, fill=CHART_FILL, name=f"{name}:card")
+    top = y + 0.08
+    y_top = top
+    if title:
+        add_text(slide, x + pad + 0.40, top, w - 2 * pad - 0.40, 0.32, [[(title, INK, True, 16)]],
+                 size=16, align=PP_ALIGN.CENTER, anchor="ctr", name=f"{name}:title")
+        top += 0.36
+    cat_h = 0.34
+    py = top + 0.32
+    ph = y + h - 0.10 - cat_h - py
+    left = x + pad
+    if ylabel:
+        ylabel_box(slide, left, y_top, py + ph + cat_h - y_top, ylabel, name)
+        left += 0.36
+    sums = [sum(vals[i] for _, vals in series) for i in range(len(cats))]
+    ymax = max(sums) * 1.08
+    tick_vals = nice_ticks(ymax, 3)
+    tick_w = 0.55
+    px = left + tick_w + 0.04
+    pw = x + w - pad - 0.04 - px
+
+    def ypos(v):
+        return py + ph - ph * v / ymax
+
+    for t in tick_vals:
+        yy = ypos(t)
+        add_line(slide, px, yy, px + pw, yy, color=GRID, width=0.75)
+        add_text(slide, left, yy - 0.14, tick_w, 0.28, [[(fmt_int(t), MUTED, False, 13)]],
+                 size=13, align=PP_ALIGN.RIGHT, anchor="ctr", margin=0.0, name=f"{name}:tick")
+    add_line(slide, px, py + ph, px + pw, py + ph, color=AXIS, width=1.0)
+    n = len(cats)
+    slot = pw / n
+    bw = slot * 0.56
+    for i, cat in enumerate(cats):
+        bx = px + i * slot + (slot - bw) / 2
+        base = 0.0
+        for s, (_label, vals) in enumerate(series):
+            v = vals[i]
+            if v <= 0:
+                continue
+            y1, y0 = ypos(base + v), ypos(base)
+            if y0 - y1 >= 0.01:
+                add_rect(slide, bx, y1, bw, y0 - y1, fill=colors_by_cat[i][s], name=f"{name}:bar")
+            base += v
+        if totals:
+            add_text(slide, bx - 0.25, ypos(sums[i]) - 0.30, bw + 0.5, 0.28,
+                     [[(fmt_int(sums[i]), INK, True, 16)]], size=16,
+                     align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:value")
+        add_text(slide, bx - 0.2, py + ph + 0.03, bw + 0.4, cat_h - 0.03,
+                 [[(cat, INK, False, 15)]], size=15, align=PP_ALIGN.CENTER, anchor="t",
+                 margin=0.0, name=f"{name}:cat")
+    if legend:
+        lx = x + w - pad - sum(0.22 + 0.06 + len(lbl) * 0.11 + 0.18 for lbl, _ in legend)
+        ly = top + 0.02
+        for lbl, col in legend:
+            add_rect(slide, lx, ly + 0.06, 0.22, 0.16, fill=col, name=f"{name}:legend")
+            lw = len(lbl) * 0.11 + 0.18
+            add_text(slide, lx + 0.26, ly, lw, 0.28, [[(lbl, INK, False, 13)]], size=13,
+                     anchor="ctr", margin=0.0, name=f"{name}:legend")
+            lx += 0.22 + 0.06 + lw
+    return py + ph
+
+
+BLUES = [(247, 251, 255), (222, 235, 247), (198, 219, 239), (158, 202, 225), (107, 174, 214),
+         (66, 146, 198), (33, 113, 181), (8, 81, 156), (8, 48, 107)]
+
+
+def blues(t: float) -> RGBColor:
+    t = min(max(t, 0.0), 1.0) * (len(BLUES) - 1)
+    i = int(t)
+    if i >= len(BLUES) - 1:
+        r, g, b = BLUES[-1]
+    else:
+        f = t - i
+        r, g, b = (round(BLUES[i][k] + (BLUES[i + 1][k] - BLUES[i][k]) * f) for k in range(3))
+    return RGBColor(int(r), int(g), int(b))
+
+
+def chart_heatmap(slide, x, y, w, h, rows, cols, matrix, *, title=None, legend=None, name="chart", pad=0.14):
+    """熱圖：每格一個矩形加數字；最大格套紅框。rows 直排、cols 橫排。"""
+    add_card(slide, x, y, w, h, fill=CHART_FILL, name=f"{name}:card")
+    top = y + 0.08
+    legend_w = 3.0 if legend else 0.0
+    if title:
+        add_text(slide, x + pad, top, w - 2 * pad - legend_w, 0.32, [[(title, INK, True, 16)]],
+                 size=16, align=PP_ALIGN.CENTER, anchor="ctr", name=f"{name}:title")
+        top += 0.38
+    if legend:
+        add_text(slide, x + w - pad - legend_w, y + 0.08, legend_w, 0.32,
+                 [[(legend, MUTED, False, 13)]], size=13, align=PP_ALIGN.RIGHT, anchor="ctr",
+                 margin=0.0, name=f"{name}:legend")
+    row_label_w = 1.35
+    col_h = 0.34
+    gx = x + pad + row_label_w
+    gw = x + w - pad - gx
+    gy = top
+    gh = y + h - 0.10 - col_h - gy
+    cw = gw / len(cols)
+    ch = gh / len(rows)
+    vmax = max(max(r) for r in matrix)
+    best = max(((v, i, j) for i, r in enumerate(matrix) for j, v in enumerate(r)))[1:]
+    for i, label in enumerate(rows):
+        add_text(slide, x + pad, gy + i * ch, row_label_w - 0.06, ch, [[(label, INK, False, 15)]],
+                 size=15, align=PP_ALIGN.RIGHT, anchor="ctr", margin=0.0, name=f"{name}:row")
+        for j, v in enumerate(matrix[i]):
+            cx, cy = gx + j * cw, gy + i * ch
+            add_rect(slide, cx, cy, cw, ch, fill=blues(v / vmax), name=f"{name}:cell")
+            color = WHITE if v > vmax * 0.62 else INK
+            add_text(slide, cx, cy, cw, ch, [[(f"{v:.0f}", color, False, 16)]], size=16,
+                     align=PP_ALIGN.CENTER, anchor="ctr", margin=0.0, name=f"{name}:cellv")
+    bi, bj = best
+    add_rect(slide, gx + bj * cw, gy + bi * ch, cw, ch, fill=None, line=RED, width=2.25, name=f"{name}:best")
+    for j, label in enumerate(cols):
+        add_text(slide, gx + j * cw, gy + gh + 0.03, cw, col_h - 0.03, [[(label, INK, False, 14)]],
+                 size=14, align=PP_ALIGN.CENTER, anchor="t", margin=0.0, name=f"{name}:col")
+
+
+def chart_scatter(slide, x, y, w, h, points, *, title=None, xlabel=None, ylabel=None, name="chart", pad=0.14):
+    """校準散點：points = [(mean%, rate%, n)]；對角虛線是完美校準。"""
+    add_card(slide, x, y, w, h, fill=CHART_FILL, name=f"{name}:card")
+    top = y + 0.08
+    y_top = top
+    if title:
+        add_text(slide, x + pad + 0.40, top, w - 2 * pad - 0.40, 0.32, [[(title, INK, True, 16)]],
+                 size=16, align=PP_ALIGN.CENTER, anchor="ctr", name=f"{name}:title")
+        top += 0.36
+    tick_h = 0.26
+    xl_h = 0.26
+    py = top + 0.24
+    left = x + pad
+    tick_w = 0.42
+    px = left + 0.36 + tick_w + 0.04
+    pw = x + w - pad - 0.30 - px
+    ph = y + h - 0.10 - xl_h - tick_h - py
+    if ylabel:
+        ylabel_box(slide, left, y_top, py + ph + tick_h - y_top, ylabel, name)
+
+    def xpos(v):
+        return px + pw * v / 100
+
+    def ypos(v):
+        return py + ph - ph * v / 100
+
+    for t in (0, 50, 100):
+        add_line(slide, px, ypos(t), px + pw, ypos(t), color=GRID, width=0.75)
+        add_text(slide, left + 0.36, ypos(t) - 0.12, tick_w, 0.24, [[(str(t), MUTED, False, 13)]], size=13,
+                 align=PP_ALIGN.RIGHT, anchor="ctr", margin=0.0, name=f"{name}:tick")
+    for t in (20, 40, 60, 80, 100):  # 原點的 0 由縱軸刻度標，橫軸不重複標
+        add_line(slide, xpos(t), py, xpos(t), py + ph, color=GRID, width=0.75)
+        add_text(slide, xpos(t) - 0.3, py + ph + 0.03, 0.6, tick_h - 0.03, [[(str(t), MUTED, False, 13)]], size=13,
+                 align=PP_ALIGN.CENTER, anchor="t", margin=0.0, name=f"{name}:tick")
+    add_line(slide, px, py + ph, px + pw, py + ph, color=AXIS, width=1.0)
+    add_line(slide, px, py, px, py + ph, color=AXIS, width=1.0)
+    # 完美校準的對角虛線：用旋轉的極薄矩形畫，外框不會像斜向連接線那樣罩住整個圖區。
+    import math
+
+    length = math.hypot(pw, ph)
+    diag = add_rect(slide, px + pw / 2 - length / 2, py + ph / 2 - 0.005, length, 0.01,
+                    fill=None, line=AXIS, width=1.0, dashed=True, name=f"{name}:diag")
+    diag.rotation = -math.degrees(math.atan2(ph, pw))
+    if xlabel:
+        add_text(slide, px, py + ph + tick_h, pw, xl_h, [[(xlabel, MUTED, False, 14)]], size=14,
+                 align=PP_ALIGN.CENTER, anchor="t", margin=0.0, name=f"{name}:xlabel")
+    nmax = max(n for _, _, n in points)
+    for mx, ry, n in points:
+        d = 0.14 + 0.14 * (n / nmax) ** 0.5
+        cx, cy = xpos(mx), ypos(ry)
+        dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(cx - d / 2), Inches(cy - d / 2), Inches(d), Inches(d))
+        dot.fill.solid()
+        dot.fill.fore_color.rgb = RED if mx >= 80 else BLUE
+        dot.line.fill.background()
+        dot.name = f"{name}:dot"
+        if mx < 10:  # 貼近原點的桶，標籤放右邊，不壓到刻度
+            add_text(slide, cx + d / 2 + 0.04, cy - 0.16, 1.0, 0.28, [[(f"n={n}", INK, False, 15)]], size=15,
+                     anchor="ctr", margin=0.0, name=f"{name}:n")
+        else:
+            add_text(slide, cx - 0.5, cy - d / 2 - 0.30, 1.0, 0.28, [[(f"n={n}", INK, False, 15)]], size=15,
+                     align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:n")
+
+
+# ---------------------------------------------------------------------------
+# 各頁 builder。所有卡片用 card_text 的內距；數字卡「數字 26–28 藍粗、說明 15」；
+# 編號用 add_pill；流程方塊用 F7FBFF 底、藍框。
+# ---------------------------------------------------------------------------
+
 TOC_BLURB = {
     "1": "21,183 句；186 句沒抱怨就走",
     "2": "零件 17.3%；一般外廠 736 句",
@@ -644,6 +1062,22 @@ TOC_TAG = {
 }
 
 
+def add_pill(slide, x, y, w, h, text, size=12, fill=BLUE, color=WHITE):
+    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
+    try:
+        shape.adjustments[0] = 0.3
+    except Exception:
+        pass
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    shape.line.fill.background()
+    tf = shape.text_frame
+    for side in ("margin_left", "margin_right", "margin_top", "margin_bottom"):
+        setattr(tf, side, Inches(0.01))
+    set_tf(tf, [[(text, color, True, size)]], size, align=PP_ALIGN.CENTER, anchor="ctr")
+    return shape
+
+
 def build_toc(slide, y):
     groups = []
     for meta in SLIDES:
@@ -655,35 +1089,33 @@ def build_toc(slide, y):
         else:
             groups[-1]["ids"].append(meta["id"])
     appendix = [m["id"] for m in SLIDES if m["id"].startswith("A")]
-    cards = []
+    rows = []
     for g in groups:
         key = g["section"].split()[0]
         name = g["section"].split(" ", 1)[1]
         pages = page_span(g["ids"])
-        cards.append((key, name, f"第 {pages} 頁", TOC_TAG[key], TOC_BLURB[key]))
-    cards.append(("附", "附錄", f"第 {page_span(appendix)} 頁", "不計入 15 頁", "補充資料、術語、圖表與話術"))
-    gap = 0.12
-    cols = 4
-    card_w = (CW - (cols - 1) * gap) / cols
-    card_h = 1.58
-    for i, (key, name, pages, tag, blurb) in enumerate(cards):
-        col, row = i % cols, i // cols
-        x = ML + col * (card_w + gap)
-        yy = y + row * (card_h + gap)
-        add_card(slide, x, yy, card_w, card_h)
+        rows.append((key, name, f"第 {pages} 頁", TOC_TAG[key], TOC_BLURB[key]))
+    rows.append(("附", "附錄", f"第 {page_span(appendix)} 頁", "不計入 15 頁", "補充資料、術語、圖表與話術"))
+    # 左欄：七列章節；右欄：兩份產出。
+    left_w = 7.55
+    gap = 0.08
+    row_h = (BOT - y - 6 * gap) / 7
+    for i, (key, name, pages, tag, blurb) in enumerate(rows):
+        yy = y + i * (row_h + gap)
+        add_card(slide, ML, yy, left_w, row_h)
+        add_pill(slide, ML + 0.14, yy + (row_h - 0.44) / 2, 0.44, 0.44, key, size=16,
+                 fill=NAVY if key == "附" else BLUE)
         add_text(
-            slide, x + 0.10, yy + 0.08, card_w - 0.18, card_h - 0.12,
+            slide, ML + 0.70, yy + 0.06, left_w - 0.84, row_h - 0.12,
             [
-                [(f"{key}  {name}", INK, True, 16)],
-                [(pages, BLUE, True, 20)],
-                [(tag, NAVY, True, 14)],
-                [(blurb, INK, False, 14)],
+                [(name, INK, True, 18), ("　", INK, True, 18), (pages, BLUE, True, 18)],
+                [(tag, NAVY, True, 15), ("　", INK, False, 15), (blurb, INK, False, 15)],
             ],
-            size=14,
+            size=15, anchor="ctr",
         )
-    out_y = y + 2 * (card_h + gap) + 0.04
-    out_h = 7.02 - out_y
-    out_w = (CW - gap) / 2
+    right_x = ML + left_w + 0.14
+    right_w = CW - left_w - 0.14
+    out_h = (BOT - y - 0.10) / 2
     blocks = [
         (
             "產出 1",
@@ -707,38 +1139,47 @@ def build_toc(slide, y):
         ),
     ]
     for i, (head, title, lines) in enumerate(blocks):
-        x = ML + i * (out_w + gap)
-        add_card(slide, x, out_y, out_w, out_h, fill="EAF1F8")
-        add_text(
-            slide, x + 0.14, out_y + 0.10, out_w - 0.28, out_h - 0.16,
+        yy = y + i * (out_h + 0.10)
+        card_text(
+            slide, right_x, yy, right_w, out_h,
             [
                 [(head, BLUE, True, 20)],
                 [(title, INK, True, 16)],
-                *[[(line, INK, False, 16)] for line in lines],
+                *[[(line, INK, False, 15)] for line in lines],
             ],
-            size=14,
+            size=15, fill="EAF1F8",
         )
 
 
 def build_p1(slide, y):
-    add_card(slide, ML, y, CW, 1.22, fill="EAF1F8")
+    # 上帶：為什麼要做。三站流失率各一格，句子放右邊。
+    band_h = 0.98
+    add_card(slide, ML, y, CW, band_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.16, y + 0.04, CW - 0.32, 1.14,
-        [
-            [("為什麼要做", BLUE, True, 15), ("　　論壇發言者流失率", INK, True, 15),
-             ("　　χ²=99.5", NAVY, False, 15)],
-            [("Mobile01  18.2%", BLUE, True, 20), ("　　PTT  14.1%", BLUE, True, 20),
-             ("　　Dcard  6.8%", BLUE, True, 20)],
-            [("1,671 句流失中，186 句沒抱怨就找出口。母體是論壇發言者，不是全體車主。", INK, False, 14)],
-        ],
-        size=15,
+        slide, ML + 0.14, y + 0.08, 1.95, band_h - 0.16,
+        [[("為什麼要做", BLUE, True, 18)], [("論壇發言者流失率", INK, True, 14)], [("χ²=99.5", NAVY, False, 14)]],
+        size=14, anchor="ctr",
     )
-    gap = 0.12
+    stats = [("18.2%", "Mobile01"), ("14.1%", "PTT"), ("6.8%", "Dcard")]
+    sx = ML + 2.15
+    for num, site in stats:
+        add_text(
+            slide, sx, y + 0.06, 1.55, band_h - 0.12,
+            [[(num, BLUE, True, 26)], [(site, INK, True, 14)]],
+            size=14, align=PP_ALIGN.CENTER, anchor="ctr",
+        )
+        sx += 1.55
+    add_text(
+        slide, sx + 0.10, y + 0.08, ML + CW - 0.14 - sx - 0.10, band_h - 0.16,
+        [[("1,671 句流失中，186 句沒抱怨就找出口。母體是論壇發言者，不是全體車主。", INK, False, 15)]],
+        size=15, anchor="ctr",
+    )
+    gap = 0.14
     card_w = (CW - gap) / 2
-    card_y = y + 1.32
-    card_h = 7.02 - card_y
+    card_y = y + band_h + 0.12
+    card_h = BOT - card_y
     left = [
-        ("客群 Persona（客群輪廓）", f"四種流失樣貌；過保精算派 511 人", f"第 {file_page('P7')} 頁"),
+        ("客群 Persona（客群輪廓）", "四種流失樣貌；過保精算派 511 人", f"第 {file_page('P7')} 頁"),
         ("高風險議題", "零件供應 17.3%、價格 15.0%", f"第 {file_page('P3')} 頁"),
         ("整體市場輿情", "售後語料 21,183 句；186 句沒抱怨就走", f"第 {file_page('P5')} 頁"),
         ("AI 技術／模型", "r4 本機模型 F1 0.685", f"第 {file_page('P6')}、{file_page('P10')} 頁"),
@@ -753,57 +1194,74 @@ def build_p1(slide, y):
         ("產出 1", "AI 網路輿情洞察系統架構與報告", left),
         ("產出 2", "針對目標 Persona（客群輪廓）的 AI 溝通計畫與系統流程", right),
     ]
+    head_h = 0.70
     for i, (head, title, items) in enumerate(panels):
         x = ML + i * (card_w + gap)
         add_card(slide, x, card_y, card_w, card_h)
         add_text(
-            slide, x + 0.12, card_y + 0.06, card_w - 0.22, 0.62,
-            [[(head, BLUE, True, 20)], [(title, INK, True, 14)]],
-            size=14,
+            slide, x + 0.14, card_y + 0.06, card_w - 0.28, head_h,
+            [[(head, BLUE, True, 20)], [(title, INK, True, 15)]],
+            size=15,
         )
-        row_top = card_y + 0.72
-        row_h = (card_h - 0.78) / 4
+        row_top = card_y + head_h + 0.12
+        row_h = (card_h - head_h - 0.20) / 4
         for n, (name, body, page) in enumerate(items, start=1):
             yy = row_top + (n - 1) * row_h
+            if n > 1:
+                add_line(slide, x + 0.14, yy - 0.02, x + card_w - 0.14, yy - 0.02, color=GRID, width=0.75, name="divider")
+            add_pill(slide, x + 0.14, yy + 0.08, 0.36, 0.36, str(n), size=14)
             add_text(
-                slide, x + 0.12, yy, card_w - 0.22, row_h - 0.04,
+                slide, x + 0.62, yy + 0.02, card_w - 0.76, row_h - 0.06,
                 [
-                    [(f"{n}  {name}", NAVY, True, 18)],
+                    [(name, INK, True, 18)],
                     [(body, INK, False, 16)],
-                    [(page, BLUE, True, 16)],
+                    [(page, BLUE, True, 15)],
                 ],
-                size=16,
+                size=16, anchor="ctr",
             )
 
 
+def flow_box(slide, x, y, w, h, blocks, size=15, line=BLUE, fill="F7FBFF", align=PP_ALIGN.CENTER):
+    """流程方塊：淡藍底、藍框、文字置中。全冊的流程圖（第 5、8、9、18 頁）共用。"""
+    card = add_card(slide, x, y, w, h, fill=fill, line=line)
+    add_text(slide, x + 0.08, y + 0.05, w - 0.16, h - 0.10, blocks, size=size, align=align, anchor="ctr")
+    return card
+
+
+def down_arrow(slide, cx, y, h=0.22, w=0.22, color=BLUE):
+    arrow = slide.shapes.add_shape(MSO_SHAPE.DOWN_ARROW, Inches(cx - w / 2), Inches(y), Inches(w), Inches(h))
+    arrow.fill.solid()
+    arrow.fill.fore_color.rgb = color
+    arrow.line.fill.background()
+    return arrow
+
+
 def build_p2(slide, y):
-    # 上半：現況／目標，右側三張卡只留動作，數字改放下面匯流圖。
-    upper = 2.28
-    left_w = 7.55
+    # 上半：As-Is／To-Be 左、三個訊號右；下半：三個前兆並排匯流（已核准的邏輯，不動）。
+    upper = 2.50
+    left_w = 7.80
     gap = 0.10
     card_h = (upper - gap) / 2
-    add_card(slide, ML, y, left_w, card_h)
-    add_text(
-        slide, ML + 0.14, y + 0.06, left_w - 0.26, card_h - 0.10,
+    card_text(
+        slide, ML, y, left_w, card_h,
         [
-            [("As-Is", BLUE, True, 16)],
-            [("只靠客訴與回廠紀錄，人流失之後才知道。1,671 句裡 186 句沒抱怨就找出口。", INK, False, 14)],
-            [("使用者是售後決策者與服務廠客戶關係人員。", MUTED, False, 13)],
+            [("As-Is", BLUE, True, 18)],
+            [("只靠客訴與回廠紀錄，人流失之後才知道。1,671 句裡 186 句沒抱怨就找出口。", INK, False, 15)],
+            [("使用者是售後決策者與服務廠客戶關係人員。", MUTED, False, 14)],
         ],
-        size=14,
+        size=15, pad_x=0.12,
     )
-    add_card(slide, ML, y + card_h + gap, left_w, card_h)
-    add_text(
-        slide, ML + 0.14, y + card_h + gap + 0.06, left_w - 0.26, card_h - 0.10,
+    card_text(
+        slide, ML, y + card_h + gap, left_w, card_h,
         [
-            [("To-Be", BLUE, True, 16)],
-            [("三個訊號並行。到期前 90 天進名單，第 60 天再開口。", INK, False, 14)],
-            [("公開輿情加上 CRM，在離開原廠之前先辨識。", INK, False, 14)],
+            [("To-Be", BLUE, True, 18)],
+            [("三個訊號並行。到期前 90 天進名單，第 60 天再開口。", INK, False, 15)],
+            [("公開輿情加上 CRM，在離開原廠之前先辨識。", INK, False, 15)],
         ],
-        size=14,
+        size=15, pad_x=0.12,
     )
-    right_x = ML + left_w + 0.12
-    right_w = CW - left_w - 0.12
+    right_x = ML + left_w + 0.14
+    right_w = CW - left_w - 0.14
     shorts = [
         ("過保", "到期前先找到人"),
         ("刪項", "回廠時再問一次"),
@@ -812,19 +1270,15 @@ def build_p2(slide, y):
     rh = (upper - 2 * 0.08) / 3
     for i, (head, body) in enumerate(shorts):
         yy = y + i * (rh + 0.08)
-        add_card(slide, right_x, yy, right_w, rh)
-        add_text(
-            slide, right_x + 0.10, yy + 0.04, right_w - 0.16, rh - 0.06,
-            [[(head, INK, True, 15)], [(body, INK, False, 13)]],
-            size=13,
-        )
-    flow_y = y + upper + 0.10
-    flow_h = 7.02 - flow_y
+        card_text(slide, right_x, yy, right_w, rh,
+                  [[(head, INK, True, 17)], [(body, INK, False, 15)]], size=15, pad_y=0.05, anchor="ctr")
+    flow_y = y + upper + 0.12
+    flow_h = BOT - flow_y
     add_card(slide, ML, flow_y, CW, flow_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.12, flow_y + 0.04, CW - 0.24, 0.28,
-        [[("三個前兆並排，匯流後才是離開；資料沒有先後順序", NAVY, True, 13)]],
-        size=13, margin=0.0,
+        slide, ML + 0.14, flow_y + 0.06, CW - 0.28, 0.30,
+        [[("三個前兆並排，匯流後才是離開；資料沒有先後順序", NAVY, True, 14)]],
+        size=14, margin=0.0, anchor="ctr",
     )
     precursors = [
         ("過保", "過保 62 句、保固內 17 句", "觸發：到期前 90 天"),
@@ -834,113 +1288,80 @@ def build_p2(slide, y):
     inner_x, inner_w = ML + 0.14, CW - 0.28
     gap_x = 0.12
     bw = (inner_w - 2 * gap_x) / 3
-    by = flow_y + 0.34
-    bh = 1.08
+    by = flow_y + 0.42
+    arrow_h = 0.24
+    merge_h = 0.58
+    out_h = 0.58
+    bh = BOT - 0.14 - out_h - arrow_h - merge_h - arrow_h - by
     for i, (head, line, sub) in enumerate(precursors):
         xx = inner_x + i * (bw + gap_x)
-        add_card(slide, xx, by, bw, bh, fill="F7FBFF", line=BLUE)
-        add_text(
-            slide, xx + 0.06, by + 0.06, bw - 0.12, bh - 0.10,
-            [
-                [(head, INK, True, 18)],
-                [(line, BLUE, True, 14)],
-                [(sub, NAVY, False, 13)],
-            ],
-            size=14, align=PP_ALIGN.CENTER,
-        )
-        arrow = slide.shapes.add_shape(
-            MSO_SHAPE.DOWN_ARROW,
-            Inches(xx + bw / 2 - 0.11), Inches(by + bh + 0.04),
-            Inches(0.22), Inches(0.22),
-        )
-        arrow.fill.solid()
-        arrow.fill.fore_color.rgb = BLUE
-        arrow.line.fill.background()
-    merge_y = by + bh + 0.30
-    merge_h = 0.58
-    add_card(slide, inner_x, merge_y, inner_w, merge_h, fill="F7FBFF", line=BLUE)
-    add_text(
-        slide, inner_x + 0.08, merge_y + 0.04, inner_w - 0.16, merge_h - 0.06,
-        [[("離開原廠", INK, True, 18), ("　　人走了才知道", NAVY, False, 14)]],
-        size=16, align=PP_ALIGN.CENTER, anchor="ctr",
-    )
-    mid_x = ML + CW / 2
-    arrow = slide.shapes.add_shape(
-        MSO_SHAPE.DOWN_ARROW,
-        Inches(mid_x - 0.11), Inches(merge_y + merge_h + 0.04),
-        Inches(0.22), Inches(0.22),
-    )
-    arrow.fill.solid()
-    arrow.fill.fore_color.rgb = BLUE
-    arrow.line.fill.background()
-    out_y = merge_y + merge_h + 0.30
-    out_h = 0.56
-    add_card(slide, inner_x, out_y, inner_w, out_h, fill="F7FBFF", line=BLUE)
-    add_text(
-        slide, inner_x + 0.08, out_y + 0.02, inner_w - 0.16, out_h - 0.04,
-        [[("一般外廠　736 句", BLUE, True, 20), ("　　可複選", NAVY, False, 14)]],
-        size=16, align=PP_ALIGN.CENTER, anchor="ctr",
-    )
+        flow_box(slide, xx, by, bw, bh,
+                 [[(head, INK, True, 18)], [(line, BLUE, True, 16)], [(sub, NAVY, False, 15)]], size=15)
+        down_arrow(slide, xx + bw / 2, by + bh + 0.02, h=arrow_h - 0.04)
+    merge_y = by + bh + arrow_h
+    flow_box(slide, inner_x, merge_y, inner_w, merge_h,
+             [[("離開原廠", INK, True, 18), ("　　人走了才知道", NAVY, False, 15)]], size=16)
+    down_arrow(slide, ML + CW / 2, merge_y + merge_h + 0.02, h=arrow_h - 0.04)
+    out_y = merge_y + merge_h + arrow_h
+    flow_box(slide, inner_x, out_y, inner_w, out_h,
+             [[("一般外廠　736 句", BLUE, True, 20), ("　　可複選", NAVY, False, 15)]], size=16)
+
+
+def stat_chips(slide, y, items, num_size=26, label_size=15, h=0.98):
+    """一列四格數字卡：數字藍粗、說明一行。回傳下一個 y。"""
+    gap = 0.10
+    n = len(items)
+    chip_w = (CW - (n - 1) * gap) / n
+    for i, (num, label) in enumerate(items):
+        x = ML + i * (chip_w + gap)
+        card_text(slide, x, y, chip_w, h,
+                  [[(num, BLUE, True, num_size)], [(label, INK, False, label_size)]],
+                  size=label_size, align=PP_ALIGN.CENTER, anchor="ctr", pad_x=0.08)
+    return y + h + 0.10
+
+
+def note_bar(slide, y, h, text, size=16, fill="EAF1F8", bold=False):
+    """內容區底部的一行說明。h 低於 0.7 時不列入卡片留白檢查。"""
+    card_text(slide, ML, y, CW, h, [[(text, INK, bold, size)]], size=size, fill=fill, anchor="ctr")
 
 
 def build_p3(slide, y):
-    items = [
+    y = stat_chips(slide, y, [
         ("17.3%", "零件供應最高"),
         ("15.0%", "價格次高"),
         ("1.4%", "銷售交車最低"),
         ("61%", "態度負面；流失 4.7%"),
-    ]
-    gap = 0.10
-    chip_w = (CW - 3 * gap) / 4
-    chip_h = 0.92
-    for i, (num, label) in enumerate(items):
-        x = ML + i * (chip_w + gap)
-        add_card(slide, x, y, chip_w, chip_h)
-        add_text(
-            slide, x + 0.08, y + 0.04, chip_w - 0.14, chip_h - 0.06,
-            [[(num, BLUE, True, 26)], [(label, INK, False, 14)]],
-            size=14, align=PP_ALIGN.CENTER,
-        )
-    fig_y = y + chip_h + 0.08
-    note_h = 0.58
-    fig_h = fit_pic(slide, "F1.png", ML, fig_y, CW, 7.02 - fig_y - note_h - 0.06)
-    note_y = fig_y + fig_h + 0.06
-    add_card(slide, ML, note_y, CW, 7.02 - note_y, fill="EAF1F8")
-    add_text(
-        slide, ML + 0.12, note_y + 0.04, CW - 0.24, 7.02 - note_y - 0.06,
-        [[("對應接觸點：待料通知（R5），話術見附錄 A3。零件勝算比 2.58、價格 2.64，分母 21,183 句。", INK, False, 16)]],
-        size=16,
+    ])
+    note_h = 0.62
+    rows = figv()["F1"]
+    chart_bars(
+        slide, ML, y, CW, BOT - note_h - 0.10 - y,
+        [r["name"] for r in rows], [r["p"] * 100 for r in rows],
+        errs=[(r["lo"] * 100, r["hi"] * 100) for r in rows], highlight=0,
+        title="零件供應流失率最高（17.3%），銷售交車最低", ylabel="流失率（%）",
+        name="chart:F1",
     )
+    note_bar(slide, BOT - note_h, note_h,
+             "對應接觸點：待料通知（R5），話術見附錄 A3。零件勝算比 2.58、價格 2.64，分母 21,183 句。")
 
 
 def build_p4(slide, y):
-    items = [
+    y = stat_chips(slide, y, [
         ("736", "一般外廠（句）"),
         ("234／135", "自備料／DIY"),
         ("62／17", "過保／保固內"),
         ("9,000／3,500", "定保口述價"),
-    ]
-    gap = 0.10
-    chip_w = (CW - 3 * gap) / 4
-    chip_h = 0.92
-    for i, (num, label) in enumerate(items):
-        x = ML + i * (chip_w + gap)
-        add_card(slide, x, y, chip_w, chip_h)
-        add_text(
-            slide, x + 0.06, y + 0.04, chip_w - 0.10, chip_h - 0.06,
-            [[(num, BLUE, True, 22)], [(label, INK, True, 14)]],
-            size=14, align=PP_ALIGN.CENTER,
-        )
-    fig_y = y + chip_h + 0.08
-    note_h = 0.58
-    fig_h = fit_pic(slide, "F3.png", ML, fig_y, CW, 7.02 - fig_y - note_h - 0.06)
-    note_y = fig_y + fig_h + 0.06
-    add_card(slide, ML, note_y, CW, 7.02 - note_y, fill="EAF1F8")
-    add_text(
-        slide, ML + 0.12, note_y + 0.04, CW - 0.24, 7.02 - note_y - 0.06,
-        [[("去向可複選，母體 1,671 句流失。定保價是論壇口述中位數，原廠 9,000、外廠 3,500，不是公告價。", INK, False, 16)]],
-        size=16,
+    ], num_size=24)
+    note_h = 0.62
+    rows = figv()["F3"]
+    chart_bars(
+        slide, ML, y, CW, BOT - note_h - 0.10 - y,
+        [r["name"] for r in rows], [r["n"] for r in rows], highlight=0, fmt="{:,.0f}",
+        title="1,671 句流失裡，替代去向以一般外廠最多（736 句）", ylabel="句數（一句可多選）",
+        tick_fmt=fmt_int, name="chart:F3",
     )
+    note_bar(slide, BOT - note_h, note_h,
+             "去向可複選，母體 1,671 句流失。定保價是論壇口述中位數，原廠 9,000、外廠 3,500，不是公告價。")
 
 
 def build_p5(slide, y):
@@ -948,6 +1369,7 @@ def build_p5(slide, y):
     scale_rows_r = ["數量", "5,765 篇", "225,157（22.5 萬）", "235,775（23.6 萬）", "21,183", "1,671"]
     qual_l = ["指標（售後句）", "關鍵欄缺失率", "重複率", "一致性率", "異常值率", "完整性率"]
     qual_r = ["結果", "0.00%", "0.00%", "100%", "7.77%", "100%"]
+
     def pairs(labels, values):
         out = []
         for i, (a, b) in enumerate(zip(labels, values)):
@@ -957,36 +1379,50 @@ def build_p5(slide, y):
                 out.append([cell_text(a), cell_text(b)])
         return out
 
-    add_table(slide, ML, y, 6.05, 2.05, pairs(scale_rows_l, scale_rows_r), [3.15, 2.90], font=13)
-    add_table(slide, ML + 6.35, y, 6.07, 2.05, pairs(qual_l, qual_r), [3.35, 2.72], font=13)
-    note_y = y + 2.12
-    note_h = 0.66
-    add_card(slide, ML, note_y, CW, note_h)
-    add_text(
-        slide, ML + 0.12, note_y + 0.04, CW - 0.24, note_h - 0.06,
+    table_h = 2.56
+    row_h = [0.40] + [(table_h - 0.40) / 5] * 5
+    add_table(slide, ML, y, 6.05, table_h, pairs(scale_rows_l, scale_rows_r), [3.15, 2.90], font=15, row_h=row_h)
+    add_table(slide, ML + 6.35, y, 6.07, table_h, pairs(qual_l, qual_r), [3.35, 2.72], font=15, row_h=row_h)
+    note_y = y + table_h + 0.10
+    note_h = 0.80
+    card_text(
+        slide, ML, note_y, CW, note_h,
         [[(
             "去識別：文本遮蔽 517 次，抽查 50 句（seed 42）漏網 0。"
             "超過 78 字的長句占 7.77%，只標記、不刪除。21,183 句仍全部進入標註。",
-            INK, False, 14,
+            INK, False, 17,
         )]],
-        size=14,
+        size=17, anchor="ctr",
     )
-    trend_y = note_y + note_h + 0.06
-    trend_h = 0.40
-    add_card(slide, ML, trend_y, CW, trend_h, fill="EAF1F8")
-    add_text(
-        slide, ML + 0.12, trend_y + 0.02, CW - 0.24, trend_h - 0.02,
-        [[(
-            "整體輿情：2026Q3 流失率 4.2%，上季 5.3%，去年同季 10.9%（至 9/19）。佐證見附錄 A2b 的 F9。",
-            INK, False, 14,
-        )]],
-        size=14, anchor="ctr",
-    )
-    fig_y = trend_y + trend_h + 0.06
-    fit_pic(slide, "F9_pipeline.png", ML, fig_y, CW, 7.02 - fig_y)
+    trend_y = note_y + note_h + 0.10
+    trend_h = 0.56
+    note_bar(slide, trend_y, trend_h,
+             "整體輿情：2026Q3 流失率 4.2%，上季 5.3%，去年同季 10.9%（至 9/19）。佐證見附錄 A2b 的 F9。", size=16)
+    # 資料處理鏈（原 F9_pipeline.png），改畫原生方塊：數字轉抄 P5 與 T7 品質報告。
+    pipe_y = trend_y + trend_h + 0.10
+    pipe_h = BOT - pipe_y
+    add_card(slide, ML, pipe_y, CW, pipe_h)
+    nodes = [
+        ("爬取留言", "22.5 萬則"),
+        ("切句・去重・去識別", "23.6 萬句"),
+        ("售後關鍵詞篩選", "21,183 句"),
+        ("五指標品質檢查", "超過 78 字只標記"),
+        ("進入標註", "供模型與報告"),
+    ]
+    inner_x, inner_w = ML + 0.14, CW - 0.28
+    gap = 0.22
+    bw = (inner_w - 4 * gap) / 5
+    bh = pipe_h - 0.24
+    by = pipe_y + 0.12
+    for i, (title, sub) in enumerate(nodes):
+        xx = inner_x + i * (bw + gap)
+        flow_box(slide, xx, by, bw, bh,
+                 [[(str(i + 1), BLUE, True, 26)], [(title, INK, True, 16)], [(sub, NAVY, False, 16)]], size=16)
+        if i < 4:
+            add_arrow(slide, xx + bw + 0.04, by + bh / 2, xx + bw + gap - 0.04, by + bh / 2, width=1.75)
 
 
-# 第 9 頁（P6）用原生形狀重畫 F8：方塊、L# 標籤、連接線都是 pptx 物件，投影不會糊。
+# 第 9 頁（P6）與附錄 A0 用原生形狀畫 F8：方塊、L# 標籤、連接線都是 pptx 物件，投影不會糊。
 # 文字逐字對齊 pipeline/make_flow_figure.py；只重排換行，不刪字。
 F8_PROC, F8_DB, F8_DB_EDGE = "EAF1F8", "F6EFE3", RGBColor(0x8A, 0x6D, 0x3B)
 F8_HUMAN, F8_HUMAN_EDGE = "F3C1BD", RGBColor(0xC0, 0x39, 0x2B)
@@ -994,22 +1430,6 @@ F8_BAND_TOP, F8_BAND_BOT = "F7F9FC", "FBF7F7"
 F8_GREY = RGBColor(0x5C, 0x65, 0x70)
 F8_BODY = RGBColor(0x3C, 0x46, 0x53)
 F8_FONT = 13
-
-
-def add_pill(slide, x, y, w, h, text, size=12):
-    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
-    try:
-        shape.adjustments[0] = 0.3
-    except Exception:
-        pass
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = BLUE
-    shape.line.fill.background()
-    tf = shape.text_frame
-    for side in ("margin_left", "margin_right", "margin_top", "margin_bottom"):
-        setattr(tf, side, Inches(0.01))
-    set_tf(tf, [[(text, WHITE, True, size)]], size, align=PP_ALIGN.CENTER, anchor="ctr")
-    return shape
 
 
 def add_flow_box(slide, x, y, w, h, head, body, fill=F8_PROC, edge=BLUE, tag=None, dashed=False, thick=False, size=F8_FONT, max_lines=None):
@@ -1048,16 +1468,26 @@ def add_arrow(slide, x1, y1, x2, y2, color=BLUE, width=1.5, head=True, both=Fals
     return line
 
 
-def build_p6(slide, y):
+def draw_f8(slide, y, *, compact=False):
+    """畫 F8 雙迴路。compact=False 是第 9 頁（含八層圖例與說明列）；
+    compact=True 給附錄 A0：兩帶標題各併成一行、資料庫列矮一點、不畫圖例，回傳下緣 y。"""
     gap = 0.10
     size = F8_FONT
     # ---- 上帶：產出 1，七個方塊，欄寬依內文最長一行配置 ----
-    top_y, top_h = y, 1.66
+    # compact 只把上帶標題併成一行；下帶的溝通迴路說明太長，仍維持兩行。
+    head_h = 0.34 if compact else 0.56
+    bot_head_h = 0.56
+    top_y, top_h = y, head_h + 1.10
     add_card(slide, ML, top_y, CW, top_h, fill=F8_BAND_TOP)
-    add_text(slide, ML + 0.10, top_y + 0.05, CW - 0.2, 0.26,
-             [[("產出 1：AI 網路輿情洞察系統架構與報告", BLUE, True, size)]], size=size)
-    add_text(slide, ML + 0.10, top_y + 0.29, CW - 0.2, 0.25,
-             [[("洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", BLUE, False, 12)]], size=12)
+    if compact:
+        add_text(slide, ML + 0.10, top_y + 0.05, CW - 0.2, 0.26,
+                 [[("產出 1：AI 網路輿情洞察系統架構與報告", BLUE, True, size),
+                   ("　洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", BLUE, False, 12)]], size=size)
+    else:
+        add_text(slide, ML + 0.10, top_y + 0.05, CW - 0.2, 0.26,
+                 [[("產出 1：AI 網路輿情洞察系統架構與報告", BLUE, True, size)]], size=size)
+        add_text(slide, ML + 0.10, top_y + 0.29, CW - 0.2, 0.25,
+                 [[("洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", BLUE, False, 12)]], size=12)
     tw = [1.46, 1.74, 1.68, 2.00, 1.96, 1.42, 1.56]
     top = [
         ("論壇爬蟲", ["每日抓新留言", "三站公開論壇"], F8_PROC, BLUE, "L0", False),
@@ -1068,7 +1498,7 @@ def build_p6(slide, y):
         ("資料庫 A", ["報告池", "日／週／季報、", "預警紀錄"], F8_DB, F8_DB_EDGE, None, False),
         ("Dashboard 1–3", ["1 戰情總覽", "2 報告池・", "3 原始輿情"], F8_PROC, BLUE, None, True),
     ]
-    box_y, box_h = top_y + 0.56, 1.06
+    box_y, box_h = top_y + head_h, 1.06
     xs = []
     x = ML
     for w in tw:
@@ -1081,11 +1511,16 @@ def build_p6(slide, y):
     risk_x = xs[3] + tw[3] / 2  # 流失判斷底緣中點
 
     # ---- 兩帶之間：風險升為高 → 觸發 ----
-    mid_y = top_y + top_h + 0.16
-    bot_y = top_y + top_h + 0.32
+    band_gap = 0.26 if compact else 0.32
+    mid_y = top_y + top_h + band_gap / 2
+    bot_y = top_y + top_h + band_gap
     gut_x = ML + 0.10  # 直向線走帶內左緣
-    bot_box_y, bot_box_h = bot_y + 0.56, 1.06
-    bot_h = 7.02 - 0.94 - bot_y  # 留給圖例與說明列；底卡先畫，灰線與紅線才不會被蓋住
+    bot_box_y, bot_box_h = bot_y + bot_head_h, 1.06
+    db_h = 0.80 if compact else 0.98
+    db_y = bot_box_y + bot_box_h + 0.16
+    red_y = db_y + db_h + 0.08
+    # 底卡先畫，灰線與紅線才不會被蓋住。第 9 頁沿用 v3.2 的高度（留 0.94 吋給圖例與說明列）。
+    bot_h = (red_y + 0.10 - bot_y) if compact else (BOT - 0.94 - bot_y)
     add_card(slide, ML, bot_y, CW, bot_h, fill=F8_BAND_BOT)
     add_arrow(slide, risk_x, box_y + box_h, risk_x, mid_y, color=F8_GREY, width=1.25, head=False)
     add_arrow(slide, risk_x, mid_y, gut_x, mid_y, color=F8_GREY, width=1.25, head=False)
@@ -1120,8 +1555,6 @@ def build_p6(slide, y):
     for bx, w in zip(bxs[:-1], bw[:-1]):
         add_arrow(slide, bx + w, bot_box_y + 0.50, bx + w + 0.08, bot_box_y + 0.50)
 
-    db_y = bot_box_y + bot_box_h + 0.16
-    db_h = 0.98
     # 第 1 欄：灰字註記（觸發事件下方）
     add_text(slide, bxs[0], db_y, bw[0], db_h,
              [[("客訴回訪不計頻率上限；", F8_GREY, False, size)], [("觀察名單車主也回訪", F8_GREY, False, size)]], size=size, anchor="ctr")
@@ -1129,9 +1562,9 @@ def build_p6(slide, y):
     add_text(slide, bxs[1], db_y, bw[1], db_h,
              [[("回頭校正觸發門檻，", F8_HUMAN_EDGE, False, size)], [("再訓練 r4", F8_HUMAN_EDGE, False, size)]], size=size, anchor="b")
     # 第 3、4 欄：資料庫 C、D
-    add_flow_box(slide, bxs[2], db_y, bw[2], db_h, "資料庫 C", ["知識庫 76 條・保固條款", "Dashboard 4 可查閱"], fill=F8_DB, edge=F8_DB_EDGE, max_lines=3)
+    add_flow_box(slide, bxs[2], db_y, bw[2], db_h, "資料庫 C", ["知識庫 76 條・保固條款", "Dashboard 4 可查閱"], fill=F8_DB, edge=F8_DB_EDGE, max_lines=3 if not compact else None)
     add_arrow(slide, bxs[2] + bw[2] / 2, db_y, bxs[2] + bw[2] / 2, bot_box_y + bot_box_h, color=F8_DB_EDGE)
-    add_flow_box(slide, bxs[3], db_y, bw[3], db_h, "資料庫 D", ["溝通佇列：草稿、", "審核狀態、投遞結果"], fill=F8_DB, edge=F8_DB_EDGE, max_lines=3)
+    add_flow_box(slide, bxs[3], db_y, bw[3], db_h, "資料庫 D", ["溝通佇列：草稿、", "審核狀態、投遞結果"], fill=F8_DB, edge=F8_DB_EDGE, max_lines=3 if not compact else None)
     add_arrow(slide, bxs[3] + bw[3] / 2, bot_box_y + bot_box_h, bxs[3] + bw[3] / 2, db_y, color=F8_DB_EDGE, both=True)
     # 第 5–6 欄：內網說明；右側留 0.28 吋給紅線直向段
     note_w = bw[4] + 0.08 + bw[5] - 0.28
@@ -1143,16 +1576,17 @@ def build_p6(slide, y):
 
     # ---- 紅色回饋迴路：KPI 回饋 → 帶底 → 左緣 → 觸發事件 ----
     red_x = bxs[5] + bw[5] - 0.14
-    red_y = db_y + db_h + 0.08
     add_arrow(slide, red_x, bot_box_y + bot_box_h, red_x, red_y, color=F8_HUMAN_EDGE, width=1.5, head=False)
     add_arrow(slide, red_x, red_y, gut_x, red_y, color=F8_HUMAN_EDGE, width=1.5, head=False)
     add_arrow(slide, gut_x, red_y, gut_x, bot_box_y + bot_box_h - 0.30, color=F8_HUMAN_EDGE, width=1.5, head=False)
     add_arrow(slide, gut_x, bot_box_y + bot_box_h - 0.30, ML + 0.22, bot_box_y + bot_box_h - 0.30, color=F8_HUMAN_EDGE, width=1.5)
+    if compact:
+        return bot_y + bot_h
 
     # ---- 八層圖例 ----
     legend_y = bot_y + bot_h + 0.06
     bar_h = 0.30
-    bar_y = 7.02 - bar_h
+    bar_y = BOT - bar_h
     legend_h = bar_y - 0.06 - legend_y
     lgap = 0.08
     cell_w = (CW - 7 * lgap) / 8
@@ -1183,62 +1617,78 @@ def build_p6(slide, y):
         [[("先讀上帶產出 1（左到右），再讀下帶產出 2。外緣 L# 對下面八格。KPI 回頭校正門檻，再訓練 r4。", INK, False, 14)]],
         size=14, anchor="ctr",
     )
+    return BOT
+
+
+def build_p6(slide, y):
+    draw_f8(slide, y, compact=False)
 
 
 def build_p7(slide, y):
     gap = 0.10
     card_w = (CW - 3 * gap) / 4
-    card_h = 1.38
+    card_h = 1.62
     for i, (name, people, share, feature, quote) in enumerate(PERSONAS):
         x = ML + i * (card_w + gap)
-        add_card(slide, x, y, card_w, card_h)
-        add_text(
-            slide, x + 0.08, y + 0.04, card_w - 0.12, card_h - 0.06,
+        card_text(
+            slide, x, y, card_w, card_h,
             [
-                [(name, INK, True, 15)],
-                [(f"{people}　{share}", BLUE, True, 16)],
-                [(feature, INK, False, 13)],
-                [(quote, NAVY, False, 12)],
+                [(name, INK, True, 17)],
+                [(f"{people}　{share}", BLUE, True, 18)],
+                [(feature, INK, False, 14)],
+                [(quote, NAVY, False, 13)],
             ],
-            size=13,
+            size=14, pad_x=0.12,
         )
-    fig_y = y + card_h + 0.08
-    foot_h = 0.46
-    fig_h = fit_pic(slide, "F5.png", ML, fig_y, CW, 7.02 - fig_y - foot_h - 0.06)
-    foot_y = 7.02 - foot_h
-    add_card(slide, ML, foot_y, CW, foot_h, fill="EAF1F8")
-    add_text(
-        slide, ML + 0.12, foot_y + 0.04, CW - 0.22, foot_h - 0.06,
-        [[("分母：高、中風險 1,280 人。未分類 199 人列觀察名單，不投遞。Persona 為規則定義，每項可回溯原句。", INK, False, 15)]],
-        size=15,
+    fig_y = y + card_h + 0.10
+    foot_h = 0.58
+    f5 = figv()["F5"]
+    chart_heatmap(
+        slide, ML, fig_y, CW, BOT - foot_h - 0.10 - fig_y,
+        f5["personas"], f5["aspects"], f5["matrix"],
+        title="過保精算派近半句子在談價格，品質失望派則集中在技術品質",
+        legend="格內數字為面向出現比例（%）", name="chart:F5",
     )
+    note_bar(slide, BOT - foot_h, foot_h,
+             "分母：高、中風險 1,280 人。未分類 199 人列觀察名單，不投遞。Persona 為規則定義，每項可回溯原句。", size=15)
 
 
 def build_p8(slide, y):
-    fig_h = fit_pic(slide, "F7.png", ML, y, CW, 2.45)
-    note_y = y + fig_h + 0.06
-    add_card(slide, ML, note_y, CW, 0.48, fill="EAF1F8")
-    add_text(
-        slide, ML + 0.12, note_y + 0.04, CW - 0.22, 0.40,
-        [[("高 1,049／中 231／低 5,114。高風險 74% 有流失句，低風險 1.8%。過保精算派 511 人，平均風險 0.73。", INK, False, 15)]],
-        size=15,
-    )
-    y = note_y + 0.54
+    f7 = figv()["F7"]
+    chart_h = 2.20
+    add_card(slide, ML, y, CW, chart_h, fill=CHART_FILL, name="chart:F7:card")
+    add_text(slide, ML + 0.14, y + 0.08, CW - 0.28, 0.32,
+             [[("過保精算派人數最多，平均風險也最高", INK, True, 16)]],
+             size=16, align=PP_ALIGN.CENTER, anchor="ctr", name="chart:F7:title")
+    half = (CW - 0.30) / 2
+    peak = max(range(len(f7["risks"])), key=lambda i: f7["risks"][i])
+    chart_bars(slide, ML, y + 0.40, half, chart_h - 0.40, f7["personas"], f7["counts"],
+               highlight=peak, fmt="{:,.0f}", ylabel="發言者數", tick_fmt=fmt_int,
+               name="chart:F7a", card=False, label_size=13)
+    chart_bars(slide, ML + half + 0.30, y + 0.40, half, chart_h - 0.40, f7["personas"], f7["risks"],
+               highlight=peak, fmt="{:.2f}", ylabel="平均風險分", ymax=1.0,
+               name="chart:F7b", card=False, label_size=13)
+    note_y = y + chart_h + 0.08
+    note_h = 0.50
+    note_bar(slide, note_y, note_h,
+             "高 1,049／中 231／低 5,114。高風險 74% 有流失句，低風險 1.8%。過保精算派 511 人，平均風險 0.73。", size=15)
     header = [cell_text(h, WHITE, True) for h in ("規則", "輿情訊號", "CRM 欄位")]
     body = [header]
     for code, signal in SIGNALS:
         body.append([
-            cell_text(code),
-            cell_text(signal),
+            cell_text(code, BLUE, True),
+            cell_text(signal, INK, True),
             cell_text(CRM_FIELDS[code], INK, False),
         ])
-    table_y = y
-    table_h = 7.02 - table_y - 0.42
-    add_table(slide, ML, table_y, CW, table_h, body, [1.3, 2.4, 8.72], font=12)
+    table_y = note_y + note_h + 0.08
+    foot_h = 0.28
+    table_h = BOT - foot_h - 0.04 - table_y
+    row_h = [0.34] + [(table_h - 0.34) / 8] * 8
+    add_table(slide, ML, table_y, CW, table_h, body, [1.1, 2.2, 9.12], font=13, row_h=row_h)
     add_text(
-        slide, ML, table_y + table_h + 0.02, CW, 0.36,
+        slide, ML, BOT - foot_h, CW, foot_h,
         [[("CRM 欄位為業界通用假設，導入時以和泰 DMS 實際欄位替換；模型輸入由論壇文字改為工單備註與客訴文字，架構不變。", MUTED, False, 12)]],
-        size=12,
+        size=12, margin=0.0, anchor="ctr",
     )
 
 
@@ -1248,53 +1698,43 @@ def build_p9(slide, y):
         ("3,760", "帶上下文複核", "重疊 3,760 句。Mobile01、PTT 用 Sonnet，Dcard 用 GPT 再看一次。"),
         ("98.4%", "對得起來", "c≥2 一致率 98.4%。九面向標完，殘餘僅 4 句，不再另開面向。"),
     ]
+    note_h = 0.86
     gap = 0.12
-    note_h = 0.70
-    card_w = (CW - 2 * gap) / 3
-    card_h = 2.15
+    left_w = 7.40
+    body_h = BOT - note_h - gap - y
+    step_h = (body_h - 2 * 0.10) / 3
     for i, (num, head, body) in enumerate(steps):
-        x = ML + i * (card_w + gap)
-        add_card(slide, x, y, card_w, card_h)
-        add_text(
-            slide, x + 0.12, y + 0.08, card_w - 0.22, card_h - 0.12,
+        yy = y + i * (step_h + 0.10)
+        card_text(
+            slide, ML, yy, left_w, step_h,
             [
-                [(num, BLUE, True, 40)],
-                [(head, INK, True, 18)],
-                [(body, INK, False, 16)],
+                [(num, BLUE, True, 36), ("   " + head, INK, True, 20)],
+                [(body, INK, False, 18)],
             ],
-            size=16,
+            size=18, anchor="ctr",
         )
-    gold_y = y + card_h + gap
-    half = (CW - gap) / 2
-    add_card(slide, ML, gold_y, half, card_h, fill="FDEBD0")
-    add_text(
-        slide, ML + 0.16, gold_y + 0.08, half - 0.28, card_h - 0.14,
+    right_x = ML + left_w + gap
+    right_w = CW - left_w - gap
+    gold_h = (body_h - 0.12) / 2
+    golds = [
+        ("F1  0.82", BLUE, "本機模型，與 Sonnet 同級", "人工金標 300 句。正例僅 9 句，召回區間 0.45–0.94。0.82 還不是穩定成績。"),
+        ("F1  0.50", ORANGE, "Haiku 零樣本", "同一批人工金標。召回約 57% 不夠，所以才要兩段式，不能只靠初篩。"),
+    ]
+    for i, (num, color, head, body) in enumerate(golds):
+        yy = y + i * (gold_h + 0.12)
+        card_text(
+            slide, right_x, yy, right_w, gold_h,
+            [[(num, color, True, 44)], [(head, INK, True, 22)], [(body, INK, False, 18)]],
+            size=18, fill="FDEBD0", anchor="ctr", pad_x=0.12,
+        )
+    note_y = BOT - note_h
+    card_text(
+        slide, ML, note_y, CW, note_h,
         [
-            [("F1  0.82", BLUE, True, 40)],
-            [("本機模型，與 Sonnet 同級", INK, True, 18)],
-            [("人工金標 300 句。正例僅 9 句，召回區間 0.45–0.94。0.82 還不是穩定成績。", INK, False, 16)],
+            [("九面向全量標完，殘餘僅 4 句。Haiku 單獨召回約 57%，所以第二段才複核。", INK, False, 18)],
+            [("正例僅 9 句，召回區間 0.45–0.94。本機 F1 0.82 還不是穩定成績。", INK, False, 18)],
         ],
-        size=16,
-    )
-    add_card(slide, ML + half + gap, gold_y, half, card_h, fill="FDEBD0")
-    add_text(
-        slide, ML + half + gap + 0.16, gold_y + 0.08, half - 0.28, card_h - 0.14,
-        [
-            [("F1  0.50", ORANGE, True, 40)],
-            [("Haiku 零樣本", INK, True, 18)],
-            [("同一批人工金標。召回約 57% 不夠，所以才要兩段式，不能只靠初篩。", INK, False, 16)],
-        ],
-        size=16,
-    )
-    note_y = gold_y + card_h + gap
-    add_card(slide, ML, note_y, CW, note_h, fill="EAF1F8")
-    add_text(
-        slide, ML + 0.14, note_y + 0.06, CW - 0.26, note_h - 0.08,
-        [
-            [("九面向全量標完，殘餘僅 4 句。Haiku 單獨召回約 57%，所以第二段才複核。", INK, False, 16)],
-            [("正例僅 9 句，召回區間 0.45–0.94。本機 F1 0.82 還不是穩定成績。", INK, False, 16)],
-        ],
-        size=16, anchor="ctr",
+        size=18, fill="EAF1F8", anchor="ctr",
     )
 
 
@@ -1305,18 +1745,17 @@ def build_p10(slide, y):
     rows = []
     for i, row in enumerate((headers, haiku, r4)):
         rows.append([cell_text(v, WHITE, True) if i == 0 else cell_text(v, INK, c == 0) for c, v in enumerate(row)])
-    table_h = 1.08
-    add_table(slide, ML, y, 6.15, table_h, rows, [2.15, 1.0, 1.0, 1.0, 1.0], font=13)
+    left_w = 6.15
+    table_h = 1.14
+    add_table(slide, ML, y, left_w, table_h, rows, [2.15, 1.0, 1.0, 1.0, 1.0], font=15, row_h=[0.36, 0.39, 0.39])
     note_y = y + table_h + 0.10
-    note_h = 0.58
-    add_card(slide, ML, note_y, 6.15, note_h)
-    add_text(
-        slide, ML + 0.12, note_y + 0.04, 5.90, note_h - 0.08,
-        [
-            [("同一 600 句測試集比較。", MUTED, False, 14)],
-            [("校準曲線見附錄 A2b。", MUTED, False, 14)],
-        ],
-        size=14,
+    prefill_x, prefill_w = ML + left_w + 0.25, CW - left_w - 0.25
+    prefill_h = 1.86
+    note_h = prefill_h - table_h - 0.10
+    card_text(
+        slide, ML, note_y, left_w, note_h,
+        [[("同一 600 句測試集比較。", MUTED, False, 15)], [("校準曲線見附錄 A2b。", MUTED, False, 15)]],
+        size=15, anchor="ctr",
     )
     lines = [
         "Prefill-only：只輸出各等級機率，不生成文字。",
@@ -1324,11 +1763,9 @@ def build_p10(slide, y):
         "資料不出門，推論零 API 費。",
         "同一 600 句：r4 F1 0.685，高於 Haiku 的 0.58。",
     ]
-    prefill_x, prefill_w = ML + 6.40, 6.02
-    prefill_h = note_y + note_h - y
     add_card(slide, prefill_x, y, prefill_w, prefill_h)
     add_text(
-        slide, prefill_x + 0.16, y + 0.06, prefill_w - 0.30, 1.12,
+        slide, prefill_x + 0.14, y + 0.06, prefill_w - 0.28, 1.24,
         [[(line, INK, False, 16)] for line in lines],
         size=16,
     )
@@ -1336,14 +1773,14 @@ def build_p10(slide, y):
     chips = [("輸入", 1.05), ("只取下一詞機率", 2.05), ("各等級機率", 1.55)]
     chip_gap = 0.28
     chip_h = 0.42
-    chip_y = y + prefill_h - chip_h - 0.06
-    chip_x = prefill_x + 0.16
+    chip_y = y + prefill_h - chip_h - 0.08
+    chip_x = prefill_x + 0.14
     for label, chip_w in chips:
         add_card(slide, chip_x, chip_y, chip_w, chip_h, fill="EAF1F8")
         add_text(
             slide, chip_x, chip_y + 0.04, chip_w, chip_h - 0.06,
-            [[(label, BLUE, True, 13)]],
-            size=13, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.02,
+            [[(label, BLUE, True, 14)]],
+            size=14, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.02,
         )
         chip_x += chip_w
         if label != chips[-1][0]:
@@ -1362,26 +1799,23 @@ def build_p10(slide, y):
     ]
     gap = 0.10
     cw = (CW - 4 * gap) / 5
-    sy = note_y + note_h + 0.14
-    bar_h = 1.12
-    bar_y = 7.02 - bar_h
-    step_h = min(2.62, bar_y - 0.10 - sy)
+    sy = y + prefill_h + 0.12
+    bar_h = 1.20
+    bar_y = BOT - bar_h
+    step_h = bar_y - 0.10 - sy
     for i, (head, body) in enumerate(steps):
         x = ML + i * (cw + gap)
-        add_card(slide, x, sy, cw, step_h)
         blocks = [[(line, BLUE, True, 16)] for line in head.split("\n")]
         blocks.append([(body, INK, False, 16)])
-        add_text(slide, x + 0.08, sy + 0.06, cw - 0.14, step_h - 0.10,
-                 blocks, size=16, anchor="ctr")
-    add_card(slide, ML, bar_y, CW, bar_h, fill="EAF1F8")
-    add_text(
-        slide, ML + 0.12, bar_y + 0.06, CW - 0.22, bar_h - 0.10,
+        card_text(slide, x, sy, cw, step_h, blocks, size=16, pad_x=0.10, anchor="ctr")
+    card_text(
+        slide, ML, bar_y, CW, bar_h,
         [
             [("架構沿用開源 LLM2Jev。8 GB 可訓可推，推論零 API 費。", INK, False, 16)],
             [("最高信心桶 n=71、實際約 68%（約七成），見附錄 A2b。", INK, False, 16)],
             [("同一 600 句測試集：r4 F1 0.685，高於 Haiku 零樣本的 F1 0.58。", INK, False, 16)],
         ],
-        size=16, anchor="ctr",
+        size=16, fill="EAF1F8", anchor="ctr",
     )
 
 
@@ -1392,24 +1826,23 @@ def build_p11(slide, y):
         ("0 元", "本機就能跑", "Qwen3-4B，8 GB 約 5 小時，每句 0.7 秒。", "測試集 F1 0.685。CRM 文字不上雲。"),
         ("0.080", "只有一組被資料分開", "k=4 的 ARI 0.08，四個假設沒有全被拆開。", "簡報仍用可回溯原句的規則，不假裝分群已分開。"),
     ]
-    gap_x, gap_y = 0.12, 0.10
+    gap_x, gap_y = 0.14, 0.10
     card_w = (CW - gap_x) / 2
-    card_h = 1.28
+    card_h = 1.32
     for i, (num, head, how, how2) in enumerate(cards):
         col, row = i % 2, i // 2
         x = ML + col * (card_w + gap_x)
         yy = y + row * (card_h + gap_y)
-        add_card(slide, x, yy, card_w, card_h)
-        add_text(
-            slide, x + 0.14, yy + 0.06, card_w - 0.26, card_h - 0.10,
+        card_text(
+            slide, x, yy, card_w, card_h,
             [
                 [(num, BLUE, True, 28), ("   " + head, INK, True, 18)],
                 [(how, INK, False, 16)],
                 [(how2, INK, False, 16)],
             ],
-            size=16,
+            size=16, anchor="ctr",
         )
-    table_y = y + 2 * card_h + gap_y + 0.08
+    table_y = y + 2 * card_h + gap_y + 0.12
     rows = [
         [cell_text(h, WHITE, True) for h in ("", "只看客訴", "本案")],
         [cell_text("沒抱怨就走", INK, True), cell_text("看不到這群人"), cell_text("靜默出走者 128 人，替代 55% 到一般外廠")],
@@ -1417,7 +1850,9 @@ def build_p11(slide, y):
         [cell_text("在哪裡算", INK, True), cell_text("資料得出門"), cell_text("8 GB 本機，每句 0.7 秒，F1 0.685，API 費 0")],
         [cell_text("四個客群", INK, True), cell_text("主觀標籤"), cell_text("ARI 0.08；只有靜默出走者被資料獨立支持")],
     ]
-    add_table(slide, ML, table_y, CW, 7.02 - table_y, rows, [1.7, 3.3, 7.42], font=14)
+    table_h = BOT - table_y
+    row_h = [0.40] + [(table_h - 0.40) / 4] * 4
+    add_table(slide, ML, table_y, CW, table_h, rows, [1.7, 3.3, 7.42], font=16, row_h=row_h)
 
 
 def load_p12_messages() -> list[dict]:
@@ -1475,41 +1910,43 @@ def build_p12(slide, y):
                 [(preview, INK, False)],
             ])
         rows.append(row)
-    foot_h = 0.78
-    add_table(slide, ML, y, CW, 7.02 - y - foot_h - 0.10, rows, [2.08, 3.4467, 3.4467, 3.4466], font=12)
-    foot_y = 7.02 - foot_h
-    add_card(slide, ML, foot_y, CW, foot_h)
-    add_text(
-        slide, ML + 0.16, foot_y + 0.08, CW - 0.32, 7.02 - foot_y - 0.12,
+    foot_h = 0.82
+    table_h = BOT - y - foot_h - 0.12
+    row_h = [0.42] + [(table_h - 0.42) / 4] * 4
+    add_table(slide, ML, y, CW, table_h, rows, [2.08, 3.4467, 3.4467, 3.4466], font=14, row_h=row_h)
+    foot_y = BOT - foot_h
+    card_text(
+        slide, ML, foot_y, CW, foot_h,
         [
-            [("12 則對 76 條官方條款查核通過。人工核准才投遞。", INK, True, 16)],
-            [("十二則只列前 40 字。待料全文見附錄 A3，客訴回訪見附錄 A5。", INK, False, 15)],
+            [("12 則對 76 條官方條款查核通過。人工核准才投遞。", INK, True, 17)],
+            [("十二則只列前 40 字。待料全文見附錄 A3，客訴回訪見附錄 A5。", INK, False, 16)],
         ],
-        size=15,
+        size=16, anchor="ctr",
     )
 
 
 def build_p13(slide, y):
     left_w = 5.35
+    # 第三個數是高度權重：依標題一行加內文行數（15pt、寬 5.07 吋）估，內文 1 行 0.74、2 行 1.0、3 行 1.36。
     items = [
-        ("需求", "人走了才知道。過保、刪項、間隔拉長時先找到人。", 0.76),
-        ("技術", "判斷、分群、生成都有原型。8 條規則已對到 DMS 欄位。", 0.76),
-        ("財務：人力成本節省", "人工逐句篩 2.1 萬句約需 106 人時（估）。本機模型 4.1 小時跑完，零 API 費。人力改花在審名單與話術。", 1.08),
-        ("風險", "五項主要風險，對策與責任人見右表。", 0.74),
-        ("怎麼讀右表", "技術：寫錯條款只引用 76 條並人工審；模糊句多報就當初篩。資料註明論壇母體，上線改 CRM。法規只用去識別版。客群寫成可回溯原句的規則。", 1.28),
+        ("需求", "人走了才知道。過保、刪項、間隔拉長時先找到人。", 0.74),
+        ("技術", "判斷、分群、生成都有原型。8 條規則已對到 DMS 欄位。", 1.00),
+        ("財務：人力成本節省", "人工逐句篩 2.1 萬句約需 106 人時（估）。本機模型 4.1 小時跑完，零 API 費。人力改花在審名單與話術。", 1.36),
+        ("風險", "五項主要風險，對策與責任人見右表。", 0.72),
+        ("怎麼讀右表", "技術：寫錯條款只引用 76 條並人工審；模糊句多報就當初篩。資料註明論壇母體，上線改 CRM。法規只用去識別版。客群寫成可回溯原句的規則。", 1.36),
     ]
+    gap = 0.08
+    avail = BOT - y - gap * (len(items) - 1)
+    scale = avail / sum(rh for _, _, rh in items)
     yy = y
     for head, body, rh in items:
-        add_card(slide, ML, yy, left_w, rh)
-        add_text(
-            slide, ML + 0.12, yy + 0.06, left_w - 0.22, rh - 0.10,
-            [
-                [(head, BLUE, True, 16)],
-                [(body, INK, False, 14)],
-            ],
-            size=14,
+        rh *= scale
+        card_text(
+            slide, ML, yy, left_w, rh,
+            [[(head, BLUE, True, 17)], [(body, INK, False, 15)]],
+            size=15, anchor="ctr",
         )
-        yy += rh + 0.08
+        yy += rh + gap
     # 風險登錄表前 5 列（iPAS骨架頁_草稿.md）。四欄：層別、風險、對策、責任人。
     risks = [
         ("層別", "風險", "對策", "責任人"),
@@ -1524,20 +1961,19 @@ def build_p13(slide, y):
         if i == 0:
             rows.append([cell_text(c, WHITE, True) for c in cols])
         else:
-            rows.append([cell_text(cols[0], INK, True), cell_text(cols[1]), cell_text(cols[2]), cell_text(cols[3], INK, True)])
+            rows.append([cell_text(cols[0], INK, True), cell_text(cols[1]), cell_text(cols[2]), cell_text(cols[3], BLUE, True)])
+    table_h = BOT - y
+    row_h = [0.42] + [(table_h - 0.42) / 5] * 5
     add_table(
-        slide, ML + left_w + 0.14, y, CW - left_w - 0.14, 7.02 - y, rows,
-        [0.78, 2.15, 3.15, 0.85],
-        font=13,
+        slide, ML + left_w + 0.14, y, CW - left_w - 0.14, table_h, rows,
+        [0.78, 2.25, 3.02, 0.88],
+        font=14, row_h=row_h,
     )
 
 
 def build_p14(slide, y):
-    add_text(
-        slide, ML, y, CW, 0.28,
-        [[("層級對照 iPAS：成果＝業務、流程＝應用、模型＝系統", MUTED, False, 12)]],
-        size=12, margin=0.0,
-    )
+    # 說明列都放進淺底橫條，和其他頁的說明列同一個樣子，頁面也不會留白色空檔。
+    note_bar(slide, y, 0.30, "層級對照 iPAS：成果＝業務、流程＝應用、模型＝系統", size=13, fill="F4F7FB")
     headers = ["層級", "指標", "現況", "目標"]
     data = [
         ("成果", "高風險車主 12 個月回廠率", "導入後建立基期", "提升 10 個百分點＊"),
@@ -1553,24 +1989,23 @@ def build_p14(slide, y):
             cell_text(now),
             cell_text(goal),
         ])
-    add_table(slide, ML, y + 0.26, CW, 2.05, rows, [1.15, 3.55, 3.85, 3.87], font=10)
-    add_text(
-        slide, ML, y + 2.32, CW, 0.22,
-        [[("＊假設值，導入後以基期實測校正。模型現況用隨機層人工金標，與目標同一把尺。", MUTED, False, 11)]],
-        size=11, margin=0.0,
-    )
-    moat_y = y + 2.58
-    moat_h = 1.48
-    add_card(slide, ML, moat_y, CW, moat_h)
-    add_text(
-        slide, ML + 0.14, moat_y + 0.06, CW - 0.28, moat_h - 0.10,
+    table_y = y + 0.38
+    table_h = 1.50
+    add_table(slide, ML, table_y, CW, table_h, rows, [1.0, 3.3, 3.9, 4.22], font=13,
+              row_h=[0.34] + [(table_h - 0.34) / 4] * 4)
+    foot_y = table_y + table_h + 0.06
+    note_bar(slide, foot_y, 0.30, "＊假設值，導入後以基期實測校正。模型現況用隨機層人工金標，與目標同一把尺。", size=13, fill="F4F7FB")
+    moat_y = foot_y + 0.40
+    moat_h = 1.34
+    card_text(
+        slide, ML, moat_y, CW, moat_h,
         [
-            [("數據護城河：三項資產，全部留在和泰內網", BLUE, True, 16)],
+            [("數據護城河：三項資產，全部留在和泰內網", BLUE, True, 17)],
             [("語料：2.1 萬句標註＋300 句人工金標。每季重標，審核回饋持續再訓練。", INK, False, 15)],
             [("模型：自有 4B 模型，8 GB 顯卡 5 小時可重訓。推論零 API 費，資料不出門。", INK, False, 15)],
             [("知識庫：76 條官方條款＋每則話術查核紀錄。價格與保固只引用這 76 條。", INK, False, 15)],
         ],
-        size=15,
+        size=15, anchor="ctr",
     )
     phases = [
         ("資料接入", "4 週", "R1–R8 換成\nDMS 實際欄位\n工單去識別後接入"),
@@ -1581,71 +2016,72 @@ def build_p14(slide, y):
     ]
     gap = 0.12
     card_w = (CW - 4 * gap) / 5
-    base = moat_y + moat_h + 0.08
-    phase_h = 7.02 - 0.32 - base
+    base = moat_y + moat_h + 0.10
+    total_h = 0.32
+    phase_h = BOT - total_h - 0.10 - base
     for i, (name, weeks, doing) in enumerate(phases):
         x = ML + i * (card_w + gap)
         add_card(slide, x, base, card_w, phase_h)
+        add_pill(slide, x + 0.12, base + 0.12, 0.36, 0.36, str(i + 1), size=14)
         add_text(
-            slide, x + 0.06, base + 0.06, card_w - 0.12, phase_h - 0.10,
-            [
-                [(str(i + 1) + "  " + name, BLUE, True, 14)],
-                [(weeks, NAVY, True, 13)],
-                *[[(line, MUTED, False, 12)] for line in doing.split("\n")],
-            ],
-            size=11,
+            slide, x + 0.56, base + 0.10, card_w - 0.66, 0.40,
+            [[(name, BLUE, True, 16)]],
+            size=16, anchor="ctr",
         )
-    add_text(
-        slide, ML, base + phase_h + 0.04, CW, 0.30,
-        [[("合計約 24 週（持續監控不設終點）。", INK, True, 14)]],
-        size=14, margin=0.0,
-    )
+        add_text(
+            slide, x + 0.12, base + 0.56, card_w - 0.22, phase_h - 0.62,
+            [
+                [(weeks, NAVY, True, 15)],
+                *[[(line, INK, False, 15)] for line in doing.split("\n")],
+            ],
+            size=15,
+        )
+    note_bar(slide, BOT - total_h, total_h, "合計約 24 週（持續監控不設終點）。", size=15, bold=True)
 
 
 def build_p15(slide, y):
-    mock_h = 1.62
-    h = fit_pic(slide, "F8.png", ML, y, CW, 7.02 - y - mock_h - 0.08)
-    rx = ML
-    rw = CW
-    mock_y = y + h + 0.08
-    rh = 7.02 - mock_y
+    """附錄 A0：上方雙迴路（原生 F8，緊湊版），下方審核佇列線框。"""
+    bottom = draw_f8(slide, y, compact=True)
+    rx, rw = ML, CW
+    mock_y = bottom + 0.10
+    rh = BOT - mock_y
     add_card(slide, rx, mock_y, rw, rh, fill="F4F7FB", line=NAVY)
-    bar = slide.shapes.add_shape(
-        MSO_SHAPE.RECTANGLE, Inches(rx), Inches(mock_y), Inches(rw), Inches(0.36)
-    )
-    bar.fill.solid()
-    bar.fill.fore_color.rgb = NAVY
-    bar.line.fill.background()
+    bar_h = 0.34
+    bar = add_rect(slide, rx, mock_y, rw, bar_h, fill=NAVY)
     add_text(
-        slide, rx + 0.10, mock_y + 0.02, rw - 0.20, 0.32,
+        slide, rx + 0.14, mock_y + 0.02, rw - 0.28, bar_h - 0.04,
         [[("Dashboard 5　溝通審核佇列", WHITE, True, 14)]],
         size=14, anchor="ctr", margin=0.0,
     )
+    body_y = mock_y + bar_h + 0.05
+    body_h = rh - bar_h - 0.10
+    # 左：佇列一筆的欄位；右：三個動作鈕，鈕下一行說明。
+    btn_w, btn_gap, btn_h = 1.30, 0.10, 0.46
+    right_w = 3 * btn_w + 2 * btn_gap
+    right_x = rx + rw - 0.16 - right_w
     add_text(
-        slide, rx + 0.16, mock_y + 0.42, 4.3, rh - 0.96,
+        slide, rx + 0.16, body_y, 6.0, body_h,
         [
-            [("車主 H-7F3A　風險 高", INK, True, 16)],
-            [("Persona　過保精算派　觸發 R1 過保", INK, False, 14)],
-            [("話術草稿　引用條目 41、52", NAVY, False, 15)],
+            [("車主 H-7F3A　風險 高", INK, True, 18)],
+            [("Persona　過保精算派　觸發 R1 過保", INK, False, 18)],
+            [("話術草稿　引用條目 41、52", NAVY, False, 18)],
         ],
-        size=15,
+        size=18, anchor="ctr",
     )
     labels = [("核准", "2F5D9F"), ("改寫", "44546A"), ("退回", "C05600")]
-    btn_gap = 0.10
-    btn_w = 1.35
-    btn_y = mock_y + 0.48
+    btn_y = body_y + 0.04
     for i, (label, fill) in enumerate(labels):
-        bx = rx + rw - 0.16 - (3 - i) * (btn_w + btn_gap) + btn_gap
-        add_card(slide, bx, btn_y, btn_w, 0.46, fill=fill)
+        bx = right_x + i * (btn_w + btn_gap)
+        add_card(slide, bx, btn_y, btn_w, btn_h, fill=fill)
         add_text(
-            slide, bx, btn_y + 0.04, btn_w, 0.38,
+            slide, bx, btn_y + 0.03, btn_w, btn_h - 0.06,
             [[(label, WHITE, True, 16)]],
             size=16, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.0,
         )
     add_text(
-        slide, rx + 0.16, mock_y + rh - 0.42, rw - 0.32, 0.34,
-        [[("未核准不投遞。決賽再給可操作版。代號為示意，不是論壇帳號。", MUTED, False, 14)]],
-        size=14,
+        slide, right_x - 1.3, btn_y + btn_h + 0.04, right_w + 1.3, body_y + body_h - btn_y - btn_h - 0.04,
+        [[("未核准不投遞。決賽再給可操作版。代號為示意，不是論壇帳號。", MUTED, False, 13)]],
+        size=13, align=PP_ALIGN.RIGHT, anchor="t",
     )
 
 
@@ -1718,35 +2154,71 @@ def build_a1(slide, y):
     body = [[cell_text(h, WHITE, True) for h in ("名詞", "定義", "本案用法")]]
     for a, b, c in rows:
         body.append([cell_text(a, INK, True), cell_text(b), cell_text(c)])
-    add_table(slide, ML, y, CW, 5.85, body, [2.55, 4.70, 5.17], font=11)
+    col_w = [2.35, 4.85, 5.22]
+    font = 12
+    heights, total = table_row_heights(body, col_w, font, header_h=0.36, pad=0.08, min_h=0.30)
+    avail = BOT - y
+    if total < avail:  # 還有餘裕就平均分給每列，表格填滿內容區
+        extra = (avail - total) / (len(heights) - 1)
+        heights = [heights[0]] + [h + extra for h in heights[1:]]
+    add_table(slide, ML, y, CW, min(total, avail), body, col_w, font=font, row_h=heights)
 
 
-def _stack_figs(slide, y, items):
-    cursor = y
-    for fig, cap, extra in items:
-        fig_h = fit_pic(slide, fig, ML, cursor, CW, 2.28)
-        cap_y = cursor + fig_h + 0.04
-        add_card(slide, ML, cap_y, CW, 0.50, fill="EAF1F8")
-        add_text(
-            slide, ML + 0.12, cap_y + 0.04, CW - 0.22, 0.42,
-            [[(cap + "　" + extra, INK, False, 16)]],
-            size=16,
-        )
-        cursor = cap_y + 0.56
+def caption_bar(slide, y, h, code, cap, extra):
+    card_text(slide, ML, y, CW, h,
+              [[(code, BLUE, True, 16), ("　" + cap, INK, True, 16), (extra, INK, False, 16)]],
+              size=16, fill="EAF1F8", anchor="ctr")
 
 
 def build_a2(slide, y):
-    _stack_figs(slide, y, [
-        ("F2.png", "F2　論壇發言者流失率。", "Mobile01 18.2%、PTT 14.1%、Dcard 6.8%。母體是論壇發言者，χ²=99.5。"),
-        ("F4.png", "F4　發言者風險分布。", "高風險發言者 1,049 人（16.4%）；約八成在低風險。"),
-    ])
+    cap_h = 0.56
+    gap = 0.08
+    chart_h = (BOT - y - 2 * cap_h - 3 * gap) / 2
+    f2 = figv()["F2"]
+    chart_bars(
+        slide, ML, y, CW, chart_h,
+        [r["name"] for r in f2], [r["p"] * 100 for r in f2],
+        errs=[(r["lo"] * 100, r["hi"] * 100) for r in f2],
+        highlight=max(range(len(f2)), key=lambda i: f2[i]["p"]),
+        title="Mobile01 論壇發言者流失率 18.2%，高於 Dcard 的 6.8%", ylabel="論壇發言者流失率（%）",
+        name="chart:F2", bar_frac=0.5,
+    )
+    caption_bar(slide, y + chart_h + gap, cap_h, "F2", "論壇發言者流失率。",
+                "　Mobile01 18.2%、PTT 14.1%、Dcard 6.8%。母體是論壇發言者，χ²=99.5。")
+    f4 = figv()["F4"]
+    y2 = y + chart_h + gap + cap_h + gap
+    series = [(src, f4["counts"][src]) for src in f4["sources"]]
+    blue_set = [BLUE_LIGHT, BLUE_MID, BLUE]
+    red_set = [RED_LIGHT, RED_MID, RED]
+    colors = [blue_set, blue_set, red_set]
+    chart_stacked(
+        slide, ML, y2, CW, chart_h, f4["levels"], series, colors,
+        title=f"高風險發言者 {f4['n_high']:,} 人，占全部發言者 {100 * f4['n_high'] / f4['n_all']:.1f}%",
+        ylabel="發言者數", legend=list(zip(f4["sources"], blue_set)), name="chart:F4",
+    )
+    caption_bar(slide, y2 + chart_h + gap, cap_h, "F4", "發言者風險分布。",
+                "　高風險發言者 1,049 人（16.4%）；約八成在低風險。風險等級：紅＝高。")
 
 
 def build_a2b(slide, y):
-    _stack_figs(slide, y, [
-        ("F6.png", "F6　校準曲線。", "最高信心桶 n=71，實際流失 68%。高分仍偏高，方向對。"),
-        ("F9.png", "F9　季趨勢預警。", "討論量達前 4 週平均 3 倍且至少 5 句就亮燈。"),
-    ])
+    # F6 原生散點在上；F9 季趨勢 PNG 依本格尺寸重畫（12.42×2.62 吋），貼進來不縮放、填滿整格。
+    cap_h = 0.50
+    gap = 0.08
+    f6 = figv()["F6"]["bins"]
+    chart_h = 2.08
+    hi = max(f6, key=lambda b: b["mean"])
+    chart_scatter(
+        slide, ML, y, CW, chart_h,
+        [(b["mean"] * 100, b["rate"] * 100, b["n"]) for b in f6],
+        title=f"高分仍偏高：預測接近 {hi['mean'] * 100:.0f}% 時，實際流失是 {hi['rate'] * 100:.0f}%",
+        xlabel="桶內平均預測機率（%）", ylabel="實際流失比例（%）", name="chart:F6",
+    )
+    caption_bar(slide, y + chart_h + gap, cap_h, "F6", "校準曲線。", "　最高信心桶 n=71，實際流失 68%。高分仍偏高，方向對。")
+    y2 = y + chart_h + gap + cap_h + gap
+    fig_h = BOT - cap_h - gap - y2
+    add_card(slide, ML, y2, CW, fig_h, fill=CHART_FILL, name="chart:F9:card")
+    fit_pic(slide, "F9.png", ML, y2, CW, fig_h)
+    caption_bar(slide, BOT - cap_h, cap_h, "F9", "季趨勢預警。", "　討論量達前 4 週平均 3 倍且至少 5 句就亮燈。")
 
 
 def load_a3_messages() -> list[dict]:
@@ -1792,22 +2264,25 @@ def load_a3_messages() -> list[dict]:
     return items
 
 
-def build_a3(slide, y):
-    msgs = load_a3_messages()
-    card_h = (7.02 - y - 0.12) / 2
+def message_cards(slide, y, msgs, touch_label):
+    """A3／A5 共用：兩張話術卡，全文 24pt，標題與引用 18pt，查核 15pt。"""
+    card_h = (BOT - y - 0.12) / 2
     for i, msg in enumerate(msgs):
         yy = y + i * (card_h + 0.12)
-        add_card(slide, ML, yy, CW, card_h)
-        add_text(
-            slide, ML + 0.14, yy + 0.06, CW - 0.26, card_h - 0.10,
+        card_text(
+            slide, ML, yy, CW, card_h,
             [
-                [(f"{msg['persona']} × 待料通知　{msg['channel']}", BLUE, True, 16)],
-                [(f"引用條目　{msg['cites']}", NAVY, True, 16)],
-                [(msg["text"], INK, False, 20)],
-                [(f"查核結果　{msg['check']}", MUTED, False, 14)],
+                [(f"{msg['persona']} × {touch_label}　{msg['channel']}", BLUE, True, 18)],
+                [(f"引用條目　{msg['cites']}", NAVY, True, 18)],
+                [(msg["text"], INK, False, 24)],
+                [(f"查核結果　{msg['check']}", MUTED, False, 15)],
             ],
-            size=16,
+            size=18, pad_y=0.10, anchor="ctr",
         )
+
+
+def build_a3(slide, y):
+    message_cards(slide, y, load_a3_messages(), "待料通知")
 
 
 def build_a4(slide, y):
@@ -1815,11 +2290,13 @@ def build_a4(slide, y):
     rows = [header]
     for code, signal in SIGNALS:
         rows.append([
-            cell_text(f"{code} {signal}", INK, True),
+            [[(code, BLUE, True), ("　" + signal, INK, True)]],
             cell_text(CRM_FIELDS[code]),
             cell_text(CRM_THRESHOLD[code]),
         ])
-    add_table(slide, ML, y, CW, 5.85, rows, [2.3, 5.3, 4.82], font=14)
+    table_h = BOT - y
+    row_h = [0.44] + [(table_h - 0.44) / 8] * 8
+    add_table(slide, ML, y, CW, table_h, rows, [2.3, 5.3, 4.82], font=16, row_h=row_h)
 
 
 def load_a5_messages() -> list[dict]:
@@ -1866,21 +2343,7 @@ def load_a5_messages() -> list[dict]:
 
 
 def build_a5(slide, y):
-    msgs = load_a5_messages()
-    card_h = (7.02 - y - 0.12) / 2
-    for i, msg in enumerate(msgs):
-        yy = y + i * (card_h + 0.12)
-        add_card(slide, ML, yy, CW, card_h)
-        add_text(
-            slide, ML + 0.14, yy + 0.06, CW - 0.26, card_h - 0.10,
-            [
-                [(f"{msg['persona']} × 客訴結案後 7 天回訪　{msg['channel']}", BLUE, True, 16)],
-                [(f"引用條目　{msg['cites']}", NAVY, True, 16)],
-                [(msg["text"], INK, False, 20)],
-                [(f"查核結果　{msg['check']}", MUTED, False, 14)],
-            ],
-            size=16,
-        )
+    message_cards(slide, y, load_a5_messages(), "客訴結案後 7 天回訪")
 
 
 BUILDERS = [build_toc, build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15, build_a1, build_a2, build_a2b, build_a3, build_a4, build_a5]
@@ -1952,7 +2415,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         )
     lines += [
         "",
-        "圖檔在 `reports/figures/`。洞察頁用 F1、F3、F5、F7。P5 用 F9_pipeline。P6 與附錄 A0 用 F8。附錄 A2 放 F2、F4，A2b 放 F6、F9。",
+        "圖欄是該頁對應的報告圖。自 v3.3 起 F1–F7 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 9 頁與附錄 A0 都用原生形狀（`draw_f8`）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。",
         "",
         "## 占位清單",
         "",
@@ -1994,7 +2457,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "```",
         "",
         "腳本列出非包含關係的形狀重疊、超出頁面或壓到頁尾來源列的形狀，以及每張預覽圖的 PIL 空白比例。文字放在卡片上、標籤放在方塊內這種包含關係不算重疊。",
-        "另列卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，低於 0.7 的會印出來。第 12–18 頁要以這個比例把卡片內空白壓到約兩成以內。",
+        "另列卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，低於 0.7 的會印出來；全冊每張文字卡都要達 0.7。名稱以 `chart` 開頭的形狀是原生圖表的圖區與長條，不是文字卡，不列入這項檢查。",
         "",
         "## 預覽",
         "",

@@ -2,6 +2,9 @@
 
   python pipeline/make_figures.py
   另：f_pipeline() 寫 reports/figures/F9_pipeline.png（不在 main 裡，避免連動重畫）。
+  python pipeline/make_figures.py --values-only
+    只把 F1–F7 畫上去的數字寫成 reports/figures/figure_values.json，
+    給 deck/build_deck.py 用 pptx 原生形狀重畫圖表；簡報腳本不重算統計。
 
 F1、F2 的分子分母沿用 reports/T7_stats_tests.md，誤差線為依該表重算的 Wilson 95% CI。
 F6 用 r4 ep2 的 600 句測試集（jev_lora_r4_ep2_pilot.jsonl）。
@@ -436,7 +439,104 @@ def f_pipeline():
     print(f"F9_pipeline.png {png_size(path)[0]}×{png_size(path)[1]}")
 
 
+def export_values():
+    """把 F1–F7 畫上去的數字寫成 JSON，簡報用原生形狀重畫時直接轉抄。計算方式與各 f*_ 函式相同。"""
+    import sys
+    sys.path.insert(0, str(ROOT / "pipeline"))
+    from label_aspects import ALTS, ASPECTS
+    import numpy as np
+
+    out = {}
+    rows = []
+    for name, k, n in ASPECT_TABLE:
+        p, lo, hi = wilson(k, n)
+        rows.append({"name": name, "p": p, "lo": lo, "hi": hi, "k": k, "n": n})
+    rows.sort(key=lambda r: -r["p"])
+    out["F1"] = rows
+    rows = []
+    for name, k, n in SOURCE_TABLE:
+        p, lo, hi = wilson(k, n)
+        rows.append({"name": name, "p": p, "lo": lo, "hi": hi, "k": k, "n": n})
+    out["F2"] = rows
+
+    pos = {r["sid"] for r in load_jsonl(P / "churn_positives.jsonl")}
+    counts = Counter()
+    for rec in load_jsonl(P / "aspect_labels.jsonl"):
+        if rec["sid"] not in pos:
+            continue
+        for name in rec.get("alt") or []:
+            if name in ALTS:
+                counts[name] += 1
+    out["F3"] = [{"name": name, "n": counts[name]} for name in sorted(ALTS, key=lambda a: -counts[a])]
+
+    risk_rows = load_jsonl(P / "authors_risk.jsonl")
+    levels = ("低", "中", "高")
+    stacks = {src: [] for src in SOURCE_ORDER}
+    for lv in levels:
+        sub = [r for r in risk_rows if r["level"] == lv]
+        c = Counter(r["source"] for r in sub)
+        for src in SOURCE_ORDER:
+            stacks[src].append(c.get(src, 0))
+    n_high = sum(stacks[src][2] for src in SOURCE_ORDER)
+    out["F4"] = {
+        "levels": list(levels),
+        "sources": [SOURCE_LABEL[s] for s in SOURCE_ORDER],
+        "counts": {SOURCE_LABEL[s]: stacks[s] for s in SOURCE_ORDER},
+        "n_high": n_high,
+        "n_all": len(risk_rows),
+    }
+
+    risk = {r["author_id"]: r for r in risk_rows}
+    persona_rows = load_jsonl(P / "authors_persona.jsonl")
+    order = [name for name in PERSONA_ORDER if any(r["persona"] == name for r in persona_rows)]
+    mat = []
+    for name in order:
+        members = [risk[r["author_id"]] for r in persona_rows if r["persona"] == name]
+        mat.append([
+            100 * sum(m["aspect_n"][a] / m["n"] for m in members) / len(members)
+            for a in ASPECTS
+        ])
+    out["F5"] = {"personas": order, "aspects": list(ASPECTS), "matrix": mat}
+
+    gold = {}
+    for rec in load_jsonl(P / "churn_verified.jsonl"):
+        gold[rec["sid"]] = 1 if int(rec["c"]) >= 2 else 0
+    xs, ys = [], []
+    for rec in load_jsonl(P / "jev_lora_r4_ep2_pilot.jsonl"):
+        p = float(rec["churn_p"]["2"]) + float(rec["churn_p"]["3"])
+        xs.append(p)
+        ys.append(gold[rec["sid"]])
+    xs, ys = np.array(xs), np.array(ys)
+    edges = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0000001]
+    bins = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        mask = (xs >= lo) & (xs < hi)
+        if mask.sum() == 0:
+            continue
+        bins.append({"mean": float(xs[mask].mean()), "rate": float(ys[mask].mean()), "n": int(mask.sum())})
+    out["F6"] = {"bins": bins}
+
+    persona_rows = [r for r in persona_rows if r["persona"] in PERSONA_ORDER]
+    order = [name for name in PERSONA_ORDER if any(r["persona"] == name for r in persona_rows)]
+    counts7, risks7 = [], []
+    for name in order:
+        members = [risk[r["author_id"]] for r in persona_rows if r["persona"] == name]
+        counts7.append(len(members))
+        risks7.append(sum(m["risk"] for m in members) / len(members))
+    out["F7"] = {"personas": order, "counts": counts7, "risks": risks7}
+
+    FIG.mkdir(parents=True, exist_ok=True)
+    path = FIG / "figure_values.json"
+    path.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"figure_values.json：F1 {len(out['F1'])} 列、F3 {len(out['F3'])} 列、"
+          f"F5 {len(out['F5']['personas'])}×{len(out['F5']['aspects'])}、F6 {len(bins)} 桶")
+
+
 def main():
+    import sys
+    if "--values-only" in sys.argv:
+        export_values()
+        return
     setup()
     f1_aspects()
     f2_sources()
@@ -448,6 +548,7 @@ def main():
         f7_persona_risk()
     else:
         print("skip F4 F5：風險表或 persona 尚未產出")
+    export_values()
 
 
 if __name__ == "__main__":

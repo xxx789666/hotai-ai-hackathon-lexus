@@ -5,6 +5,7 @@
 包含關係（文字框在卡片裡、小標在大方塊裡）不算重疊。
 卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，
 低於 0.7 的列出來。高度不到 0.7 吋的小卡、頁尾與頁首標籤不列入。
+名稱以 chart 開頭的形狀是原生圖表的圖區、長條與熱圖格，不是文字卡，也不列入。
 若同版預覽圖存在，另外印出每張的 PIL 空白比例：
 內容區（約 1.05 吋到 7.05 吋）裡 R、G、B 都 ≥ 250 的像素占比。
 淺底色卡片不算白。
@@ -152,6 +153,8 @@ def card_fill(items):
     texts = []
     for shape, rect, text in items:
         h = rect[3] - rect[1]
+        if (shape.name or "").startswith("chart"):
+            continue
         if shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE and h >= 0.70 and rect[1] < FOOTER_Y - 0.05:
             cards.append(rect)
             continue

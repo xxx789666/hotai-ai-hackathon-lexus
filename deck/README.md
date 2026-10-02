@@ -1,11 +1,11 @@
-# 初賽簡報 v3.2
+# 初賽簡報 v3.3
 
-和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.2.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
+和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.3.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
 
 ## 版本
 
-- 目前版號：v3.2。
-- 檔名規則：`deck/初賽簡報_v3.2.pptx`、`deck/preview/初賽簡報_v3.2.pdf`、`deck/preview/v3.2/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
+- 目前版號：v3.3。
+- 檔名規則：`deck/初賽簡報_v3.3.pptx`、`deck/preview/初賽簡報_v3.3.pdf`、`deck/preview/v3.3/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
 - 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。
 - 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。
 - 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。
@@ -46,7 +46,7 @@
 | 23 | A4 | 附錄 A4 CRM 觸發門檻（不計入 15 頁） | 八條規則的欄位與門檻；投影片只留欄位名 | — | `reports/T10_risk_persona_report.md`、`L7運作流程_草稿.md` |
 | 24 | A5 | 附錄 A5 客訴回訪話術（不計入 15 頁） | 客訴結案第 7 天回訪，不推銷、不要求刪評 | — | `客訴關懷策略_草稿.md`、`knowledge/generated_examples.md` |
 
-圖檔在 `reports/figures/`。洞察頁用 F1、F3、F5、F7。P5 用 F9_pipeline。P6 與附錄 A0 用 F8。附錄 A2 放 F2、F4，A2b 放 F6、F9。
+圖欄是該頁對應的報告圖。自 v3.3 起 F1–F7 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 9 頁與附錄 A0 都用原生形狀（`draw_f8`）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。
 
 ## 占位清單
 
@@ -84,10 +84,10 @@ python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 ```
 
 腳本列出非包含關係的形狀重疊、超出頁面或壓到頁尾來源列的形狀，以及每張預覽圖的 PIL 空白比例。文字放在卡片上、標籤放在方塊內這種包含關係不算重疊。
-另列卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，低於 0.7 的會印出來。第 12–18 頁要以這個比例把卡片內空白壓到約兩成以內。
+另列卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，低於 0.7 的會印出來；全冊每張文字卡都要達 0.7。名稱以 `chart` 開頭的形狀是原生圖表的圖區與長條，不是文字卡，不列入這項檢查。
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.2.pdf` 與 `deck/preview/v3.2/slide-01.png`–`slide-24.png`。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.3.pdf` 與 `deck/preview/v3.3/slide-01.png`–`slide-24.png`。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
