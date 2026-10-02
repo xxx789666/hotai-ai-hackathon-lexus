@@ -61,10 +61,10 @@ def main():
     ax.add_patch(FancyBboxPatch((1, 52), 190, 38, boxstyle="round,pad=0,rounding_size=2", fc=BAND_TOP, ec="#D5DEE8", lw=1, zorder=1))
     ax.add_patch(FancyBboxPatch((1, 0), 190, 49, boxstyle="round,pad=0,rounding_size=2", fc=BAND_BOT, ec="#E4D4D4", lw=1, zorder=1))
     ax.text(3, 85.5, "洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", fontsize=13, fontweight="bold", color=BLUE, va="center")
-    ax.text(28, 45.5, "溝通迴路｜事件觸發：CRM 訊號 → Persona → RAG 話術 → 人工核准 → 投遞 → KPI 回饋", fontsize=13, fontweight="bold", color=HUMAN_EDGE, va="center")
+    ax.text(28, 45.5, "溝通迴路｜事件觸發：CRM 訊號・客訴結案 → Persona → RAG 話術 → 人工核准 → 投遞 → KPI 回饋", fontsize=13, fontweight="bold", color=HUMAN_EDGE, va="center")
 
-    # 上帶：7 個方塊
-    w, h, yt = 23, 15, 60
+    # 上帶：7 個方塊。下帶觸發方塊改三行後，上下方塊一起加高 2，避免字擠出框。
+    w, h, yt = 23, 17, 58
     xs = [2, 29.5, 57, 84.5, 112, 139.5, 167]
     top = [
         ("論壇爬蟲", "每日抓新留言\n三站公開論壇", PROC, BLUE),
@@ -83,20 +83,24 @@ def main():
     # 下帶：6 個方塊 + 2 個資料庫
     yb = 22
     bot = [
-        ("觸發事件", "CRM 命中 R1–R8\n或風險分數升為高", PROC, BLUE),
+        ("觸發事件", "CRM 命中 R1–R8（含 R5 待料）\n客訴結案 → 第 7 天回訪\n或風險分數升為高", PROC, BLUE),
         ("判定 Persona", "四類之一\n未分類 → 觀察名單", PROC, BLUE),
         ("RAG 生成話術", "檢索條款 → 生成\n→ 第二輪事實查核", PROC, BLUE),
         ("人工審核", "Dashboard 5 審核佇列\n核准或改寫才投遞", HUMAN_FILL, HUMAN_EDGE),
         ("投遞", "LINE・App\nEmail・專員電話", PROC, BLUE),
-        ("KPI 回饋", "點擊・預約・回廠\n寫回 CRM", PROC, BLUE),
+        ("KPI 回饋", "點擊・預約・回廠\n客訴再發率・寫回 CRM", PROC, BLUE),
     ]
     for x, (head, body, f, e) in zip(xs[:6], bot):
-        box(ax, x, yb, w, h, head + "\n" + body, fill=f, edge=e, lw=2.2 if head == "人工審核" else 1.4)
+        box(ax, x, yb, w, h, head + "\n" + body, fill=f, edge=e, lw=2.2 if head == "人工審核" else 1.4,
+            size=10 if head == "觸發事件" else 11)
     for a, b in zip(xs[:5], xs[1:6]):
         arrow(ax, (a + w, yb + h / 2), (b, yb + h / 2))
+    # 回饋箭在 x=13.5 垂直上升，小字改放箭頭右側，仍在觸發方塊正下方。
+    ax.text(16.2, 19.0, "客訴回訪不計頻率上限；觀察名單車主也回訪", fontsize=9, color=GREY,
+            ha="left", va="center", zorder=4)
 
     # 資料庫 C、D 與 Dashboard 4
-    box(ax, 57, 3, 23, 13, "資料庫 C\n知識庫 72 條・保固條款\nDashboard 4 可查閱", fill=DB_FILL, edge=DB_EDGE)
+    box(ax, 57, 3, 23, 13, "資料庫 C\n知識庫 76 條・保固條款\nDashboard 4 可查閱", fill=DB_FILL, edge=DB_EDGE)
     arrow(ax, (68.5, 16), (68.5, yb), color=DB_EDGE)
     box(ax, 92, 3, 23, 13, "資料庫 D\n溝通佇列：草稿、審核\n狀態、投遞結果", fill=DB_FILL, edge=DB_EDGE)
     arrow(ax, (100, yb), (100, 16), color=DB_EDGE, style="<|-|>")
