@@ -8,7 +8,7 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v2.4（22 張：封面、摘要、P1–P15、A1–A5）。
+內容是 v2.6（22 張：封面、摘要、P1–P15、A1–A5）。
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "2.4"
+DECK_VERSION = "2.6"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -70,7 +70,7 @@ NOTES = [
     "出口在一般外廠；定保口述中位原廠九千、外廠三千五，不是公告價。",
     "IQR 定 78 字門檻，上游已去掉 15,182 句重複。",
     "兩個迴路：洞察每天進報告池，關懷由客訴結案等事件觸發，審核後才投遞。",
-    "分群只獨立支持靜默出走者；其餘 Persona 用規則定義。",
+    "分群只獨立支持靜默出走者；其餘 Persona（客群輪廓）用規則定義。",
     "高風險七成四真有流失句；過保精算派人最多，平均風險也最高。",
     "人工兩人 κ 0.40，不一致處要經仲裁後才成為金標。",
     "r4 原值 P 0.617、R 0.769、κ 0.642。",
@@ -92,9 +92,9 @@ SUMMARY_RIGHT = {
     "challenge": [[("AI 流失風險洞察與智慧溝通：打造Lexus車主忠誠度的終極防線", INK, False)]],
     "audience": [[("Lexus 售後服務部門決策者與服務廠客戶關係人員", INK, False)]],
     "design": [
-        [("1. 從公開輿情 21,183 句售後語料自動標註流失意圖與九大面向，找出 4 種流失 Persona。", INK, False)],
+        [("1. 從公開輿情 21,183 句售後語料自動標註流失意圖與九大面向，找出 4 種流失 Persona（客群輪廓）。", INK, False)],
         [("2. 本機自訓 System-One 決策模型即時給出流失機率與可解釋規則，作者層級高／中／低分級。", INK, False)],
-        [("3. Persona × 接觸點的 RAG 關懷內容生成，價格與保固只引用官方知識庫並經人工審核。", INK, False)],
+        [("3. Persona（客群輪廓） × 接觸點的 RAG 關懷內容生成，價格與保固只引用官方知識庫並經人工審核。", INK, False)],
     ],
     "ai": [[(
         "Claude Haiku／Sonnet 兩段式標註、GPT-5.6 Sol 複核、Qwen3-4B QLoRA 自訓 prefill-only 決策模型"
@@ -139,7 +139,7 @@ SLIDES = [
         "id": "P4",
         "section": "2 目標對象與痛點分析",
         "title": "出口是一般外廠；過保後價差把人推走",
-        "source": "來源：風險與 Persona 報告（T10）、專案架構、知識庫價格摘錄（T11）",
+        "source": "來源：風險與 Persona（客群輪廓）報告（T10）、專案架構、知識庫價格摘錄（T11）",
         "reports": [
             "reports/T10_risk_persona_report.md",
             "專案架構_2026-09-23.md",
@@ -171,7 +171,7 @@ SLIDES = [
         "id": "P7",
         "section": "3 解決方案設計",
         "title": "四種流失車主，過保精算派最多（511 人）",
-        "source": "來源：風險與 Persona 報告（T10）；圖 F5。未分類處置見 9/30 會議記錄",
+        "source": "來源：風險與 Persona（客群輪廓）報告（T10）；圖 F5。未分類處置見 9/30 會議記錄",
         "reports": ["reports/T10_risk_persona_report.md", "會議記錄_2026-09-30.md"],
         "figures": ["reports/figures/F5.png"],
     },
@@ -179,7 +179,7 @@ SLIDES = [
         "id": "P8",
         "section": "3 解決方案設計",
         "title": "高風險車主 74% 確有流失句，分級可信",
-        "source": "來源：風險與 Persona 報告（T10）；圖 F7",
+        "source": "來源：風險與 Persona（客群輪廓）報告（T10）；圖 F7",
         "reports": ["reports/T10_risk_persona_report.md"],
         "figures": ["reports/figures/F7.png"],
     },
@@ -208,7 +208,7 @@ SLIDES = [
         "id": "P11",
         "section": "5 獨特優勢與差異化",
         "title": "看得見沒抱怨就走的人，分數說得出原因",
-        "source": "來源：風險與 Persona 報告（T10）、本機模型報告（T8）、專案架構",
+        "source": "來源：風險與 Persona（客群輪廓）報告（T10）、本機模型報告（T8）、專案架構",
         "reports": [
             "reports/T10_risk_persona_report.md",
             "reports/T8_r4_report.md",
@@ -269,7 +269,7 @@ LAYERS = [
     ("L2", "標註", "流失、九面向、替代與車主特徵"),
     ("L3", "決策模型", "本機 QLoRA，只輸出各等級機率"),
     ("L4", "風險辨識", "八條規則乘上 r4 的流失機率"),
-    ("L5", "Persona", "規則指派四種流失樣貌"),
+    ("L5", "Persona（客群輪廓）", "規則指派四種流失樣貌"),
     ("L6", "RAG 生成", "價格與保固只引用官方知識庫"),
     ("L7", "接觸點", "審核後投遞，並把 KPI 寫回去"),
 ]
@@ -595,7 +595,7 @@ def build_p1(slide, y):
         "三站差異顯著（χ²=99.5）。",
         "母體為論壇發言者。",
         "1,671 句流失中，186 句沒抱怨就找出口。",
-        "方案：提早辨識、分成 Persona、在對的接觸點說對的話。",
+        "方案：提早辨識、分成 Persona（客群輪廓）、在對的接觸點說對的話。",
     ]
     add_text(
         slide, ML, lines_y, CW, 1.35,
@@ -754,7 +754,7 @@ def build_p7(slide, y):
         [
             [("分母：高、中風險 1,280 人。", MUTED, False, 13)],
             [("未分類 199 人列觀察名單，不投遞。", MUTED, False, 13)],
-            [("Persona 為規則定義，每項可回溯原句。", MUTED, False, 13)],
+            [("Persona（客群輪廓）為規則定義，每項可回溯原句。", MUTED, False, 13)],
         ],
         size=13,
     )
@@ -933,7 +933,7 @@ def load_p12_messages() -> list[dict]:
 
 def build_p12(slide, y):
     msgs = {(m["persona"], m["touch"]): m for m in load_p12_messages()}
-    header = [cell_text("Persona", WHITE, True)] + [cell_text(c, WHITE, True) for c in TOUCH_COLS]
+    header = [cell_text("Persona（客群輪廓）", WHITE, True)] + [cell_text(c, WHITE, True) for c in TOUCH_COLS]
     rows = [header]
     for name, *_rest in PERSONAS:
         row = [cell_text(name, INK, True)]
@@ -946,7 +946,7 @@ def build_p12(slide, y):
                 [(preview, INK, False)],
             ])
         rows.append(row)
-    add_table(slide, ML, y, CW, 4.05, rows, [1.62, 3.60, 3.60, 3.60], font=10)
+    add_table(slide, ML, y, CW, 4.05, rows, [2.08, 3.4467, 3.4467, 3.4466], font=10)
     add_text(
         slide, ML, y + 4.12, CW, 1.20,
         [
@@ -985,7 +985,7 @@ def build_p13(slide, y):
         ("技術", "模型在模糊句多報（困難層 F1 ≤ 0.51，精確率 0.34）", "定位成「初篩＋人工複核」", "A"),
         ("資料", "論壇代表性（正例 67% 來自 Mobile01，母體是論壇發言者）", "分析頁註明母體與來源構成；上線改用 CRM 資料", "B"),
         ("法規", "個資與再識別", "去識別流程，簡報與 Demo 只用去識別版", "A"),
-        ("組織", "Persona 被質疑主觀（ARI 0.08）", "寫成「規則定義、每項可回溯原句」", "B"),
+        ("組織", "Persona（客群輪廓）被質疑主觀（ARI 0.08）", "寫成「規則定義、每項可回溯原句」", "B"),
     ]
     rows = []
     for i, cols in enumerate(risks):
@@ -1099,7 +1099,7 @@ def build_p15(slide, y):
         slide, rx + 0.24, y + 0.60, rw - 0.48, 1.02,
         [
             [("車主　H-7F3A　　風險　高", INK, True, 13)],
-            [("Persona　過保精算派", INK, False, 13)],
+            [("Persona（客群輪廓）　過保精算派", INK, False, 13)],
             [("觸發　R1 過保", INK, False, 13)],
         ],
         size=13,
@@ -1139,7 +1139,7 @@ SLIDES.append({
     "id": "A1",
     "section": "附錄 術語表（不計入 15 頁）",
     "title": "本案用到的技術名詞：定義與在本案的用法",
-    "source": "來源：本機模型報告（T8）、人工評估（T9）、風險與 Persona 報告（T10）",
+    "source": "來源：本機模型報告（T8）、人工評估（T9）、風險與 Persona（客群輪廓）報告（T10）",
     "reports": ["reports/T8_r4_report.md", "reports/T9_human_eval.md", "reports/T10_risk_persona_report.md"],
     "figures": [],
 })
@@ -1147,7 +1147,7 @@ SLIDES.append({
     "id": "A2",
     "section": "附錄 補充圖表（不計入 15 頁）",
     "title": "來源差異、風險分布、校準曲線，與季趨勢",
-    "source": "來源：統計檢定報告（T7）、風險與 Persona 報告（T10）、本機模型報告（T8）、趨勢報告（T15）",
+    "source": "來源：統計檢定報告（T7）、風險與 Persona（客群輪廓）報告（T10）、本機模型報告（T8）、趨勢報告（T15）",
     "reports": [
         "reports/T7_stats_tests.md",
         "reports/T10_risk_persona_report.md",
@@ -1173,7 +1173,7 @@ SLIDES.append({
     "id": "A4",
     "section": "附錄 CRM 觸發門檻（不計入 15 頁）",
     "title": "八條規則的欄位與門檻；投影片只留欄位名",
-    "source": "來源：風險與 Persona 報告（T10）、L7 運作流程",
+    "source": "來源：風險與 Persona（客群輪廓）報告（T10）、L7 運作流程",
     "reports": ["reports/T10_risk_persona_report.md", "L7運作流程_草稿.md"],
     "figures": [],
 })
@@ -1201,12 +1201,12 @@ def build_a1(slide, y):
         ("校準（reliability bins）", "把預測機率分箱，看每箱實際正例比例是否接近機率", "最高信心桶約七成為真正例，方向對、尚未完全校準"),
         ("χ²、Cramér's V、Wilson CI", "類別關聯檢定、其效果量、比例的信賴區間", "來源流失率差異 χ²=99.5、V=0.125；九面向勝算比"),
         ("RAG（檢索增強生成）", "先從知識庫檢索相關條目，再讓模型只依這些內容生成", "76 條（官網 40、手冊 36）；16 則話術每則附引用與查核"),
-        ("K-means／silhouette／ARI", "分群法、分群品質指標、兩種分群結果的一致度", "驗證四個 Persona：只有靜默出走者被資料獨立支持"),
+        ("K-means／silhouette／ARI", "分群法、分群品質指標、兩種分群結果的一致度", "驗證四個 Persona（客群輪廓）：只有靜默出走者被資料獨立支持"),
     ]
     body = [[cell_text(h, WHITE, True) for h in ("名詞", "定義", "本案用法")]]
     for a, b, c in rows:
         body.append([cell_text(a, INK, True), cell_text(b), cell_text(c)])
-    add_table(slide, ML, y, CW, 5.6, body, [2.6, 5.0, 4.82], font=9.5)
+    add_table(slide, ML, y, CW, 5.6, body, [2.6, 4.62, 5.20], font=9.5)
 
 
 def build_a2(slide, y):
