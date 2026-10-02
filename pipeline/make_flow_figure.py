@@ -211,9 +211,10 @@ def main():
     # 橫線在兩帶空檔。直向箭頭貼左緣下來，不穿過產出 2 與溝通迴路標題。
     arrow(ax, (xs[3] + w / 2, yt), (xs[0] + 0.04, yb + hb),
           path=[(xs[3] + w / 2, 2.96), (0.08, 2.96)], color=GREY, lw=1.15)
-    risk = note(ax, (xs[1] + xs[2] + w) / 2, 3.02, "風險升為高 → 觸發",
-                size=11, color=GREY, ha="center", va="bottom",
-                bbox=dict(fc="#F4F7FB", ec="none", pad=0.15))
+    # 標籤放在兩帶空檔，底緣低於上方方塊（yt=3.18），避免壓到方塊邊線。
+    risk = note(ax, (xs[1] + xs[2] + w) / 2, 2.96, "風險升為高 → 觸發",
+                size=11, color=GREY, ha="center", va="center",
+                bbox=dict(fc="#F4F7FB", ec="none", pad=0.12))
 
     arrow(ax, (xs[5] + w * 0.72, yb), (xs[0] + 0.08, 0.06),
           path=[(xs[5] + w * 0.72, 0.06)], color=HUMAN_EDGE, lw=1.15)
