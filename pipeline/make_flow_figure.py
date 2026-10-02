@@ -24,17 +24,28 @@ BAND_TOP, BAND_BOT = "#F7F9FC", "#FBF7F7"
 GREY = "#8A8F98"
 
 
-def box(ax, x, y, w, h, text, fill=PROC, edge=BLUE, size=11, bold_first=True, lw=1.4, ls="-"):
+def box(ax, x, y, w, h, text, fill=PROC, edge=BLUE, size=11, bold_first=True, lw=1.4, ls="-", bold_lines=1):
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.6",
                                 fc=fill, ec=edge, lw=lw, ls=ls, zorder=3))
     lines = text.split("\n")
     if bold_first:
-        ax.text(x + w / 2, y + h - 3.2, lines[0], ha="center", va="center", fontsize=size + 0.5, fontweight="bold",
-                color=INK, zorder=4)
-        rest = "\n".join(lines[1:])
-        if rest:
-            ax.text(x + w / 2, y + (h - 3.2) / 2 - 0.4, rest, ha="center", va="center", fontsize=size - 1.2,
-                    color="#3C4653", zorder=4, linespacing=1.35)
+        title = "\n".join(lines[:bold_lines])
+        rest = "\n".join(lines[bold_lines:])
+        if bold_lines == 1:
+            ax.text(x + w / 2, y + h - 3.2, title, ha="center", va="center", fontsize=size + 0.5, fontweight="bold",
+                    color=INK, zorder=4)
+            if rest:
+                ax.text(x + w / 2, y + (h - 3.2) / 2 - 0.4, rest, ha="center", va="center", fontsize=size - 1.2,
+                        color="#3C4653", zorder=4, linespacing=1.35)
+        else:
+            # 標題兩行（中文括註後單行超出方塊）。其餘方塊仍走上面的單行路徑。
+            ax.text(x + w / 2, y + h - 1.5, title, ha="center", va="top", fontsize=size + 0.5, fontweight="bold",
+                    color=INK, zorder=4, linespacing=1.1)
+            if rest:
+                title_span = bold_lines * (size + 0.5) / 72 * 12 * 1.15
+                body_center = y + (h - 1.5 - title_span) / 2
+                ax.text(x + w / 2, body_center, rest, ha="center", va="center", fontsize=size - 1.2,
+                        color="#3C4653", zorder=4, linespacing=1.35)
     else:
         ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=size, color=INK, zorder=4,
                 linespacing=1.35)
@@ -61,7 +72,7 @@ def main():
     ax.add_patch(FancyBboxPatch((1, 52), 190, 38, boxstyle="round,pad=0,rounding_size=2", fc=BAND_TOP, ec="#D5DEE8", lw=1, zorder=1))
     ax.add_patch(FancyBboxPatch((1, 0), 190, 49, boxstyle="round,pad=0,rounding_size=2", fc=BAND_BOT, ec="#E4D4D4", lw=1, zorder=1))
     ax.text(3, 85.5, "洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", fontsize=13, fontweight="bold", color=BLUE, va="center")
-    ax.text(28, 45.5, "溝通迴路｜事件觸發：CRM 訊號・客訴結案 → Persona → RAG 話術 → 人工核准 → 投遞 → KPI 回饋", fontsize=13, fontweight="bold", color=HUMAN_EDGE, va="center")
+    ax.text(28, 45.5, "溝通迴路｜事件觸發：CRM 訊號・客訴結案 → Persona（客群輪廓） → RAG 話術 → 人工核准 → 投遞 → KPI 回饋", fontsize=13, fontweight="bold", color=HUMAN_EDGE, va="center")
 
     # 上帶：7 個方塊。下帶觸發方塊改三行後，上下方塊一起加高 2，避免字擠出框。
     w, h, yt = 23, 17, 58
@@ -70,7 +81,7 @@ def main():
         ("論壇爬蟲", "每日抓新留言\n三站公開論壇", PROC, BLUE),
         ("去重・去識別", "作者雜湊、店名\n人名遮蔽（L1）", PROC, BLUE),
         ("資料庫 B", "原始輿情\n去識別版，可溯源", DB_FILL, DB_EDGE),
-        ("流失判斷 L3–L5", "r4 逐句判流失、面向\n→ 風險分數 → Persona", PROC, BLUE),
+        ("流失判斷 L3–L5", "r4 逐句判流失、面向\n→ 風險分數 →\nPersona（客群輪廓）", PROC, BLUE),
         ("洞察報告", "日報・週報・季報\n趨勢分析、200% 預警", PROC, BLUE),
         ("資料庫 A", "報告池\n日／週／季報、預警紀錄", DB_FILL, DB_EDGE),
         ("Dashboard 1–3", "1 戰情總覽\n2 報告池・3 原始輿情", PROC, BLUE),
@@ -84,7 +95,7 @@ def main():
     yb = 22
     bot = [
         ("觸發事件", "CRM 命中 R1–R8（含 R5 待料）\n客訴結案 → 第 7 天回訪\n或風險分數升為高", PROC, BLUE),
-        ("判定 Persona", "四類之一\n未分類 → 觀察名單", PROC, BLUE),
+        ("判定 Persona\n（客群輪廓）", "四類之一\n未分類 → 觀察名單", PROC, BLUE),
         ("RAG 生成話術", "檢索條款 → 生成\n→ 第二輪事實查核", PROC, BLUE),
         ("人工審核", "Dashboard 5 審核佇列\n核准或改寫才投遞", HUMAN_FILL, HUMAN_EDGE),
         ("投遞", "LINE・App\nEmail・專員電話", PROC, BLUE),
@@ -92,7 +103,8 @@ def main():
     ]
     for x, (head, body, f, e) in zip(xs[:6], bot):
         box(ax, x, yb, w, h, head + "\n" + body, fill=f, edge=e, lw=2.2 if head == "人工審核" else 1.4,
-            size=10 if head == "觸發事件" else 11)
+            size=10 if head == "觸發事件" else 11,
+            bold_lines=2 if head.startswith("判定 Persona") else 1)
     for a, b in zip(xs[:5], xs[1:6]):
         arrow(ax, (a + w, yb + h / 2), (b, yb + h / 2))
     # 回饋箭在 x=13.5 垂直上升，小字放箭頭右側、觸發方塊正下方。12pt 單行會伸進第二格下方，改兩行。
