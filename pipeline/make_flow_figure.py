@@ -25,43 +25,33 @@ GREY = "#8A8F98"
 
 
 def layer_tag(ax, x, y, w, h, label):
-    """短標放右上角；L3·L4·L5 較寬，改放右下角，避免蓋住標題。"""
-    wide = len(label) > 3
-    tw = 14.2 if wide else 5.2
-    th = 3.3
-    bx = x + w - tw - 0.4
-    by = (y + 0.45) if wide else (y + h - th - 0.35)
-    ax.add_patch(FancyBboxPatch((bx, by), tw, th, boxstyle="round,pad=0,rounding_size=0.5",
+    """標籤坐在方塊右上角外緣，標題左對齊，避免壓字。"""
+    n = len(label)
+    tw = 8.0 if n <= 2 else (12.2 if n <= 4 else 20.0)
+    th = 3.6
+    bx = x + w - tw
+    by = y + h + 0.25
+    ax.add_patch(FancyBboxPatch((bx, by), tw, th, boxstyle="round,pad=0,rounding_size=0.45",
                                 fc=BLUE, ec=BLUE, lw=0, zorder=5))
-    ax.text(bx + tw / 2, by + th / 2, label, ha="center", va="center", fontsize=8,
+    ax.text(bx + tw / 2, by + th / 2, label, ha="center", va="center", fontsize=12,
             color="white", fontweight="bold", zorder=6)
 
 
-def box(ax, x, y, w, h, text, fill=PROC, edge=BLUE, size=11, bold_first=True, lw=1.4, ls="-", bold_lines=1, tag=None):
-    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.6",
+def box(ax, x, y, w, h, text, fill=PROC, edge=BLUE, size=13, bold_first=True, lw=1.4, ls="-", bold_lines=1, tag=None):
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.2",
                                 fc=fill, ec=edge, lw=lw, ls=ls, zorder=3))
     lines = text.split("\n")
     if bold_first:
         title = "\n".join(lines[:bold_lines])
         rest = "\n".join(lines[bold_lines:])
-        if bold_lines == 1:
-            ax.text(x + w / 2, y + h - 3.2, title, ha="center", va="center", fontsize=size + 0.5, fontweight="bold",
-                    color=INK, zorder=4)
-            if rest:
-                ax.text(x + w / 2, y + (h - 3.2) / 2 - 0.4, rest, ha="center", va="center", fontsize=size - 1.2,
-                        color="#3C4653", zorder=4, linespacing=1.35)
-        else:
-            # 標題兩行（中文括註後單行超出方塊）。其餘方塊仍走上面的單行路徑。
-            ax.text(x + w / 2, y + h - 1.5, title, ha="center", va="top", fontsize=size + 0.5, fontweight="bold",
-                    color=INK, zorder=4, linespacing=1.1)
-            if rest:
-                title_span = bold_lines * (size + 0.5) / 72 * 12 * 1.15
-                body_center = y + (h - 1.5 - title_span) / 2
-                ax.text(x + w / 2, body_center, rest, ha="center", va="center", fontsize=size - 1.2,
-                        color="#3C4653", zorder=4, linespacing=1.35)
+        ax.text(x + 0.8, y + h - 4.4, title, ha="left", va="center", fontsize=size + 1, fontweight="bold",
+                color=INK, zorder=4, linespacing=1.05)
+        if rest:
+            ax.text(x + w / 2, y + (h - 5.2) / 2, rest, ha="center", va="center", fontsize=size,
+                    color="#3C4653", zorder=4, linespacing=1.25)
     else:
         ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=size, color=INK, zorder=4,
-                linespacing=1.35)
+                linespacing=1.25)
     if tag:
         layer_tag(ax, x, y, w, h, tag)
 
@@ -77,32 +67,29 @@ def arrow(ax, p, q, color=BLUE, lw=1.6, style="-|>", ms=14, path=None, zorder=2)
 
 
 def main():
-    fig, ax = plt.subplots(figsize=(16, 7.5))
+    fig, ax = plt.subplots(figsize=(12.4, 4.15), dpi=160)
     ax.set_position([0, 0, 1, 1])
-    ax.set_xlim(0, 192)
-    ax.set_ylim(-1, 89)
+    ax.set_xlim(0, 200)
+    ax.set_ylim(0, 78)
     ax.axis("off")
+    fig.patch.set_facecolor("#F4F7FB")
 
-    # 兩個帶狀區
-    ax.add_patch(FancyBboxPatch((1, 52), 190, 38, boxstyle="round,pad=0,rounding_size=2", fc=BAND_TOP, ec="#D5DEE8", lw=1, zorder=1))
-    ax.add_patch(FancyBboxPatch((1, 0), 190, 49, boxstyle="round,pad=0,rounding_size=2", fc=BAND_BOT, ec="#E4D4D4", lw=1, zorder=1))
-    ax.text(3, 87.2, "產出 1：AI 網路輿情洞察系統架構與報告", fontsize=12, fontweight="bold", color=BLUE, va="center")
-    ax.text(3, 83.6, "洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", fontsize=11, color=BLUE, va="center")
-    ax.text(3, 46.6, "產出 2：針對目標 Persona（客群輪廓）的 AI 溝通計畫與系統流程", fontsize=12, fontweight="bold", color=HUMAN_EDGE, va="center")
-    ax.text(3, 43.2, "溝通迴路｜事件觸發：CRM・客訴結案 → Persona → RAG 話術 → 人工核准 → 投遞 → KPI", fontsize=11, color=HUMAN_EDGE, va="center")
+    ax.add_patch(FancyBboxPatch((1, 43), 198, 34, boxstyle="round,pad=0,rounding_size=1.4", fc=BAND_TOP, ec="#D5DEE8", lw=1, zorder=1))
+    ax.add_patch(FancyBboxPatch((1, 0.6), 198, 41, boxstyle="round,pad=0,rounding_size=1.4", fc=BAND_BOT, ec="#E4D4D4", lw=1, zorder=1))
+    ax.text(3, 74.6, "產出 1：AI 網路輿情洞察系統架構與報告", fontsize=14, fontweight="bold", color=BLUE, va="center")
+    ax.text(3, 38.4, "產出 2：針對目標 Persona（客群輪廓）的 AI 溝通計畫與系統流程", fontsize=14, fontweight="bold", color=HUMAN_EDGE, va="center")
 
-    # 上帶：7 個方塊。下帶觸發方塊改三行後，上下方塊一起加高 2，避免字擠出框。
-    w, h, yt = 23, 17, 58
-    xs = [2, 29.5, 57, 84.5, 112, 139.5, 167]
+    w, h, yt = 25, 14.5, 52.2
+    xs = [3, 30.5, 58, 85.5, 113, 140.5, 168]
     # L2 沒有獨立的每日步驟方塊。L7 文件 §3：資料庫 B 存放去識別留言與標註結果。
     top = [
-        ("論壇爬蟲", "每日抓新留言\n三站公開論壇", PROC, BLUE, "L0"),
-        ("去重・去識別", "作者雜湊、店名\n人名遮蔽", PROC, BLUE, "L1"),
-        ("資料庫 B", "去識別留言\n與標註結果", DB_FILL, DB_EDGE, "L2"),
-        ("流失判斷", "r4 判流失、面向、風險分數\n再指派 Persona（客群輪廓）", PROC, BLUE, "L3·L4·L5"),
-        ("洞察報告", "日報・週報・季報\n趨勢分析、200% 預警", PROC, BLUE, None),
-        ("資料庫 A", "報告池\n日／週／季報、預警紀錄", DB_FILL, DB_EDGE, None),
-        ("Dashboard 1–3", "1 戰情總覽\n2 報告池・3 原始輿情", PROC, BLUE, None),
+        ("論壇爬蟲", "每日新留言", PROC, BLUE, "L0"),
+        ("去重・去識別", "遮蔽店名、人名", PROC, BLUE, "L1"),
+        ("資料庫 B", "去識別與標註", DB_FILL, DB_EDGE, "L2"),
+        ("流失判斷", "r4 機率、再派客群", PROC, BLUE, "L3·L4·L5"),
+        ("洞察報告", "日週季報、預警", PROC, BLUE, None),
+        ("資料庫 A", "報告池", DB_FILL, DB_EDGE, None),
+        ("Dashboard", "戰情・報告・輿情", PROC, BLUE, None),
     ]
     for x, (head, body, f, e, tg) in zip(xs, top):
         box(ax, x, yt, w, h, head + "\n" + body, fill=f, edge=e, ls="--" if head.startswith("Dashboard") else "-", tag=tg)
@@ -110,46 +97,33 @@ def main():
         arrow(ax, (a + w, yt + h / 2), (b, yt + h / 2))
 
     # 下帶：6 個方塊 + 2 個資料庫
-    yb = 22
+    yb = 17.2
     # 觸發對 L4、Persona 對 L5、RAG 對 L6、投遞與 KPI 對 L7（L7運作流程_2026-09-30.md）。人工審核沒有層號。
     bot = [
-        ("觸發事件", "CRM 命中 R1–R8（含 R5 待料）\n客訴結案 → 第 7 天回訪\n或風險分數升為高", PROC, BLUE, "L4"),
-        ("判定 Persona\n（客群輪廓）", "四類之一\n未分類 → 觀察名單", PROC, BLUE, "L5"),
-        ("RAG 生成話術", "檢索條款 → 生成\n→ 第二輪事實查核", PROC, BLUE, "L6"),
-        ("人工審核", "Dashboard 5 審核佇列\n核准或改寫才投遞", HUMAN_FILL, HUMAN_EDGE, None),
-        ("投遞", "LINE・App\nEmail・專員電話", PROC, BLUE, "L7"),
-        ("KPI 回饋", "點擊・預約・回廠\n寫回 CRM", PROC, BLUE, "L7"),
+        ("觸發事件", "客訴或風險升高", PROC, BLUE, "L4"),
+        ("判定 Persona", "四種客群輪廓", PROC, BLUE, "L5"),
+        ("RAG 生成話術", "只引用知識庫", PROC, BLUE, "L6"),
+        ("人工審核", "核准才投遞", HUMAN_FILL, HUMAN_EDGE, None),
+        ("投遞", "LINE・電話", PROC, BLUE, "L7"),
+        ("KPI 回饋", "寫回 CRM", PROC, BLUE, "L7"),
     ]
     for x, (head, body, f, e, tg) in zip(xs[:6], bot):
-        box(ax, x, yb, w, h, head + "\n" + body, fill=f, edge=e, lw=2.2 if head == "人工審核" else 1.4,
-            size=10 if head == "觸發事件" else 11,
-            bold_lines=2 if head.startswith("判定 Persona") else 1, tag=tg)
+        box(ax, x, yb, w, h, head + "\n" + body, fill=f, edge=e, lw=2.2 if head == "人工審核" else 1.4, tag=tg)
     for a, b in zip(xs[:5], xs[1:6]):
         arrow(ax, (a + w, yb + h / 2), (b, yb + h / 2))
     # 回饋箭在 x=13.5 垂直上升，小字放箭頭右側、觸發方塊正下方。12pt 單行會伸進第二格下方，改兩行。
-    ax.text(16.2, 18.6, "客訴回訪不計頻率上限；\n觀察名單車主也回訪", fontsize=12, color=GREY,
-            ha="left", va="center", zorder=4, linespacing=1.25)
+    box(ax, 58, 1.6, 25, 11.2, "資料庫 C\n知識庫 76 條", fill=DB_FILL, edge=DB_EDGE, size=13)
+    arrow(ax, (70.5, 12.8), (70.5, yb), color=DB_EDGE)
+    box(ax, 90, 1.6, 25, 11.2, "資料庫 D\n溝通佇列", fill=DB_FILL, edge=DB_EDGE, size=13)
+    arrow(ax, (102.5, yb), (102.5, 12.8), color=DB_EDGE, style="<|-|>")
 
-    # 資料庫 C、D 與 Dashboard 4
-    box(ax, 57, 3, 23, 13, "資料庫 C\n知識庫 76 條・保固條款\nDashboard 4 可查閱", fill=DB_FILL, edge=DB_EDGE)
-    arrow(ax, (68.5, 16), (68.5, yb), color=DB_EDGE)
-    box(ax, 92, 3, 23, 13, "資料庫 D\n溝通佇列：草稿、審核\n狀態、投遞結果", fill=DB_FILL, edge=DB_EDGE)
-    arrow(ax, (100, yb), (100, 16), color=DB_EDGE, style="<|-|>")
+    arrow(ax, (98, yt), (15.5, yb + h), path=[(98, 48.6), (15.5, 48.6)], color=GREY, lw=1.4)
+    ax.text(56, 49.2, "風險升為高 → 觸發", fontsize=12, color=GREY, ha="center", va="bottom")
 
-    # 上帶 → 下帶：風險分數升高也會觸發
-    arrow(ax, (96, yt), (13.5, yb + h), path=[(96, 50.5), (13.5, 50.5)], color=GREY, lw=1.4)
-    ax.text(55, 51.8, "風險升為高 → 觸發", fontsize=11, color=GREY, ha="center", va="bottom")
-
-    # KPI 回饋 → 校正門檻與模型
-    arrow(ax, (151, yb), (13.5, yb), path=[(151, 1.2), (13.5, 1.2)], color=HUMAN_EDGE, lw=1.4, style="-|>")
-    ax.text(140, 3.0, "回頭校正觸發門檻，\n再訓練 r4", fontsize=11, color=HUMAN_EDGE, ha="center", va="bottom", linespacing=1.3)
-
-    # 右下註記
-    ax.text(166, 37, "資料庫與模型都在\n和泰內網，不出門；\n論壇文字只作研究語料，\n上線後輸入改為\n工單與客訴文字。", fontsize=10, color="#3C4653", va="top", linespacing=1.4)
 
     FIG.mkdir(parents=True, exist_ok=True)
     out = FIG / "F8.png"
-    fig.savefig(out, dpi=120, facecolor="white")
+    fig.savefig(out, dpi=160, facecolor="#F4F7FB")
     plt.close(fig)
     from PIL import Image
     wpx, hpx = Image.open(out).size
