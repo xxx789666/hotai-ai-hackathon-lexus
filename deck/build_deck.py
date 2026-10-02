@@ -8,7 +8,8 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.1（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+內容是 v3.2（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+第 9 頁（P6）自 v3.2 起用原生形狀畫雙迴路，不再貼 F8.png；F8.png 只剩附錄 A0 線框頁使用。
 計入 15 頁的是大綱 1 張加內容頁 14 張（第 4–17 頁）。附錄 7 張（第 18–24 頁，含 A0）不計入。
 封面是否計入尚待向主辦方確認，封面不動。
 """
@@ -34,7 +35,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.1"
+DECK_VERSION = "3.2"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -1011,7 +1012,7 @@ def add_pill(slide, x, y, w, h, text, size=12):
     return shape
 
 
-def add_flow_box(slide, x, y, w, h, head, body, fill=F8_PROC, edge=BLUE, tag=None, dashed=False, thick=False, size=F8_FONT):
+def add_flow_box(slide, x, y, w, h, head, body, fill=F8_PROC, edge=BLUE, tag=None, dashed=False, thick=False, size=F8_FONT, max_lines=None):
     """方塊＋粗體標題＋置中內文；L# 標籤貼右上角內緣，標題框讓出標籤寬度。"""
     card = add_card(slide, x, y, w, h, fill=fill, line=edge)
     card.line.width = Pt(2.0 if thick else 1.25)
@@ -1025,6 +1026,10 @@ def add_flow_box(slide, x, y, w, h, head, body, fill=F8_PROC, edge=BLUE, tag=Non
     )
     for para in box.text_frame.paragraphs[1:]:
         para.alignment = PP_ALIGN.CENTER
+    # 內文行數少於同列最多行數時，內文往下推半個差額，上下留白平均。
+    slack_lines = (max_lines or len(body)) - len(body)
+    if slack_lines > 0:
+        box.text_frame.paragraphs[1].space_before = Pt(slack_lines * (size * 1.15 + 2) / 2)
     if tag:
         pill_w = 0.42 if len(tag) <= 2 else 0.92
         add_pill(slide, x + w - pill_w - 0.06, y + 0.07, pill_w, 0.24, tag)
@@ -1070,7 +1075,7 @@ def build_p6(slide, y):
         xs.append(x)
         x += w + gap
     for bx, w, (head, body, fill, edge, tag, dashed) in zip(xs, tw, top):
-        add_flow_box(slide, bx, box_y, w, box_h, head, body, fill=fill, edge=edge, tag=tag, dashed=dashed)
+        add_flow_box(slide, bx, box_y, w, box_h, head, body, fill=fill, edge=edge, tag=tag, dashed=dashed, max_lines=3)
     for bx, w in zip(xs[:-1], tw[:-1]):
         add_arrow(slide, bx + w, box_y + 0.50, bx + w + gap, box_y + 0.50)
     risk_x = xs[3] + tw[3] / 2  # 流失判斷底緣中點
@@ -1111,7 +1116,7 @@ def build_p6(slide, y):
         bxs.append(x)
         x += w + 0.08
     for bx, w, (head, body, fill, edge, tag, thick) in zip(bxs, bw, bot):
-        add_flow_box(slide, bx, bot_box_y, w, bot_box_h, head, body, fill=fill, edge=edge, tag=tag, thick=thick)
+        add_flow_box(slide, bx, bot_box_y, w, bot_box_h, head, body, fill=fill, edge=edge, tag=tag, thick=thick, max_lines=3)
     for bx, w in zip(bxs[:-1], bw[:-1]):
         add_arrow(slide, bx + w, bot_box_y + 0.50, bx + w + 0.08, bot_box_y + 0.50)
 
@@ -1119,14 +1124,14 @@ def build_p6(slide, y):
     db_h = 0.98
     # 第 1 欄：灰字註記（觸發事件下方）
     add_text(slide, bxs[0], db_y, bw[0], db_h,
-             [[("客訴回訪不計頻率上限；", F8_GREY, False, size)], [("觀察名單車主也回訪", F8_GREY, False, size)]], size=size)
+             [[("客訴回訪不計頻率上限；", F8_GREY, False, size)], [("觀察名單車主也回訪", F8_GREY, False, size)]], size=size, anchor="ctr")
     # 第 2 欄：紅色回饋說明，貼近底部紅線
     add_text(slide, bxs[1], db_y, bw[1], db_h,
              [[("回頭校正觸發門檻，", F8_HUMAN_EDGE, False, size)], [("再訓練 r4", F8_HUMAN_EDGE, False, size)]], size=size, anchor="b")
     # 第 3、4 欄：資料庫 C、D
-    add_flow_box(slide, bxs[2], db_y, bw[2], db_h, "資料庫 C", ["知識庫 76 條・保固條款", "Dashboard 4 可查閱"], fill=F8_DB, edge=F8_DB_EDGE)
+    add_flow_box(slide, bxs[2], db_y, bw[2], db_h, "資料庫 C", ["知識庫 76 條・保固條款", "Dashboard 4 可查閱"], fill=F8_DB, edge=F8_DB_EDGE, max_lines=3)
     add_arrow(slide, bxs[2] + bw[2] / 2, db_y, bxs[2] + bw[2] / 2, bot_box_y + bot_box_h, color=F8_DB_EDGE)
-    add_flow_box(slide, bxs[3], db_y, bw[3], db_h, "資料庫 D", ["溝通佇列：草稿、", "審核狀態、投遞結果"], fill=F8_DB, edge=F8_DB_EDGE)
+    add_flow_box(slide, bxs[3], db_y, bw[3], db_h, "資料庫 D", ["溝通佇列：草稿、", "審核狀態、投遞結果"], fill=F8_DB, edge=F8_DB_EDGE, max_lines=3)
     add_arrow(slide, bxs[3] + bw[3] / 2, bot_box_y + bot_box_h, bxs[3] + bw[3] / 2, db_y, color=F8_DB_EDGE, both=True)
     # 第 5–6 欄：內網說明；右側留 0.28 吋給紅線直向段
     note_w = bw[4] + 0.08 + bw[5] - 0.28
@@ -1134,7 +1139,7 @@ def build_p6(slide, y):
         [("資料庫與模型都在和泰內網，不出門；", F8_BODY, False, size)],
         [("論壇文字只作研究語料，", F8_BODY, False, size)],
         [("上線後輸入改為工單與客訴文字。", F8_BODY, False, size)],
-    ], size=size)
+    ], size=size, anchor="ctr")
 
     # ---- 紅色回饋迴路：KPI 回饋 → 帶底 → 左緣 → 觸發事件 ----
     red_x = bxs[5] + bw[5] - 0.14
