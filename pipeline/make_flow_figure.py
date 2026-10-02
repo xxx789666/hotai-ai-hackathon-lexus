@@ -88,16 +88,16 @@ def main():
         ("RAG 生成話術", "檢索條款 → 生成\n→ 第二輪事實查核", PROC, BLUE),
         ("人工審核", "Dashboard 5 審核佇列\n核准或改寫才投遞", HUMAN_FILL, HUMAN_EDGE),
         ("投遞", "LINE・App\nEmail・專員電話", PROC, BLUE),
-        ("KPI 回饋", "點擊・預約・回廠\n客訴再發率・寫回 CRM", PROC, BLUE),
+        ("KPI 回饋", "點擊・預約・回廠\n寫回 CRM", PROC, BLUE),
     ]
     for x, (head, body, f, e) in zip(xs[:6], bot):
         box(ax, x, yb, w, h, head + "\n" + body, fill=f, edge=e, lw=2.2 if head == "人工審核" else 1.4,
             size=10 if head == "觸發事件" else 11)
     for a, b in zip(xs[:5], xs[1:6]):
         arrow(ax, (a + w, yb + h / 2), (b, yb + h / 2))
-    # 回饋箭在 x=13.5 垂直上升，小字改放箭頭右側，仍在觸發方塊正下方。
-    ax.text(16.2, 19.0, "客訴回訪不計頻率上限；觀察名單車主也回訪", fontsize=9, color=GREY,
-            ha="left", va="center", zorder=4)
+    # 回饋箭在 x=13.5 垂直上升，小字放箭頭右側、觸發方塊正下方。12pt 單行會伸進第二格下方，改兩行。
+    ax.text(16.2, 18.6, "客訴回訪不計頻率上限；\n觀察名單車主也回訪", fontsize=12, color=GREY,
+            ha="left", va="center", zorder=4, linespacing=1.25)
 
     # 資料庫 C、D 與 Dashboard 4
     box(ax, 57, 3, 23, 13, "資料庫 C\n知識庫 76 條・保固條款\nDashboard 4 可查閱", fill=DB_FILL, edge=DB_EDGE)
