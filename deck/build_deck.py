@@ -8,7 +8,8 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v2.9（封面、摘要、大綱、P1–P15、附錄）。大綱與提案摘要一樣不計入 15 頁內容。
+內容是 v3.0（封面、摘要、大綱、P1–P15、附錄）。投影片 24 張，內容頁 15 張。
+大綱頁是否計入 15 頁尚未向主辦方確認，頁面標籤只寫「大綱」。
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "2.9"
+DECK_VERSION = "3.0"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -66,10 +67,10 @@ NOTES = [
     "摘要給評審三層目標：回廠率假設加十點，核准八成，模型每季重驗。",
     "大綱列出七個章節與頁碼，並標示兩大產出各落在哪幾頁。",
     "提案分成兩份產出：一份輿情洞察，一份對準四種客群的溝通。",
-    "售後人走了才知道，三個前兆是過保、刪項、間隔拉長。",
+    "三個前兆並行，不是依序發生：過保、刪項、間隔拉長。",
     "零件勝算比二點五八、價格二點六四，分母兩萬一千句。",
     "出口在一般外廠；定保口述中位原廠九千、外廠三千五，不是公告價。",
-    "超過78字只標記不刪，仍全部進標註；重複句已上游刪除。",
+    "長句門檻是Q3+1.5×IQR，超過78字只標記。",
     "八層對到雙迴路：上面是產出一，下面是產出二，審核後才投遞。",
     "分群只獨立支持靜默出走者；其餘 Persona（客群輪廓）用規則定義。",
     "高風險七成四真有流失句；過保精算派人最多，平均風險也最高。",
@@ -115,7 +116,7 @@ SUMMARY_RIGHT = {
 SLIDES = [
     {
         "id": "TOC",
-        "section": "大綱（不計入內容頁，同提案摘要）",
+        "section": "大綱",
         "title": "七個章節、兩大產出，對照頁碼",
         "source": "來源：本簡報章節；兩大產出依企業挑戰題",
         "reports": ["raw/bh-challenge.txt"],
@@ -137,8 +138,13 @@ SLIDES = [
         "id": "P2",
         "section": "2 目標對象與痛點分析",
         "title": "售後是人走了才知道；輿情能提前預警",
-        "source": "來源：統計檢定報告（T7）；Dcard 偏購車階段",
-        "reports": ["reports/T7_stats_tests.md"],
+        "source": "來源：統計檢定（T7）、專案架構、風險報告（T10）；門檻見附錄 A4",
+        "reports": [
+            "reports/T7_stats_tests.md",
+            "專案架構_2026-09-23.md",
+            "reports/T10_risk_persona_report.md",
+            "輿情訊號對應CRM欄位_草稿_2026-09-28.md",
+        ],
         "figures": [],
     },
     {
@@ -165,11 +171,12 @@ SLIDES = [
         "id": "P5",
         "section": "2 目標對象與痛點分析",
         "title": "2.1 萬句售後語料，品質過關、全數去識別",
-        "source": "來源：題目選擇分析、資料品質報告（T7）、去識別報告（T7）；圖 F9_pipeline",
+        "source": "來源：資料品質與去識別（T7）、趨勢報告（T15）；圖 F9_pipeline。季趨勢圖見附錄 A2b",
         "reports": [
             "題目選擇分析_2026-09-22.md",
             "reports/T7_data_quality.md",
             "reports/T7_deid_report.md",
+            "reports/T15_trend_reports.md",
         ],
         "figures": ["reports/figures/F9_pipeline.png"],
     },
@@ -733,11 +740,11 @@ def build_p1(slide, y):
         ("客群 Persona（客群輪廓）", f"四種流失樣貌；過保精算派 511 人", f"第 {file_page('P7')} 頁"),
         ("高風險議題", "零件供應 17.3%、價格 15.0%", f"第 {file_page('P3')} 頁"),
         ("整體市場輿情", "售後語料 21,183 句；186 句沒抱怨就走", f"第 {file_page('P5')} 頁"),
-        ("AI 技術／模型", "r4 本機模型 F1 0.685", f"第 {file_page('P10')}、{file_page('P6')} 頁"),
+        ("AI 技術／模型", "r4 本機模型 F1 0.685", f"第 {file_page('P6')}、{file_page('P10')} 頁"),
     ]
     right = [
         ("核心溝通策略", "對的人、對的時機開口", f"第 {file_page('P12')} 頁"),
-        ("AI 生成內容範例", "12 則主表已對 76 條條款查核", "附錄 A3、A5"),
+        ("AI 生成內容範例", "12 則主表已對 76 條條款查核", f"第 {file_page('P12')} 頁；附錄 A3、A5"),
         ("精準接觸點", "保固前 60 天、間隔拉長、刪項後", f"第 {file_page('P12')} 頁"),
         ("運作流程圖", "洞察與溝通雙迴路，人工核准才發", f"第 {file_page('P6')}、{file_page('P15')} 頁"),
     ]
@@ -769,84 +776,110 @@ def build_p1(slide, y):
 
 
 def build_p2(slide, y):
-    flow_h = 1.62
-    flow_y = 7.02 - flow_h
-    upper = flow_y - y - 0.12
-    left_w = 5.70
-    card_h = (upper - 0.12) / 2
+    # 上半：現況／目標，右側三張卡只留動作，數字改放下面匯流圖。
+    upper = 2.28
+    left_w = 7.55
+    gap = 0.10
+    card_h = (upper - gap) / 2
     add_card(slide, ML, y, left_w, card_h)
     add_text(
-        slide, ML + 0.16, y + 0.12, left_w - 0.32, card_h - 0.20,
+        slide, ML + 0.14, y + 0.06, left_w - 0.26, card_h - 0.10,
         [
-            [("As-Is", BLUE, True, 18)],
-            [("只靠客訴與回廠紀錄，人流失之後才知道。", INK, False, 16)],
-            [("1,671 句流失裡，186 句沒抱怨就找出口。", INK, False, 16)],
-            [("使用者是售後決策者與服務廠客戶關係人員。", MUTED, False, 15)],
+            [("As-Is", BLUE, True, 16)],
+            [("只靠客訴與回廠紀錄，人流失之後才知道。1,671 句裡 186 句沒抱怨就找出口。", INK, False, 14)],
+            [("使用者是售後決策者與服務廠客戶關係人員。", MUTED, False, 13)],
         ],
-        size=16,
+        size=14,
     )
-    add_card(slide, ML, y + card_h + 0.12, left_w, card_h)
+    add_card(slide, ML, y + card_h + gap, left_w, card_h)
     add_text(
-        slide, ML + 0.16, y + card_h + 0.24, left_w - 0.32, card_h - 0.20,
+        slide, ML + 0.14, y + card_h + gap + 0.06, left_w - 0.26, card_h - 0.10,
         [
-            [("To-Be", BLUE, True, 18)],
-            [("公開輿情加上 CRM 訊號，在離開之前先辨識。", INK, False, 16)],
-            [("過保前 60 天、刪項後、間隔拉長，先找到人。", INK, False, 16)],
+            [("To-Be", BLUE, True, 16)],
+            [("三個訊號並行。到期前 90 天進名單，第 60 天再開口。", INK, False, 14)],
+            [("公開輿情加上 CRM，在離開原廠之前先辨識。", INK, False, 14)],
         ],
-        size=16,
+        size=14,
     )
-    right_x = ML + left_w + 0.16
-    right_w = CW - left_w - 0.16
-    cards = [
-        ("過保", "保固到期前先找到人。", "過保 62 句、保固內 17 句"),
-        ("刪項", "未同意的項目，回廠時再問。", "連續 2 次拒項就列管"),
-        ("回廠間隔拉長", "間隔超過建議週期就提醒。", "逾期超過建議週期 1.5 倍"),
+    right_x = ML + left_w + 0.12
+    right_w = CW - left_w - 0.12
+    shorts = [
+        ("過保", "到期前先找到人"),
+        ("刪項", "回廠時再問一次"),
+        ("間隔拉長", "超過週期就提醒"),
     ]
-    gap_y = 0.10
-    rh = (upper - 2 * gap_y) / 3
-    for i, (head, body, num) in enumerate(cards):
-        yy = y + i * (rh + gap_y)
+    rh = (upper - 2 * 0.08) / 3
+    for i, (head, body) in enumerate(shorts):
+        yy = y + i * (rh + 0.08)
         add_card(slide, right_x, yy, right_w, rh)
         add_text(
-            slide, right_x + 0.14, yy + 0.08, right_w - 0.26, rh - 0.12,
-            [
-                [(head, INK, True, 18)],
-                [(num, BLUE, True, 16)],
-                [(body, INK, False, 15)],
-            ],
-            size=15,
+            slide, right_x + 0.10, yy + 0.04, right_w - 0.16, rh - 0.06,
+            [[(head, INK, True, 15)], [(body, INK, False, 13)]],
+            size=13,
         )
-    # 三個前兆並行，再接到離開原廠、一般外廠（736 句見 T10，可複選）。
+    flow_y = y + upper + 0.10
+    flow_h = 7.02 - flow_y
     add_card(slide, ML, flow_y, CW, flow_h, fill="EAF1F8")
-    steps = [
-        ("過保", "前兆"),
-        ("刪項", "前兆"),
-        ("間隔拉長", "前兆"),
-        ("離開原廠", "人走了才知道"),
-        ("一般外廠", "736 句，可複選"),
+    add_text(
+        slide, ML + 0.12, flow_y + 0.04, CW - 0.24, 0.28,
+        [[("三個前兆並排，匯流後才是離開；資料沒有先後順序", NAVY, True, 13)]],
+        size=13, margin=0.0,
+    )
+    precursors = [
+        ("過保", "過保 62 句、保固內 17 句", "觸發：到期前 90 天"),
+        ("刪項", "連續 2 次拒項", "拒絕估價項目就列管"),
+        ("間隔拉長", "逾期超過建議週期", "1.5 倍"),
     ]
-    aw, n = 0.28, len(steps)
-    inner_x, inner_w = ML + 0.12, CW - 0.24
-    bw = (inner_w - aw * (n - 1)) / n
-    by = flow_y + 0.36
-    bh = flow_h - 0.48
-    for i, (head, sub) in enumerate(steps):
-        xx = inner_x + i * (bw + aw)
+    inner_x, inner_w = ML + 0.14, CW - 0.28
+    gap_x = 0.12
+    bw = (inner_w - 2 * gap_x) / 3
+    by = flow_y + 0.34
+    bh = 1.08
+    for i, (head, line, sub) in enumerate(precursors):
+        xx = inner_x + i * (bw + gap_x)
         add_card(slide, xx, by, bw, bh, fill="F7FBFF", line=BLUE)
         add_text(
-            slide, xx + 0.04, by + 0.06, bw - 0.08, bh - 0.08,
-            [[(head, INK, True, 16)], [(sub, NAVY, False, 14)]],
-            size=15, align=PP_ALIGN.CENTER,
+            slide, xx + 0.06, by + 0.06, bw - 0.12, bh - 0.10,
+            [
+                [(head, INK, True, 18)],
+                [(line, BLUE, True, 14)],
+                [(sub, NAVY, False, 13)],
+            ],
+            size=14, align=PP_ALIGN.CENTER,
         )
-        if i < n - 1:
-            arrow = slide.shapes.add_shape(
-                MSO_SHAPE.RIGHT_ARROW,
-                Inches(xx + bw + 0.02), Inches(by + bh / 2 - 0.11),
-                Inches(aw - 0.04), Inches(0.22),
-            )
-            arrow.fill.solid()
-            arrow.fill.fore_color.rgb = BLUE
-            arrow.line.fill.background()
+        arrow = slide.shapes.add_shape(
+            MSO_SHAPE.DOWN_ARROW,
+            Inches(xx + bw / 2 - 0.11), Inches(by + bh + 0.04),
+            Inches(0.22), Inches(0.22),
+        )
+        arrow.fill.solid()
+        arrow.fill.fore_color.rgb = BLUE
+        arrow.line.fill.background()
+    merge_y = by + bh + 0.30
+    merge_h = 0.58
+    add_card(slide, inner_x, merge_y, inner_w, merge_h, fill="F7FBFF", line=BLUE)
+    add_text(
+        slide, inner_x + 0.08, merge_y + 0.04, inner_w - 0.16, merge_h - 0.06,
+        [[("離開原廠", INK, True, 18), ("　　人走了才知道", NAVY, False, 14)]],
+        size=16, align=PP_ALIGN.CENTER, anchor="ctr",
+    )
+    mid_x = ML + CW / 2
+    arrow = slide.shapes.add_shape(
+        MSO_SHAPE.DOWN_ARROW,
+        Inches(mid_x - 0.11), Inches(merge_y + merge_h + 0.04),
+        Inches(0.22), Inches(0.22),
+    )
+    arrow.fill.solid()
+    arrow.fill.fore_color.rgb = BLUE
+    arrow.line.fill.background()
+    out_y = merge_y + merge_h + 0.30
+    out_h = 0.56
+    add_card(slide, inner_x, out_y, inner_w, out_h, fill="F7FBFF", line=BLUE)
+    add_text(
+        slide, inner_x + 0.08, out_y + 0.02, inner_w - 0.16, out_h - 0.04,
+        [[("一般外廠　736 句", BLUE, True, 20), ("　　可複選", NAVY, False, 14)]],
+        size=16, align=PP_ALIGN.CENTER, anchor="ctr",
+    )
 
 
 def build_p3(slide, y):
@@ -923,20 +956,33 @@ def build_p5(slide, y):
                 out.append([cell_text(a), cell_text(b)])
         return out
 
-    add_table(slide, ML, y, 6.05, 2.20, pairs(scale_rows_l, scale_rows_r), [3.15, 2.90], font=13)
-    add_table(slide, ML + 6.35, y, 6.07, 2.20, pairs(qual_l, qual_r), [3.35, 2.72], font=13)
-    add_card(slide, ML, y + 2.30, CW, 1.15)
+    add_table(slide, ML, y, 6.05, 2.05, pairs(scale_rows_l, scale_rows_r), [3.15, 2.90], font=13)
+    add_table(slide, ML + 6.35, y, 6.07, 2.05, pairs(qual_l, qual_r), [3.35, 2.72], font=13)
+    note_y = y + 2.12
+    note_h = 0.66
+    add_card(slide, ML, note_y, CW, note_h)
     add_text(
-        slide, ML + 0.12, y + 2.34, CW - 0.24, 1.06,
+        slide, ML + 0.12, note_y + 0.04, CW - 0.24, note_h - 0.06,
         [[(
-            "去識別：文本遮蔽 517 次，抽查 50 句（seed 42）漏網 0。超過 78 字（Q3+1.5×IQR）占 7.77%，"
-            "品質檢查只標記、不刪除，21,183 句仍全部進入標註。切句時另把超過 200 字的段落依逗號切開。"
-            "22.5 萬則留言切句後為 23.6 萬句（切句使句數增加）。",
+            "去識別：文本遮蔽 517 次，抽查 50 句（seed 42）漏網 0。"
+            "超過 78 字的長句占 7.77%，只標記、不刪除。21,183 句仍全部進入標註。",
             INK, False, 14,
         )]],
         size=14,
     )
-    fit_pic(slide, "F9_pipeline.png", ML, y + 3.54, CW, 2.30)
+    trend_y = note_y + note_h + 0.06
+    trend_h = 0.40
+    add_card(slide, ML, trend_y, CW, trend_h, fill="EAF1F8")
+    add_text(
+        slide, ML + 0.12, trend_y + 0.02, CW - 0.24, trend_h - 0.02,
+        [[(
+            "整體輿情：2026Q3 流失率 4.2%，上季 5.3%，去年同季 10.9%（至 9/19）。佐證見附錄 A2b 的 F9。",
+            INK, False, 14,
+        )]],
+        size=14, anchor="ctr",
+    )
+    fig_y = trend_y + trend_h + 0.06
+    fit_pic(slide, "F9_pipeline.png", ML, fig_y, CW, 7.02 - fig_y)
 
 
 def build_p6(slide, y):
@@ -980,7 +1026,7 @@ def build_p6(slide, y):
 def build_p7(slide, y):
     gap = 0.10
     card_w = (CW - 3 * gap) / 4
-    card_h = 1.72
+    card_h = 1.38
     for i, (name, people, share, feature, quote) in enumerate(PERSONAS):
         x = ML + i * (card_w + gap)
         add_card(slide, x, y, card_w, card_h)
@@ -997,10 +1043,10 @@ def build_p7(slide, y):
     fig_y = y + card_h + 0.08
     foot_h = 0.46
     fig_h = fit_pic(slide, "F5.png", ML, fig_y, CW, 7.02 - fig_y - foot_h - 0.06)
-    foot_y = fig_y + fig_h + 0.06
-    add_card(slide, ML, foot_y, CW, 7.02 - foot_y, fill="EAF1F8")
+    foot_y = 7.02 - foot_h
+    add_card(slide, ML, foot_y, CW, foot_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.12, foot_y + 0.04, CW - 0.22, 7.02 - foot_y - 0.04,
+        slide, ML + 0.12, foot_y + 0.04, CW - 0.22, foot_h - 0.06,
         [[("分母：高、中風險 1,280 人。未分類 199 人列觀察名單，不投遞。Persona 為規則定義，每項可回溯原句。", INK, False, 15)]],
         size=15,
     )
@@ -1036,57 +1082,57 @@ def build_p8(slide, y):
 
 def build_p9(slide, y):
     steps = [
-        ("57%", "Haiku 初篩", "單獨召回約 57%。先把可能流失的句子留住。"),
-        ("3,760", "帶上下文複核", "重疊 3,760 句。Mobile01、PTT 用 Sonnet，Dcard 用 GPT。"),
-        ("98.4%", "對得起來", "c≥2 一致率 98.4%。九面向標完，殘餘僅 4 句。"),
+        ("57%", "Haiku 初篩", "單獨召回約 57%。先把可能流失的句子留住，不能只靠這一段初篩。"),
+        ("3,760", "帶上下文複核", "重疊 3,760 句。Mobile01、PTT 用 Sonnet，Dcard 用 GPT 再看一次。"),
+        ("98.4%", "對得起來", "c≥2 一致率 98.4%。九面向標完，殘餘僅 4 句，不再另開面向。"),
     ]
-    gap = 0.14
+    gap = 0.12
+    note_h = 0.70
     card_w = (CW - 2 * gap) / 3
-    card_h = 2.05
+    card_h = 2.15
     for i, (num, head, body) in enumerate(steps):
         x = ML + i * (card_w + gap)
         add_card(slide, x, y, card_w, card_h)
         add_text(
             slide, x + 0.12, y + 0.08, card_w - 0.22, card_h - 0.12,
             [
-                [(num, BLUE, True, 32)],
+                [(num, BLUE, True, 40)],
                 [(head, INK, True, 18)],
                 [(body, INK, False, 16)],
             ],
             size=16,
         )
-    gold_y = y + card_h + 0.10
-    gold_h = 2.05
+    gold_y = y + card_h + gap
     half = (CW - gap) / 2
-    add_card(slide, ML, gold_y, half, gold_h, fill="FDEBD0")
+    add_card(slide, ML, gold_y, half, card_h, fill="FDEBD0")
     add_text(
-        slide, ML + 0.16, gold_y + 0.10, half - 0.28, gold_h - 0.16,
+        slide, ML + 0.16, gold_y + 0.08, half - 0.28, card_h - 0.14,
         [
-            [("F1  0.82", BLUE, True, 32)],
+            [("F1  0.82", BLUE, True, 40)],
             [("本機模型，與 Sonnet 同級", INK, True, 18)],
-            [("人工金標 300 句。限制：正例僅 9 句，召回區間 0.45–0.94。", INK, False, 16)],
+            [("人工金標 300 句。正例僅 9 句，召回區間 0.45–0.94。0.82 還不是穩定成績。", INK, False, 16)],
         ],
         size=16,
     )
-    add_card(slide, ML + half + gap, gold_y, half, gold_h, fill="FDEBD0")
+    add_card(slide, ML + half + gap, gold_y, half, card_h, fill="FDEBD0")
     add_text(
-        slide, ML + half + gap + 0.16, gold_y + 0.10, half - 0.28, gold_h - 0.16,
+        slide, ML + half + gap + 0.16, gold_y + 0.08, half - 0.28, card_h - 0.14,
         [
-            [("F1  0.50", ORANGE, True, 32)],
+            [("F1  0.50", ORANGE, True, 40)],
             [("Haiku 零樣本", INK, True, 18)],
-            [("同一批人工金標。所以才要兩段式，不能只靠初篩。", INK, False, 16)],
+            [("同一批人工金標。召回約 57% 不夠，所以才要兩段式，不能只靠初篩。", INK, False, 16)],
         ],
         size=16,
     )
-    note_y = gold_y + gold_h + 0.08
-    add_card(slide, ML, note_y, CW, 7.02 - note_y, fill="EAF1F8")
+    note_y = gold_y + card_h + gap
+    add_card(slide, ML, note_y, CW, note_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.14, note_y + 0.06, CW - 0.26, 7.02 - note_y - 0.08,
+        slide, ML + 0.14, note_y + 0.06, CW - 0.26, note_h - 0.08,
         [
-            [("限制要一起看：正例僅 9 句，召回區間 0.45–0.94，0.82 不是穩定成績。", INK, False, 16)],
             [("九面向全量標完，殘餘僅 4 句。Haiku 單獨召回約 57%，所以第二段才複核。", INK, False, 16)],
+            [("正例僅 9 句，召回區間 0.45–0.94。本機 F1 0.82 還不是穩定成績。", INK, False, 16)],
         ],
-        size=16,
+        size=16, anchor="ctr",
     )
 
 
@@ -1114,12 +1160,13 @@ def build_p10(slide, y):
         "Prefill-only：只輸出各等級機率，不生成文字。",
         "8 GB 顯卡可訓（約 5 小時）、可推（每句 0.7 秒）。",
         "資料不出門，推論零 API 費。",
+        "同一 600 句：r4 F1 0.685，高於 Haiku 的 0.58。",
     ]
     prefill_x, prefill_w = ML + 6.40, 6.02
     prefill_h = note_y + note_h - y
     add_card(slide, prefill_x, y, prefill_w, prefill_h)
     add_text(
-        slide, prefill_x + 0.16, y + 0.08, prefill_w - 0.30, 1.05,
+        slide, prefill_x + 0.16, y + 0.06, prefill_w - 0.30, 1.12,
         [[(line, INK, False, 16)] for line in lines],
         size=16,
     )
@@ -1127,7 +1174,7 @@ def build_p10(slide, y):
     chips = [("輸入", 1.05), ("只取下一詞機率", 2.05), ("各等級機率", 1.55)]
     chip_gap = 0.28
     chip_h = 0.42
-    chip_y = y + prefill_h - chip_h - 0.10
+    chip_y = y + prefill_h - chip_h - 0.06
     chip_x = prefill_x + 0.16
     for label, chip_w in chips:
         add_card(slide, chip_x, chip_y, chip_w, chip_h, fill="EAF1F8")
@@ -1145,18 +1192,18 @@ def build_p10(slide, y):
             )
             chip_x += chip_gap
     steps = [
-        ("1 ETL＋弱監督標註", "篩出 21,183 句售後語料。先寬鬆標，再帶上下文複核。"),
-        ("2 資料切分\n（防洩漏）", "GroupSplit 整篇排除測試 600 句。驗證 1,096 句，訓練池 9,431 句。"),
-        ("3 任務轉換", "流失四級拆成四個是非題。Prefill-only 只取下一詞機率。"),
-        ("4 監督式微調 SFT", "Qwen3-4B 用 QLoRA r=16。過採樣到四成；2 epoch、8 GB、5 小時。"),
-        ("5 評估與校準", "金標 300 句：F1 0.82、κ 0.81。另看 P、R 與五段校準。"),
+        ("1 ETL＋弱監督標註", "篩出 21,183 句售後語料。先用 Haiku 寬鬆標，再用 Sonnet 或 GPT 帶上下文複核。c≥2 一致率 98.4%，殘餘僅 4 句。"),
+        ("2 資料切分\n（防洩漏）", "GroupSplit 整篇排除測試 600 句。驗證 1,096 句，訓練池 9,431 句。同篇句子不進訓練，避免把成績高估。"),
+        ("3 任務轉換", "流失四級拆成四個是非題。Prefill-only 只取下一詞在候選上的機率，不生成文字。每句約 0.7 秒，8 GB 顯卡可推，資料不出門。"),
+        ("4 監督式微調 SFT", "Qwen3-4B，QLoRA r=16。流失句過採樣到四成。2 epoch，8 GB 顯卡約 5 小時。只訓低秩參數，推論零 API 費。"),
+        ("5 評估與校準", "金標 300 句：F1 0.82、κ 0.81。另看精確率、召回與五段校準。最高信心桶 n=71、實際約 68%。曲線見附錄 A2b。"),
     ]
     gap = 0.10
     cw = (CW - 4 * gap) / 5
     sy = note_y + note_h + 0.14
-    bar_h = 1.08
+    bar_h = 1.12
     bar_y = 7.02 - bar_h
-    step_h = bar_y - 0.12 - sy
+    step_h = min(2.62, bar_y - 0.10 - sy)
     for i, (head, body) in enumerate(steps):
         x = ML + i * (cw + gap)
         add_card(slide, x, sy, cw, step_h)
@@ -1185,7 +1232,7 @@ def build_p11(slide, y):
     ]
     gap_x, gap_y = 0.12, 0.10
     card_w = (CW - gap_x) / 2
-    card_h = 1.58
+    card_h = 1.28
     for i, (num, head, how, how2) in enumerate(cards):
         col, row = i % 2, i // 2
         x = ML + col * (card_w + gap_x)
@@ -1266,9 +1313,10 @@ def build_p12(slide, y):
                 [(preview, INK, False)],
             ])
         rows.append(row)
-    add_table(slide, ML, y, CW, 4.55, rows, [2.08, 3.4467, 3.4467, 3.4466], font=12)
-    foot_y = y + 4.68
-    add_card(slide, ML, foot_y, CW, 7.02 - foot_y)
+    foot_h = 0.78
+    add_table(slide, ML, y, CW, 7.02 - y - foot_h - 0.10, rows, [2.08, 3.4467, 3.4467, 3.4466], font=12)
+    foot_y = 7.02 - foot_h
+    add_card(slide, ML, foot_y, CW, foot_h)
     add_text(
         slide, ML + 0.16, foot_y + 0.08, CW - 0.32, 7.02 - foot_y - 0.12,
         [
@@ -1280,24 +1328,26 @@ def build_p12(slide, y):
 
 
 def build_p13(slide, y):
-    left_w = 5.55
+    left_w = 5.35
     items = [
-        ("需求", "人走了才知道 → 過保、刪項、間隔拉長時先找到人。"),
-        ("技術", "判斷、分群、生成都有原型。8 條規則已對到 DMS 欄位。"),
-        ("財務：人力成本節省", "人工逐句篩 2.1 萬句約需 106 人時（估）。本機模型 4.1 小時跑完，零 API 費。人力改花在審名單、審話術。"),
-        ("風險", "五項主要風險，對策見右表。"),
+        ("需求", "人走了才知道。過保、刪項、間隔拉長時先找到人。", 0.76),
+        ("技術", "判斷、分群、生成都有原型。8 條規則已對到 DMS 欄位。", 0.76),
+        ("財務：人力成本節省", "人工逐句篩 2.1 萬句約需 106 人時（估）。本機模型 4.1 小時跑完，零 API 費。人力改花在審名單與話術。", 1.08),
+        ("風險", "五項主要風險，對策與責任人見右表。", 0.74),
+        ("怎麼讀右表", "技術：寫錯條款只引用 76 條並人工審；模糊句多報就當初篩。資料註明論壇母體，上線改 CRM。法規只用去識別版。客群寫成可回溯原句的規則。", 1.28),
     ]
-    for i, (head, body) in enumerate(items):
-        yy = y + i * 1.42
-        add_card(slide, ML, yy, left_w, 1.32)
+    yy = y
+    for head, body, rh in items:
+        add_card(slide, ML, yy, left_w, rh)
         add_text(
-            slide, ML + 0.12, yy + 0.06, left_w - 0.22, 1.02,
+            slide, ML + 0.12, yy + 0.06, left_w - 0.22, rh - 0.10,
             [
                 [(head, BLUE, True, 16)],
                 [(body, INK, False, 14)],
             ],
-            size=11,
+            size=14,
         )
+        yy += rh + 0.08
     # 風險登錄表前 5 列（iPAS骨架頁_草稿.md）。四欄：層別、風險、對策、責任人。
     risks = [
         ("層別", "風險", "對策", "責任人"),
@@ -1314,9 +1364,9 @@ def build_p13(slide, y):
         else:
             rows.append([cell_text(cols[0], INK, True), cell_text(cols[1]), cell_text(cols[2]), cell_text(cols[3], INK, True)])
     add_table(
-        slide, ML + 5.72, y, 6.70, 5.56, rows,
-        [0.72, 2.35, 2.85, 0.78],
-        font=12,
+        slide, ML + left_w + 0.14, y, CW - left_w - 0.14, 7.02 - y, rows,
+        [0.78, 2.15, 3.15, 0.85],
+        font=13,
     )
 
 
@@ -1348,37 +1398,38 @@ def build_p14(slide, y):
         size=11, margin=0.0,
     )
     moat_y = y + 2.58
-    add_card(slide, ML, moat_y, CW, 1.28)
+    moat_h = 1.48
+    add_card(slide, ML, moat_y, CW, moat_h)
     add_text(
-        slide, ML + 0.14, moat_y + 0.06, CW - 0.28, 1.16,
+        slide, ML + 0.14, moat_y + 0.06, CW - 0.28, moat_h - 0.10,
         [
-            [("數據護城河：三項資產，全部留在和泰內網", BLUE, True, 14)],
-            [("語料：2.1 萬句標註＋300 句人工金標", INK, False, 13)],
-            [("模型：自有 4B 模型，8 GB 顯卡 5 小時可重訓。人工審核回饋持續再訓練。", INK, False, 13)],
-            [("知識庫：76 條官方條款＋每則話術查核紀錄", INK, False, 13)],
+            [("數據護城河：三項資產，全部留在和泰內網", BLUE, True, 16)],
+            [("語料：2.1 萬句標註＋300 句人工金標。每季重標，審核回饋持續再訓練。", INK, False, 15)],
+            [("模型：自有 4B 模型，8 GB 顯卡 5 小時可重訓。推論零 API 費，資料不出門。", INK, False, 15)],
+            [("知識庫：76 條官方條款＋每則話術查核紀錄。價格與保固只引用這 76 條。", INK, False, 15)],
         ],
-        size=13,
+        size=15,
     )
     phases = [
-        ("資料接入", "4 週", "R1–R8 換成 DMS 實際欄位，工單文字去識別後接入"),
-        ("模型校準", "4 週", "重標 300 句金標，重驗 r4、調觸發門檻"),
-        ("單一據點試行", "8 週", "一個服務廠跑完流程，專員審核後投遞"),
-        ("擴大至全台", "8 週", "依試行調整話術與渠道，分批上線"),
-        ("持續監控", "不設終點", "日監控、週收樣本、月重評、季重驗模型"),
+        ("資料接入", "4 週", "R1–R8 換成\nDMS 實際欄位\n工單去識別後接入"),
+        ("模型校準", "4 週", "重標 300 句金標\n重驗 r4\n再調觸發門檻"),
+        ("單一據點試行", "8 週", "一個服務廠跑完\n專員審核後投遞\n未核准不發出"),
+        ("擴大至全台", "8 週", "依試行調話術\n與渠道分批上線\n不一次開全台"),
+        ("持續監控", "不設終點", "日監控、週收樣本\n月重評 Persona\n季重驗模型"),
     ]
     gap = 0.12
     card_w = (CW - 4 * gap) / 5
-    base = y + 3.96
-    phase_h = 7.02 - base - 0.36
+    base = moat_y + moat_h + 0.08
+    phase_h = 7.02 - 0.32 - base
     for i, (name, weeks, doing) in enumerate(phases):
         x = ML + i * (card_w + gap)
         add_card(slide, x, base, card_w, phase_h)
         add_text(
             slide, x + 0.06, base + 0.06, card_w - 0.12, phase_h - 0.10,
             [
-                [(str(i + 1) + "  " + name, BLUE, True, 12)],
-                [(weeks, NAVY, True, 12)],
-                [(doing, MUTED, False, 10)],
+                [(str(i + 1) + "  " + name, BLUE, True, 14)],
+                [(weeks, NAVY, True, 13)],
+                *[[(line, MUTED, False, 12)] for line in doing.split("\n")],
             ],
             size=11,
         )
@@ -1390,7 +1441,8 @@ def build_p14(slide, y):
 
 
 def build_p15(slide, y):
-    h = fit_pic(slide, "F8.png", ML, y, CW, 3.85)
+    mock_h = 1.62
+    h = fit_pic(slide, "F8.png", ML, y, CW, 7.02 - y - mock_h - 0.08)
     rx = ML
     rw = CW
     mock_y = y + h + 0.08
@@ -1412,7 +1464,7 @@ def build_p15(slide, y):
         [
             [("車主 H-7F3A　風險 高", INK, True, 16)],
             [("Persona　過保精算派　觸發 R1 過保", INK, False, 14)],
-            [("話術草稿　引用條目 1、13", NAVY, False, 15)],
+            [("話術草稿　引用條目 41、52", NAVY, False, 15)],
         ],
         size=15,
     )
@@ -1589,7 +1641,7 @@ def build_a3(slide, y):
             [
                 [(f"{msg['persona']} × 待料通知　{msg['channel']}", BLUE, True, 16)],
                 [(f"引用條目　{msg['cites']}", NAVY, True, 16)],
-                [(msg["text"], INK, False, 18)],
+                [(msg["text"], INK, False, 20)],
                 [(f"查核結果　{msg['check']}", MUTED, False, 14)],
             ],
             size=16,
@@ -1662,7 +1714,7 @@ def build_a5(slide, y):
             [
                 [(f"{msg['persona']} × 客訴結案後 7 天回訪　{msg['channel']}", BLUE, True, 16)],
                 [(f"引用條目　{msg['cites']}", NAVY, True, 16)],
-                [(msg["text"], INK, False, 18)],
+                [(msg["text"], INK, False, 20)],
                 [(f"查核結果　{msg['check']}", MUTED, False, 14)],
             ],
             size=16,
@@ -1781,6 +1833,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "```",
         "",
         "腳本列出非包含關係的形狀重疊、超出頁面或壓到頁尾來源列的形狀，以及每張預覽圖的 PIL 空白比例。文字放在卡片上、標籤放在方塊內這種包含關係不算重疊。",
+        "另列卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，低於 0.7 的會印出來。第 12–18 頁要以這個比例把卡片內空白壓到約兩成以內。",
         "",
         "## 預覽",
         "",
