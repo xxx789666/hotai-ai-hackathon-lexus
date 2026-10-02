@@ -8,8 +8,9 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.0（封面、摘要、大綱、P1–P15、附錄）。投影片 24 張，內容頁 15 張。
-大綱頁是否計入 15 頁尚未向主辦方確認，頁面標籤只寫「大綱」。
+內容是 v3.1（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+計入 15 頁的是大綱 1 張加內容頁 14 張（第 4–17 頁）。附錄 7 張（第 18–24 頁，含 A0）不計入。
+封面是否計入尚待向主辦方確認，封面不動。
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.0"
+DECK_VERSION = "3.1"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -65,7 +66,7 @@ def zi(text: str) -> int:
 NOTES = [
     "題三初賽：公開輿情裡，每六位售後發言就有一位在找出口。",
     "摘要給評審三層目標：回廠率假設加十點，核准八成，模型每季重驗。",
-    "大綱列出七個章節與頁碼，並標示兩大產出各落在哪幾頁。",
+    "大綱列出六個章節與頁碼，並標示兩大產出各落在哪幾頁。",
     "提案分成兩份產出：一份輿情洞察，一份對準四種客群的溝通。",
     "三個前兆並行，不是依序發生：過保、刪項、間隔拉長。",
     "零件勝算比二點五八、價格二點六四，分母兩萬一千句。",
@@ -116,8 +117,8 @@ SUMMARY_RIGHT = {
 SLIDES = [
     {
         "id": "TOC",
-        "section": "大綱",
-        "title": "七個章節、兩大產出，對照頁碼",
+        "section": "大綱（計入 15 頁）",
+        "title": "六個章節、兩大產出，對照頁碼",
         "source": "來源：本簡報章節；兩大產出依企業挑戰題",
         "reports": ["raw/bh-challenge.txt"],
         "figures": [],
@@ -275,8 +276,8 @@ SLIDES = [
         "figures": [],
     },
     {
-        "id": "P15",
-        "section": "7 補充資料",
+        "id": "A0",
+        "section": "附錄 A0 補充資料（不計入 15 頁）",
         "title": "每則話術都經人工核准；決賽提供可操作版",
         "source": "來源：L7 運作流程；圖 F8。線框為示意",
         "reports": ["L7運作流程_2026-09-30.md"],
@@ -550,9 +551,9 @@ def page_span(ids: list[str]) -> str:
 
 
 # 產出 1 涵蓋概述、痛點與輿情、雙迴路、Persona、風險、標註與模型。
-# 產出 2 涵蓋雙迴路、話術與效益、審核線框，以及待料／門檻／客訴附錄。
+# 產出 2 涵蓋雙迴路、話術與效益、附錄 A0 審核線框，以及待料／門檻／客訴附錄。
 OUT1_IDS = ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10"]
-OUT2_IDS = ["P6", "P12", "P13", "P14", "P15", "A3", "A4", "A5"]
+OUT2_IDS = ["P6", "P12", "P13", "P14", "A0", "A3", "A4", "A5"]
 
 
 def new_content_slide(prs, meta: dict, page: int):
@@ -630,7 +631,6 @@ TOC_BLURB = {
     "4": "兩段式 98.4%；r4 F1 0.685",
     "5": "128 位靜默出走者看得到",
     "6": "12 則主表＋4 則附錄已查核",
-    "7": "人工核准後才投遞",
 }
 TOC_TAG = {
     "1": "產出 1",
@@ -639,7 +639,6 @@ TOC_TAG = {
     "4": "產出 1",
     "5": "支撐兩份產出",
     "6": "產出 2",
-    "7": "產出 2",
 }
 
 
@@ -660,7 +659,7 @@ def build_toc(slide, y):
         name = g["section"].split(" ", 1)[1]
         pages = page_span(g["ids"])
         cards.append((key, name, f"第 {pages} 頁", TOC_TAG[key], TOC_BLURB[key]))
-    cards.append(("附", "附錄", f"第 {page_span(appendix)} 頁", "不計入內容頁", "術語、圖表、話術與門檻"))
+    cards.append(("附", "附錄", f"第 {page_span(appendix)} 頁", "不計入 15 頁", "補充資料、術語、圖表與話術"))
     gap = 0.12
     cols = 4
     card_w = (CW - (cols - 1) * gap) / cols
@@ -699,7 +698,7 @@ def build_toc(slide, y):
             "針對目標 Persona（客群輪廓）的 AI 溝通計畫與系統流程",
             [
                 "核心溝通策略、AI 生成內容、接觸點、運作流程圖。",
-                f"落在第 {page_span(OUT2_IDS)} 頁。",
+                f"落在第 {page_span(OUT2_IDS)} 頁（第 {file_page('A0')} 頁為附錄 A0）。",
                 "12 則主表＋4 則附錄已查核。",
                 "待料 A3、門檻 A4、客訴 A5。人工核准才發。",
             ],
@@ -746,7 +745,7 @@ def build_p1(slide, y):
         ("核心溝通策略", "對的人、對的時機開口", f"第 {file_page('P12')} 頁"),
         ("AI 生成內容範例", "12 則主表已對 76 條條款查核", f"第 {file_page('P12')} 頁；附錄 A3、A5"),
         ("精準接觸點", "保固前 60 天、間隔拉長、刪項後", f"第 {file_page('P12')} 頁"),
-        ("運作流程圖", "洞察與溝通雙迴路，人工核准才發", f"第 {file_page('P6')}、{file_page('P15')} 頁"),
+        ("運作流程圖", "洞察與溝通雙迴路，人工核准才發", f"第 {file_page('P6')}、{file_page('A0')} 頁"),
     ]
     panels = [
         ("產出 1", "AI 網路輿情洞察系統架構與報告", left),
@@ -1767,13 +1766,12 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "",
         "## 頁數怎麼算",
         "",
-        f"- 投影片共 {2 + len(SLIDES)} 張：封面 1、提案摘要 1、大綱 1（不計入內容頁）、內容 "
-        f"{sum(1 for m in SLIDES if m['id'].startswith('P'))}（P1–P15）、附錄 "
-        f"{sum(1 for m in SLIDES if m['id'].startswith('A'))}（A1 術語表、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪）。",
+        f"- 投影片共 {2 + len(SLIDES)} 張：封面 1、提案摘要 1（不計入）、大綱 1（計入 15 頁）、內容 "
+        f"{sum(1 for m in SLIDES if m['id'].startswith('P'))}（第 4–17 頁，P1–P14）、附錄 "
+        f"{sum(1 for m in SLIDES if m['id'].startswith('A'))}（第 18–24 頁：A0 補充資料、A1 術語表、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪）。",
+        "- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。附錄 7 張不計入。模板只明寫提案摘要不計入。",
         "- 待料通知與客訴回訪話術分兩頁：A3 兩則待料、A5 兩則客訴。四則全文塞不進同一頁。",
-        "- 模板寫明提案摘要不計入 15 頁上限。大綱比照提案摘要，不計入。附錄也不計。內容頁剛好 15，所以沒有把 P5 併進 P2。",
-        "- 若評審把封面也算進 15 頁，合計會是 16。那時再把 P5 的兩張表併進 P2。",
-        "- 若主辦方把大綱頁也算進 15 頁，備案是三選一：P1 與 P2 合併、把 P5 併入 P2，或把大綱併入提案摘要。先不要擅自拿掉大綱頁。",
+        "- 若主辦方連封面也計入，內容頁需再減一張。備案：第 5 頁痛點與第 6 頁合併，或第 14 頁併入第 13 頁。封面是否計入，尚待 B 向主辦方確認。",
         "",
         "## 頁次對照",
         "",
@@ -1791,7 +1789,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         )
     lines += [
         "",
-        "圖檔在 `reports/figures/`。洞察頁用 F1、F3、F5、F7。P5 用 F9_pipeline。P6 與 P15 用 F8。附錄 A2 放 F2、F4，A2b 放 F6、F9。",
+        "圖檔在 `reports/figures/`。洞察頁用 F1、F3、F5、F7。P5 用 F9_pipeline。P6 與附錄 A0 用 F8。附錄 A2 放 F2、F4，A2b 放 F6、F9。",
         "",
         "## 占位清單",
         "",
@@ -2030,8 +2028,9 @@ def main() -> None:
     if len(prs.slides) != expected:
         raise SystemExit(f"頁數應為 {expected}，實際 {len(prs.slides)}")
     content = sum(1 for m in SLIDES if m["id"].startswith("P"))
-    if content != 15:
-        raise SystemExit(f"內容頁應為 15，實際 {content}")
+    appendix = sum(1 for m in SLIDES if m["id"].startswith("A"))
+    if content != 14 or appendix != 7:
+        raise SystemExit(f"內容頁應為 14、附錄應為 7，實際內容 {content}、附錄 {appendix}")
     for i, slide in enumerate(prs.slides, 1):
         note = slide.notes_slide.notes_text_frame.text.strip()
         if not note:
