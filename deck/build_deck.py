@@ -8,7 +8,7 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v2.3（22 張：封面、摘要、P1–P15、A1–A5）。
+內容是 v2.4（22 張：封面、摘要、P1–P15、A1–A5）。
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "2.3"
+DECK_VERSION = "2.4"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -69,7 +69,7 @@ NOTES = [
     "零件勝算比二點五八、價格二點六四，分母兩萬一千句。",
     "出口在一般外廠；定保口述中位原廠九千、外廠三千五，不是公告價。",
     "IQR 定 78 字門檻，上游已去掉 15,182 句重複。",
-    "兩個迴路：洞察每天進報告池，關懷由事件觸發，人審核過才投遞。",
+    "兩個迴路：洞察每天進報告池，關懷由客訴結案等事件觸發，審核後才投遞。",
     "分群只獨立支持靜默出走者；其餘 Persona 用規則定義。",
     "高風險七成四真有流失句；過保精算派人最多，平均風險也最高。",
     "人工兩人 κ 0.40，不一致處要經仲裁後才成為金標。",
