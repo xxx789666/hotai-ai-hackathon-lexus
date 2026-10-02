@@ -1,11 +1,11 @@
-# 初賽簡報 v2.7
+# 初賽簡報 v2.8
 
-和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v2.7.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
+和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v2.8.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
 
 ## 版本
 
-- 目前版號：v2.7。
-- 檔名規則：`deck/初賽簡報_v2.7.pptx`、`deck/preview/初賽簡報_v2.7.pdf`、`deck/preview/v2.7/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
+- 目前版號：v2.8。
+- 檔名規則：`deck/初賽簡報_v2.8.pptx`、`deck/preview/初賽簡報_v2.8.pdf`、`deck/preview/v2.8/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
 - 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。
 - 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。
 - 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。
@@ -16,6 +16,7 @@
 - 待料通知與客訴回訪話術分兩頁：A3 兩則待料、A5 兩則客訴。四則全文塞不進同一頁。
 - 模板寫明提案摘要不計入 15 頁上限。大綱比照提案摘要，不計入。附錄也不計。內容頁剛好 15，所以沒有把 P5 併進 P2。
 - 若評審把封面也算進 15 頁，合計會是 16。那時再把 P5 的兩張表併進 P2。
+- 若主辦方把大綱頁也算進 15 頁，備案是三選一：P1 與 P2 合併、把 P5 併入 P2，或把大綱併入提案摘要。先不要擅自拿掉大綱頁。
 
 ## 頁次對照
 
@@ -39,12 +40,12 @@
 | 16 | P13 | 6 預期效益與落地評估 | 人工篩選工時省九成以上；五項風險都有對策 | — | `iPAS骨架頁_草稿.md`、`會議記錄_2026-09-30.md`、`iPAS導入對照_2026-09-25.md` |
 | 17 | P14 | 6 預期效益與落地評估 | 24 週導入，目標高風險回廠率 +10 個百分點 | — | `iPAS骨架頁_草稿.md`、`會議記錄_2026-09-30.md`、`reports/T9_human_eval.md`、`reports/T8_r4_report.md` |
 | 18 | P15 | 7 補充資料 | 每則話術都經人工核准；決賽提供可操作版 | F8.png | `L7運作流程_2026-09-30.md` |
-| 19 | A1 | 附錄 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
-| 20 | A2 | 附錄 補充圖表（不計入 15 頁） | 三站發言者流失率，與作者風險分布 | F2.png、F4.png | `reports/T7_stats_tests.md`、`reports/T10_risk_persona_report.md` |
-| 21 | A2b | 附錄 補充圖表（不計入 15 頁） | 校準曲線，與季趨勢預警 | F6.png、F9.png | `reports/T8_r4_report.md`、`reports/T15_trend_reports.md` |
-| 22 | A3 | 附錄 待料通知話術（不計入 15 頁） | 待料逾 7 天就主動通知，話術不寫到貨日 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md` |
-| 23 | A4 | 附錄 CRM 觸發門檻（不計入 15 頁） | 八條規則的欄位與門檻；投影片只留欄位名 | — | `reports/T10_risk_persona_report.md`、`L7運作流程_草稿.md` |
-| 24 | A5 | 附錄 客訴回訪話術（不計入 15 頁） | 客訴結案第 7 天回訪，不推銷、不要求刪評 | — | `客訴關懷策略_草稿.md`、`knowledge/generated_examples.md` |
+| 19 | A1 | 附錄 A1 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
+| 20 | A2 | 附錄 A2 補充圖表（不計入 15 頁） | 三站發言者流失率，與發言者風險分布 | F2.png、F4.png | `reports/T7_stats_tests.md`、`reports/T10_risk_persona_report.md` |
+| 21 | A2b | 附錄 A2b 補充圖表（不計入 15 頁） | 校準曲線，與季趨勢預警 | F6.png、F9.png | `reports/T8_r4_report.md`、`reports/T15_trend_reports.md` |
+| 22 | A3 | 附錄 A3 待料通知話術（不計入 15 頁） | 待料逾 7 天就主動通知，話術不寫到貨日 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md` |
+| 23 | A4 | 附錄 A4 CRM 觸發門檻（不計入 15 頁） | 八條規則的欄位與門檻；投影片只留欄位名 | — | `reports/T10_risk_persona_report.md`、`L7運作流程_草稿.md` |
+| 24 | A5 | 附錄 A5 客訴回訪話術（不計入 15 頁） | 客訴結案第 7 天回訪，不推銷、不要求刪評 | — | `客訴關懷策略_草稿.md`、`knowledge/generated_examples.md` |
 
 圖檔在 `reports/figures/`。洞察頁用 F1、F3、F5、F7。P5 用 F9_pipeline。P6 與 P15 用 F8。附錄 A2 放 F2、F4，A2b 放 F6、F9。
 
@@ -79,6 +80,6 @@ python deck/build_deck.py --version X.Y --note "一句變更說明"
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v2.7.pdf` 與 `deck/preview/v2.7/slide-01.png`–`slide-24.png`。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v2.8.pdf` 與 `deck/preview/v2.8/slide-01.png`–`slide-24.png`。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
