@@ -24,7 +24,20 @@ BAND_TOP, BAND_BOT = "#F7F9FC", "#FBF7F7"
 GREY = "#8A8F98"
 
 
-def box(ax, x, y, w, h, text, fill=PROC, edge=BLUE, size=11, bold_first=True, lw=1.4, ls="-", bold_lines=1):
+def layer_tag(ax, x, y, w, h, label):
+    """短標放右上角；L3·L4·L5 較寬，改放右下角，避免蓋住標題。"""
+    wide = len(label) > 3
+    tw = 14.2 if wide else 5.2
+    th = 3.3
+    bx = x + w - tw - 0.4
+    by = (y + 0.45) if wide else (y + h - th - 0.35)
+    ax.add_patch(FancyBboxPatch((bx, by), tw, th, boxstyle="round,pad=0,rounding_size=0.5",
+                                fc=BLUE, ec=BLUE, lw=0, zorder=5))
+    ax.text(bx + tw / 2, by + th / 2, label, ha="center", va="center", fontsize=8,
+            color="white", fontweight="bold", zorder=6)
+
+
+def box(ax, x, y, w, h, text, fill=PROC, edge=BLUE, size=11, bold_first=True, lw=1.4, ls="-", bold_lines=1, tag=None):
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.6",
                                 fc=fill, ec=edge, lw=lw, ls=ls, zorder=3))
     lines = text.split("\n")
@@ -49,6 +62,8 @@ def box(ax, x, y, w, h, text, fill=PROC, edge=BLUE, size=11, bold_first=True, lw
     else:
         ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=size, color=INK, zorder=4,
                 linespacing=1.35)
+    if tag:
+        layer_tag(ax, x, y, w, h, tag)
 
 
 def arrow(ax, p, q, color=BLUE, lw=1.6, style="-|>", ms=14, path=None, zorder=2):
@@ -71,40 +86,44 @@ def main():
     # 兩個帶狀區
     ax.add_patch(FancyBboxPatch((1, 52), 190, 38, boxstyle="round,pad=0,rounding_size=2", fc=BAND_TOP, ec="#D5DEE8", lw=1, zorder=1))
     ax.add_patch(FancyBboxPatch((1, 0), 190, 49, boxstyle="round,pad=0,rounding_size=2", fc=BAND_BOT, ec="#E4D4D4", lw=1, zorder=1))
-    ax.text(3, 85.5, "洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", fontsize=13, fontweight="bold", color=BLUE, va="center")
-    ax.text(28, 45.5, "溝通迴路｜事件觸發：CRM 訊號・客訴結案 → Persona（客群輪廓） → RAG 話術 → 人工核准 → 投遞 → KPI 回饋", fontsize=13, fontweight="bold", color=HUMAN_EDGE, va="center")
+    ax.text(3, 87.2, "產出 1：AI 網路輿情洞察系統架構與報告", fontsize=12, fontweight="bold", color=BLUE, va="center")
+    ax.text(3, 83.6, "洞察迴路｜每日排程：新留言 → 標註與風險 → 日報 → Dashboard", fontsize=11, color=BLUE, va="center")
+    ax.text(3, 46.6, "產出 2：針對目標 Persona（客群輪廓）的 AI 溝通計畫與系統流程", fontsize=12, fontweight="bold", color=HUMAN_EDGE, va="center")
+    ax.text(3, 43.2, "溝通迴路｜事件觸發：CRM・客訴結案 → Persona → RAG 話術 → 人工核准 → 投遞 → KPI", fontsize=11, color=HUMAN_EDGE, va="center")
 
     # 上帶：7 個方塊。下帶觸發方塊改三行後，上下方塊一起加高 2，避免字擠出框。
     w, h, yt = 23, 17, 58
     xs = [2, 29.5, 57, 84.5, 112, 139.5, 167]
+    # L2 沒有獨立的每日步驟方塊。L7 文件 §3：資料庫 B 存放去識別留言與標註結果。
     top = [
-        ("論壇爬蟲", "每日抓新留言\n三站公開論壇", PROC, BLUE),
-        ("去重・去識別", "作者雜湊、店名\n人名遮蔽（L1）", PROC, BLUE),
-        ("資料庫 B", "原始輿情\n去識別版，可溯源", DB_FILL, DB_EDGE),
-        ("流失判斷 L3–L5", "r4 逐句判流失、面向\n→ 風險分數 →\nPersona（客群輪廓）", PROC, BLUE),
-        ("洞察報告", "日報・週報・季報\n趨勢分析、200% 預警", PROC, BLUE),
-        ("資料庫 A", "報告池\n日／週／季報、預警紀錄", DB_FILL, DB_EDGE),
-        ("Dashboard 1–3", "1 戰情總覽\n2 報告池・3 原始輿情", PROC, BLUE),
+        ("論壇爬蟲", "每日抓新留言\n三站公開論壇", PROC, BLUE, "L0"),
+        ("去重・去識別", "作者雜湊、店名\n人名遮蔽", PROC, BLUE, "L1"),
+        ("資料庫 B", "去識別留言\n與標註結果", DB_FILL, DB_EDGE, "L2"),
+        ("流失判斷", "r4 判流失、面向、風險分數\n再指派 Persona（客群輪廓）", PROC, BLUE, "L3·L4·L5"),
+        ("洞察報告", "日報・週報・季報\n趨勢分析、200% 預警", PROC, BLUE, None),
+        ("資料庫 A", "報告池\n日／週／季報、預警紀錄", DB_FILL, DB_EDGE, None),
+        ("Dashboard 1–3", "1 戰情總覽\n2 報告池・3 原始輿情", PROC, BLUE, None),
     ]
-    for x, (head, body, f, e) in zip(xs, top):
-        box(ax, x, yt, w, h, head + "\n" + body, fill=f, edge=e, ls="--" if head.startswith("Dashboard") else "-")
+    for x, (head, body, f, e, tg) in zip(xs, top):
+        box(ax, x, yt, w, h, head + "\n" + body, fill=f, edge=e, ls="--" if head.startswith("Dashboard") else "-", tag=tg)
     for a, b in zip(xs[:-1], xs[1:]):
         arrow(ax, (a + w, yt + h / 2), (b, yt + h / 2))
 
     # 下帶：6 個方塊 + 2 個資料庫
     yb = 22
+    # 觸發對 L4、Persona 對 L5、RAG 對 L6、投遞與 KPI 對 L7（L7運作流程_2026-09-30.md）。人工審核沒有層號。
     bot = [
-        ("觸發事件", "CRM 命中 R1–R8（含 R5 待料）\n客訴結案 → 第 7 天回訪\n或風險分數升為高", PROC, BLUE),
-        ("判定 Persona\n（客群輪廓）", "四類之一\n未分類 → 觀察名單", PROC, BLUE),
-        ("RAG 生成話術", "檢索條款 → 生成\n→ 第二輪事實查核", PROC, BLUE),
-        ("人工審核", "Dashboard 5 審核佇列\n核准或改寫才投遞", HUMAN_FILL, HUMAN_EDGE),
-        ("投遞", "LINE・App\nEmail・專員電話", PROC, BLUE),
-        ("KPI 回饋", "點擊・預約・回廠\n寫回 CRM", PROC, BLUE),
+        ("觸發事件", "CRM 命中 R1–R8（含 R5 待料）\n客訴結案 → 第 7 天回訪\n或風險分數升為高", PROC, BLUE, "L4"),
+        ("判定 Persona\n（客群輪廓）", "四類之一\n未分類 → 觀察名單", PROC, BLUE, "L5"),
+        ("RAG 生成話術", "檢索條款 → 生成\n→ 第二輪事實查核", PROC, BLUE, "L6"),
+        ("人工審核", "Dashboard 5 審核佇列\n核准或改寫才投遞", HUMAN_FILL, HUMAN_EDGE, None),
+        ("投遞", "LINE・App\nEmail・專員電話", PROC, BLUE, "L7"),
+        ("KPI 回饋", "點擊・預約・回廠\n寫回 CRM", PROC, BLUE, "L7"),
     ]
-    for x, (head, body, f, e) in zip(xs[:6], bot):
+    for x, (head, body, f, e, tg) in zip(xs[:6], bot):
         box(ax, x, yb, w, h, head + "\n" + body, fill=f, edge=e, lw=2.2 if head == "人工審核" else 1.4,
             size=10 if head == "觸發事件" else 11,
-            bold_lines=2 if head.startswith("判定 Persona") else 1)
+            bold_lines=2 if head.startswith("判定 Persona") else 1, tag=tg)
     for a, b in zip(xs[:5], xs[1:6]):
         arrow(ax, (a + w, yb + h / 2), (b, yb + h / 2))
     # 回饋箭在 x=13.5 垂直上升，小字放箭頭右側、觸發方塊正下方。12pt 單行會伸進第二格下方，改兩行。

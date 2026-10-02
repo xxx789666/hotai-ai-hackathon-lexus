@@ -1,6 +1,7 @@
 """T10 圖表初稿。中文用 Microsoft JhengHei，白底，1600×900 以上。
 
   python pipeline/make_figures.py
+  另：f_pipeline() 寫 reports/figures/F9_pipeline.png（不在 main 裡，避免連動重畫）。
 
 F1、F2 的分子分母沿用 reports/T7_stats_tests.md，誤差線為依該表重算的 Wilson 95% CI。
 F6 用 r4 ep2 的 600 句測試集（jev_lora_r4_ep2_pilot.jsonl）。
@@ -163,10 +164,10 @@ def f2_sources():
     hi = rows[peak]
     dcard = next(r for r in rows if r[0] == "Dcard")
     ax.set_title(
-        f"{hi[0]} 作者流失率 {hi[1] * 100:.1f}%，高於 Dcard 的 {dcard[1] * 100:.1f}%",
+        f"{hi[0]} 論壇發言者流失率 {hi[1] * 100:.1f}%，高於 Dcard 的 {dcard[1] * 100:.1f}%",
         fontsize=22, color=INK, pad=14,
     )
-    ax.set_ylabel("作者流失率（%）")
+    ax.set_ylabel("論壇發言者流失率（%）")
     ax.set_ylim(0, max(r[3] for r in rows) * 100 * 1.3)
     for i, r in enumerate(rows):
         ax.text(i, r[1] * 100 + 0.4, f"{r[1] * 100:.1f}", ha="center", va="bottom", fontsize=14, color=INK)
@@ -384,6 +385,44 @@ def f6_calibration():
     ax.set_ylim(0, 100)
     ax.grid(axis="both", color=GRID, linewidth=0.8)
     finish(fig, FIG / "F6.png")
+
+
+def f_pipeline():
+    """資料處理鏈。數字轉抄簡報 P5 與 T7 品質報告，不重算。不進 main()，避免連動重畫 F1–F7。"""
+    from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+
+    fig, ax = plt.subplots(figsize=(16, 4.4), dpi=120)
+    fig.patch.set_facecolor("white")
+    ax.set_xlim(0, 160)
+    ax.set_ylim(0, 44)
+    ax.axis("off")
+    ax.set_position([0, 0, 1, 1])
+    nodes = [
+        ("爬取留言", "22.5 萬則"),
+        ("切句・去重・去識別", "23.6 萬句"),
+        ("售後關鍵詞篩選", "21,183 句"),
+        ("五指標品質檢查", "超過 78 字只標記"),
+        ("進入標註", "供模型與報告"),
+    ]
+    w, h, y = 26, 22, 11
+    gap = 6.2
+    xs = [3 + i * (w + gap) for i in range(5)]
+    for i, ((title, sub), x) in enumerate(zip(nodes, xs)):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.2",
+                                    fc="#EAF1F8", ec=BLUE, lw=1.6))
+        ax.text(x + w / 2, y + 14.2, str(i + 1), ha="center", va="center", fontsize=16,
+                color=BLUE, fontweight="bold")
+        ax.text(x + w / 2, y + 9.2, title, ha="center", va="center", fontsize=15,
+                color=INK, fontweight="bold")
+        ax.text(x + w / 2, y + 4.6, sub, ha="center", va="center", fontsize=14, color="#3C4653")
+        if i < 4:
+            ax.add_patch(FancyArrowPatch((x + w + 0.3, y + h / 2), (x + w + gap - 0.3, y + h / 2),
+                                         arrowstyle="-|>", mutation_scale=16, color=BLUE, lw=1.6))
+    FIG.mkdir(parents=True, exist_ok=True)
+    path = FIG / "F9_pipeline.png"
+    fig.savefig(path, dpi=120, facecolor="white")
+    plt.close(fig)
+    print(f"F9_pipeline.png {png_size(path)[0]}×{png_size(path)[1]}")
 
 
 def main():
