@@ -11,7 +11,7 @@
 內容是 v3.4（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
 v3.4：第 21 頁 F9 圖例移到圖外上方、F6 的 n 標籤避開對角線且圖區加高；全冊文字套用中日韓換行禁則
 （eaLnBrk／hangingPunct、lang=zh-TW），標點不再落行首；第 10 頁人物卡加高；封面版號由 fill_cover 帶入；
-第 11、20 頁數值標籤上移；第 13 頁流程卡標題齊頂；第 10、17 頁 Persona 補（客群輪廓）。
+第 11、20 頁數值標籤上移；第 13 頁流程卡標題齊頂；第 10 頁 Persona 補（客群輪廓）、第 17 頁改「客群輪廓」。
 v3.3 全頁版面重做：第 3–24 頁的卡片、字級、標籤位置統一；F1–F7 與資料處理鏈改用 pptx 原生形狀畫，
 數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only）；F8 在第 9 頁與附錄 A0
 都用原生形狀（draw_f8）；只有 F9 季趨勢仍貼 PNG。封面與摘要左欄是模板，不動。
@@ -851,11 +851,11 @@ def chart_bars(slide, x, y, w, h, cats, vals, *, errs=None, highlight=None, titl
             label_bottom = min(by, y_hi)
         lx = bx + bw / 2 - lab_w / 2
         txt = fmt.format(v)
-        vw = lab_w
-        if value_fill:  # 有底色時框只比字寬一點，格線只在字的位置被遮住
+        vx, vw = lx, lab_w
+        if value_fill:  # 有底色時框只比字寬一點，格線只在字的位置被遮住；類別標籤仍用 lx／lab_w
             vw = min(lab_w, sum(0.06 if ch in ".," else 0.115 for ch in txt) * value_size / 16 + 0.10)
-            lx = bx + bw / 2 - vw / 2
-        vbox = add_text(slide, lx, label_bottom - 0.30 - value_lift, vw, 0.28,
+            vx = bx + bw / 2 - vw / 2
+        vbox = add_text(slide, vx, label_bottom - 0.30 - value_lift, vw, 0.28,
                         [[(txt, INK, True, value_size)]], size=value_size,
                         align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:value")
         if value_fill:
@@ -2047,7 +2047,7 @@ def build_p14(slide, y):
         ("模型校準", "4 週", "重標 300 句金標\n重驗 r4\n再調觸發門檻"),
         ("單一據點試行", "8 週", "一個服務廠跑完\n專員審核後投遞\n未核准不發出"),
         ("擴大至全台", "8 週", "依試行調話術\n與渠道分批上線\n不一次開全台"),
-        ("持續監控", "不設終點", "日監控、週收樣本\n月重評 Persona（客群輪廓）\n季重驗模型"),
+        ("持續監控", "不設終點", "日監控、週收樣本\n月重評客群輪廓\n季重驗模型"),  # 「Persona（客群輪廓）」一行放不下，改中文
     ]
     gap = 0.12
     card_w = (CW - 4 * gap) / 5
