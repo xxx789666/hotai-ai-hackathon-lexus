@@ -8,15 +8,16 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.4（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
-v3.4：第 21 頁 F9 圖例移到圖外上方、F6 的 n 標籤避開對角線且圖區加高；全冊文字套用中日韓換行禁則
-（eaLnBrk／hangingPunct、lang=zh-TW），標點不再落行首；第 10 頁人物卡加高；封面版號由 fill_cover 帶入；
-第 11、20 頁數值標籤上移；第 13 頁流程卡標題齊頂；第 10 頁 Persona 補（客群輪廓）、第 17 頁改「客群輪廓」。
-v3.3 全頁版面重做：第 3–24 頁的卡片、字級、標籤位置統一；F1–F7 與資料處理鏈改用 pptx 原生形狀畫，
-數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only）；F8 在第 9 頁與附錄 A0
-都用原生形狀（draw_f8）；只有 F9 季趨勢仍貼 PNG。封面與摘要左欄是模板，不動。
-計入 15 頁的是大綱 1 張加內容頁 14 張（第 4–17 頁）。附錄 7 張（第 18–24 頁，含 A0）不計入。
-封面是否計入尚待向主辦方確認，封面不動。
+內容是 v3.5（摘要、大綱、P1–P14、附錄 A0–A5）。投影片 23 張，沒有封面。
+v3.5：拿掉自製封面，提案摘要成為第 1 頁（主辦方信：「提案摘要須置於簡報第一頁，並於同一頁內完整呈現」；
+模板第 1 張是規則說明頁，不是封面，建置時刪除）。全冊頁碼與「第 N 頁」引用前移 1；內容、數字、版面不變。
+v3.4：F9 圖例移到圖外上方、F6 的 n 標籤避開對角線且圖區加高；全冊文字套用中日韓換行禁則
+（eaLnBrk／hangingPunct、lang=zh-TW），標點不再落行首；人物卡加高；數值標籤上移；流程卡標題齊頂。
+v3.3 全頁版面重做：內容頁與附錄的卡片、字級、標籤位置統一；F1–F7 與資料處理鏈改用 pptx 原生形狀畫，
+數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only）；F8 在第 8 頁與附錄 A0
+都用原生形狀（draw_f8）；只有 F9 季趨勢仍貼 PNG。摘要頁左欄是模板，不動。
+頁數算法：提案摘要第 1 頁不計入；計入 15 頁的是大綱 1 張（第 2 頁）加內容頁 14 張（第 3–16 頁）；
+附錄 7 張（第 17–23 頁，含 A0）不計入。依據是主辦方信「15 頁內，提案摘要及附錄不計入頁數」。
 """
 
 from __future__ import annotations
@@ -41,7 +42,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.4"
+DECK_VERSION = "3.5"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -72,7 +73,6 @@ def zi(text: str) -> int:
 # ---------------------------------------------------------------------------
 
 NOTES = [
-    "題三初賽：公開輿情裡，每六位售後發言就有一位在找出口。",
     "摘要給評審三層目標：回廠率假設加十點，核准八成，模型每季重驗。",
     "大綱列出六個章節與頁碼，並標示兩大產出各落在哪幾頁。",
     "提案分成兩份產出：一份輿情洞察，一份對準四種客群的溝通。",
@@ -635,7 +635,7 @@ def add_title(slide, text: str) -> float:
 def file_page(slide_id: str) -> int:
     for i, meta in enumerate(SLIDES):
         if meta["id"] == slide_id:
-            return i + 3
+            return i + 2
     raise KeyError(slide_id)
 
 
@@ -1257,7 +1257,7 @@ def build_p1(slide, y):
 
 
 def flow_box(slide, x, y, w, h, blocks, size=15, line=BLUE, fill="F7FBFF", align=PP_ALIGN.CENTER):
-    """流程方塊：淡藍底、藍框、文字置中。全冊的流程圖（第 5、8、9、18 頁）共用。"""
+    """流程方塊：淡藍底、藍框、文字置中。全冊的流程圖（第 4、7、8、17 頁）共用。"""
     card = add_card(slide, x, y, w, h, fill=fill, line=line)
     add_text(slide, x + 0.08, y + 0.05, w - 0.16, h - 0.10, blocks, size=size, align=align, anchor="ctr")
     return card
@@ -1457,7 +1457,7 @@ def build_p5(slide, y):
             add_arrow(slide, xx + bw + 0.04, by + bh / 2, xx + bw + gap - 0.04, by + bh / 2, width=1.75)
 
 
-# 第 9 頁（P6）與附錄 A0 用原生形狀畫 F8：方塊、L# 標籤、連接線都是 pptx 物件，投影不會糊。
+# 第 8 頁（P6）與附錄 A0 用原生形狀畫 F8：方塊、L# 標籤、連接線都是 pptx 物件，投影不會糊。
 # 文字逐字對齊 pipeline/make_flow_figure.py；只重排換行，不刪字。
 F8_PROC, F8_DB, F8_DB_EDGE = "EAF1F8", "F6EFE3", RGBColor(0x8A, 0x6D, 0x3B)
 F8_HUMAN, F8_HUMAN_EDGE = "F3C1BD", RGBColor(0xC0, 0x39, 0x2B)
@@ -1504,7 +1504,7 @@ def add_arrow(slide, x1, y1, x2, y2, color=BLUE, width=1.5, head=True, both=Fals
 
 
 def draw_f8(slide, y, *, compact=False):
-    """畫 F8 雙迴路。compact=False 是第 9 頁（含八層圖例與說明列）；
+    """畫 F8 雙迴路。compact=False 是第 8 頁（含八層圖例與說明列）；
     compact=True 給附錄 A0：兩帶標題各併成一行、資料庫列矮一點、不畫圖例，回傳下緣 y。"""
     gap = 0.10
     size = F8_FONT
@@ -1554,7 +1554,7 @@ def draw_f8(slide, y, *, compact=False):
     db_h = 0.80 if compact else 0.98
     db_y = bot_box_y + bot_box_h + 0.16
     red_y = db_y + db_h + 0.08
-    # 底卡先畫，灰線與紅線才不會被蓋住。第 9 頁沿用 v3.2 的高度（留 0.94 吋給圖例與說明列）。
+    # 底卡先畫，灰線與紅線才不會被蓋住。第 8 頁沿用 v3.2 的高度（留 0.94 吋給圖例與說明列）。
     bot_h = (red_y + 0.10 - bot_y) if compact else (BOT - 0.94 - bot_y)
     add_card(slide, ML, bot_y, CW, bot_h, fill=F8_BAND_BOT)
     add_arrow(slide, risk_x, box_y + box_h, risk_x, mid_y, color=F8_GREY, width=1.25, head=False)
@@ -2406,7 +2406,7 @@ def collect_placeholders(prs):
     for i, slide in enumerate(prs.slides, 1):
         blob = "\n".join(iter_shape_text(slide))
         for match in pat.findall(blob):
-            pid = "封面" if i == 1 else ("摘要" if i == 2 else SLIDES[i - 3]["id"])
+            pid = "摘要" if i == 1 else SLIDES[i - 2]["id"]
             found.append((i, pid, match))
     return found
 
@@ -2429,30 +2429,30 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "",
         "## 頁數怎麼算",
         "",
-        f"- 投影片共 {2 + len(SLIDES)} 張：封面 1、提案摘要 1（不計入）、大綱 1（計入 15 頁）、內容 "
-        f"{sum(1 for m in SLIDES if m['id'].startswith('P'))}（第 4–17 頁，P1–P14）、附錄 "
-        f"{sum(1 for m in SLIDES if m['id'].startswith('A'))}（第 18–24 頁：A0 補充資料、A1 術語表、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪）。",
-        "- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。附錄 7 張不計入。模板只明寫提案摘要不計入。",
+        f"- 投影片共 {1 + len(SLIDES)} 張，沒有封面：提案摘要 1（第 1 頁，不計入）、大綱 1（第 2 頁，計入 15 頁）、內容 "
+        f"{sum(1 for m in SLIDES if m['id'].startswith('P'))}（第 3–16 頁，P1–P14）、附錄 "
+        f"{sum(1 for m in SLIDES if m['id'].startswith('A'))}（第 17–23 頁：A0 補充資料、A1 術語表、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪）。",
+        "- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。提案摘要與附錄 7 張不計入。",
+        "- 依據：主辦方信寫「提案摘要須置於簡報第一頁，並於同一頁內完整呈現」「請繳交 15 頁內的提案簡報，提案摘要及附錄不計入頁數」。官方模板第 1 張是「2026和泰AI黑客松」規則說明頁，沒有團隊名與作品名，不是封面；建置時刪掉它，提案摘要成為第 1 頁。團隊名與作品名在摘要表第 1、2 列。",
         "- 待料通知與客訴回訪話術分兩頁：A3 兩則待料、A5 兩則客訴。四則全文塞不進同一頁。",
-        "- 若主辦方連封面也計入，內容頁需再減一張。備案：第 5 頁痛點與第 6 頁合併，或第 14 頁併入第 13 頁。封面是否計入，尚待 B 向主辦方確認。",
+        "- 備案：若主辦方仍判定超過 15 頁，下一步是第 4 頁痛點併入第 5 頁，或第 13 頁差異化併入第 12 頁，內容頁減為 13。",
         "",
         "## 頁次對照",
         "",
         "| 檔案頁 | 代碼 | 章節 | 標題 | 圖 | 報告 |",
         "| --- | --- | --- | --- | --- | --- |",
-        "| 1 | 封面 | — | Lexus車主流失預警與 AI 溝通系統 | — | 模板封面，改作品名／主題／團隊 |",
-        "| 2 | 摘要 | 提案摘要 | 提案摘要（表格右欄） | — | 會議記錄 §四；模型現況見 T8、T9 |",
+        "| 1 | 摘要 | 提案摘要（不計入 15 頁） | 提案摘要（表格右欄；團隊名與作品名在第 1、2 列） | — | 會議記錄 §四；模型現況見 T8、T9 |",
     ]
     for i, meta in enumerate(SLIDES):
         figs = "、".join(Path(p).name for p in meta["figures"]) or "—"
         reports = "、".join(f"`{r}`" for r in meta["reports"])
         title = meta["title"]
         lines.append(
-            f"| {i + 3} | {meta['id']} | {meta['section']} | {title} | {figs} | {reports} |"
+            f"| {i + 2} | {meta['id']} | {meta['section']} | {title} | {figs} | {reports} |"
         )
     lines += [
         "",
-        "圖欄是該頁對應的報告圖。自 v3.3 起 F1–F7 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 9 頁與附錄 A0 都用原生形狀（`draw_f8`）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。",
+        "圖欄是該頁對應的報告圖。自 v3.3 起 F1–F7 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 8 頁與附錄 A0 都用原生形狀（`draw_f8`）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。",
         "",
         "## 占位清單",
         "",
@@ -2483,7 +2483,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "python deck/build_deck.py --version X.Y --note \"一句變更說明\"",
         "```",
         "",
-        "需要 Python 3.12 與 python-pptx。`--note` 必填。腳本開官方模板，保留封面與摘要左欄，刪掉七張章節分隔頁，再依 `SLIDES` 與各頁 builder 重畫。改文案請改本檔前半的 dict，不要改投影片後再存，否則重跑會蓋掉。同版號已存在時加上 `--force` 才會覆寫。",
+        "需要 Python 3.12 與 python-pptx。`--note` 必填。腳本開官方模板，刪掉第 1 張規則說明頁與七張章節分隔頁，只留提案摘要頁並保留其左欄，再依 `SLIDES` 與各頁 builder 重畫。改文案請改本檔前半的 dict，不要改投影片後再存，否則重跑會蓋掉。同版號已存在時加上 `--force` 才會覆寫。",
         "",
         "本機若裝了 PowerPoint，腳本會用 pywin32 把每頁匯出成 PNG，並把整份匯出成 PDF，放在 `deck/preview/` 的版號檔與 `vX.Y/` 資料夾。",
         "",
@@ -2621,7 +2621,7 @@ def publish_copies(version: str) -> None:
 
 
 def assert_notes() -> None:
-    if len(NOTES) != 2 + len(SLIDES) or len(BUILDERS) != len(SLIDES):
+    if len(NOTES) != 1 + len(SLIDES) or len(BUILDERS) != len(SLIDES):
         raise SystemExit(
             f"NOTES / SLIDES / BUILDERS 數量不一致：{len(NOTES)} / {len(SLIDES)} / {len(BUILDERS)}"
         )
@@ -2629,38 +2629,6 @@ def assert_notes() -> None:
         n = zi(note)
         if not 25 <= n <= 35:
             raise SystemExit(f"第 {i} 頁旁白 {n} 字（要 25–35）：{note}")
-
-
-def fill_cover(slide, version: str) -> None:
-    """封面：標題改作品名，說明框改主題／團隊／場次。版號與年月由建置帶入，不手改 pptx。"""
-    texts = [sh for sh in slide.shapes if sh.has_text_frame]
-    title = [sh for sh in texts if sh.text_frame.text.strip().startswith("2026")]
-    note = [sh for sh in texts if "說明" in sh.text_frame.text]
-    if title:
-        tf = title[0].text_frame
-        for para in list(tf.paragraphs)[1:]:
-            para._p.getparent().remove(para._p)
-        run_para = tf.paragraphs[0]
-        for r in list(run_para.runs)[1:]:
-            r._r.getparent().remove(r._r)
-        run_para.runs[0].text = "Lexus車主流失預警與 AI 溝通系統"
-        run_para.runs[0].font.size = Pt(44)
-        run_para.runs[0].font.bold = True
-    if note:
-        tf = note[0].text_frame
-        lines = ["2026 和泰 AI 黑客松｜AI 流失風險洞察與智慧溝通：",
-                 "打造Lexus車主忠誠度的終極防線",
-                 "團隊：回廠率研究所", f"初賽提案簡報（v{version}，{date.today():%Y-%m}）"]
-        for para in list(tf.paragraphs)[1:]:
-            para._p.getparent().remove(para._p)
-        first = tf.paragraphs[0]
-        for r in list(first.runs)[1:]:
-            r._r.getparent().remove(r._r)
-        first.runs[0].text = lines[0]
-        first.runs[0].font.size = Pt(18)
-        for ln in lines[1:]:
-            para = tf.add_paragraph()
-            run = para.add_run(); run.text = ln; run.font.size = Pt(18)
 
 
 def main() -> None:
@@ -2679,16 +2647,20 @@ def main() -> None:
         raise SystemExit(f"模板應為 9 頁，實際 {len(prs.slides)}")
     while len(prs.slides) > 2:
         delete_slide(prs, len(prs.slides) - 1)
-    fill_cover(prs.slides[0], version)
+    # 模板第 1 張是「2026和泰AI黑客松」規則說明頁，不是封面，最後會刪掉，讓提案摘要成為第 1 頁。
+    # 先留著再加內容頁：python-pptx 用「現有張數＋1」命名新投影片的 part，若先刪說明頁，
+    # 新的大綱頁會拿到 slide2.xml 而與摘要頁撞名，存檔就壞。
     fill_summary(prs.slides[1])
-    set_notes(prs.slides[0], NOTES[0])
-    set_notes(prs.slides[1], NOTES[1])
+    set_notes(prs.slides[1], NOTES[0])
     for i, (meta, builder) in enumerate(zip(SLIDES, BUILDERS)):
-        page = i + 3
+        page = i + 2
         slide, y = new_content_slide(prs, meta, page)
         builder(slide, y)
         set_notes(slide, NOTES[page - 1])
-    expected = 2 + len(SLIDES)
+    delete_slide(prs, 0)
+    expected = 1 + len(SLIDES)
+    if expected != 23:
+        raise SystemExit(f"總張數應為 23（摘要 1＋大綱 1＋內容 14＋附錄 7），SLIDES 給出 {expected}")
     if len(prs.slides) != expected:
         raise SystemExit(f"頁數應為 {expected}，實際 {len(prs.slides)}")
     content = sum(1 for m in SLIDES if m["id"].startswith("P"))
@@ -2705,7 +2677,7 @@ def main() -> None:
     check = Presentation(str(out))
     if len(check.slides) != expected:
         raise SystemExit(f"重開後頁數不是 {expected}")
-    table = next(shape.table for shape in check.slides[1].shapes if shape.has_table)
+    table = next(shape.table for shape in check.slides[0].shapes if shape.has_table)
     left = [table.cell(i, 0).text for i in range(7)]
     expected = [
         "團隊名稱",
