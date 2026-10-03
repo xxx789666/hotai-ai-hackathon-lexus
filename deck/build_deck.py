@@ -2647,17 +2647,17 @@ def main() -> None:
         raise SystemExit(f"模板應為 9 頁，實際 {len(prs.slides)}")
     while len(prs.slides) > 2:
         delete_slide(prs, len(prs.slides) - 1)
-    # 模板第 1 張是「2026和泰AI黑客松」規則說明頁，不是封面；刪掉，讓提案摘要成為第 1 頁。
-    delete_slide(prs, 0)
-    if len(prs.slides) != 1:
-        raise SystemExit(f"刪說明頁後應只剩提案摘要 1 張，實際 {len(prs.slides)}")
-    fill_summary(prs.slides[0])
-    set_notes(prs.slides[0], NOTES[0])
+    # 模板第 1 張是「2026和泰AI黑客松」規則說明頁，不是封面，最後會刪掉，讓提案摘要成為第 1 頁。
+    # 先留著再加內容頁：python-pptx 用「現有張數＋1」命名新投影片的 part，若先刪說明頁，
+    # 新的大綱頁會拿到 slide2.xml 而與摘要頁撞名，存檔就壞。
+    fill_summary(prs.slides[1])
+    set_notes(prs.slides[1], NOTES[0])
     for i, (meta, builder) in enumerate(zip(SLIDES, BUILDERS)):
         page = i + 2
         slide, y = new_content_slide(prs, meta, page)
         builder(slide, y)
         set_notes(slide, NOTES[page - 1])
+    delete_slide(prs, 0)
     expected = 1 + len(SLIDES)
     if expected != 23:
         raise SystemExit(f"總張數應為 23（摘要 1＋大綱 1＋內容 14＋附錄 7），SLIDES 給出 {expected}")
