@@ -1,11 +1,11 @@
-# 初賽簡報 v3.3
+# 初賽簡報 v3.4
 
-和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.3.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
+和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.4.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
 
 ## 版本
 
-- 目前版號：v3.3。
-- 檔名規則：`deck/初賽簡報_v3.3.pptx`、`deck/preview/初賽簡報_v3.3.pdf`、`deck/preview/v3.3/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
+- 目前版號：v3.4。
+- 檔名規則：`deck/初賽簡報_v3.4.pptx`、`deck/preview/初賽簡報_v3.4.pdf`、`deck/preview/v3.4/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
 - 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。
 - 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。
 - 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。
@@ -88,6 +88,6 @@ python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.3.pdf` 與 `deck/preview/v3.3/slide-01.png`–`slide-24.png`。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.4.pdf` 與 `deck/preview/v3.4/slide-01.png`–`slide-24.png`。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
