@@ -1,52 +1,52 @@
-# 初賽簡報 v3.4
+# 初賽簡報 v3.5
 
-和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.4.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
+和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.5.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
 
 ## 版本
 
-- 目前版號：v3.4。
-- 檔名規則：`deck/初賽簡報_v3.4.pptx`、`deck/preview/初賽簡報_v3.4.pdf`、`deck/preview/v3.4/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
+- 目前版號：v3.5。
+- 檔名規則：`deck/初賽簡報_v3.5.pptx`、`deck/preview/初賽簡報_v3.5.pdf`、`deck/preview/v3.5/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
 - 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。
 - 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。
 - 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。
 
 ## 頁數怎麼算
 
-- 投影片共 24 張：封面 1、提案摘要 1（不計入）、大綱 1（計入 15 頁）、內容 14（第 4–17 頁，P1–P14）、附錄 7（第 18–24 頁：A0 補充資料、A1 術語表、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪）。
-- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。附錄 7 張不計入。模板只明寫提案摘要不計入。
+- 投影片共 23 張，沒有封面：提案摘要 1（第 1 頁，不計入）、大綱 1（第 2 頁，計入 15 頁）、內容 14（第 3–16 頁，P1–P14）、附錄 7（第 17–23 頁：A0 補充資料、A1 術語表、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪）。
+- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。提案摘要與附錄 7 張不計入。
+- 依據：主辦方信寫「提案摘要須置於簡報第一頁，並於同一頁內完整呈現」「請繳交 15 頁內的提案簡報，提案摘要及附錄不計入頁數」。官方模板第 1 張是「2026和泰AI黑客松」規則說明頁，沒有團隊名與作品名，不是封面；建置時刪掉它，提案摘要成為第 1 頁。團隊名與作品名在摘要表第 1、2 列。
 - 待料通知與客訴回訪話術分兩頁：A3 兩則待料、A5 兩則客訴。四則全文塞不進同一頁。
-- 若主辦方連封面也計入，內容頁需再減一張。備案：第 5 頁痛點與第 6 頁合併，或第 14 頁併入第 13 頁。封面是否計入，尚待 B 向主辦方確認。
+- 備案：若主辦方仍判定超過 15 頁，下一步是第 4 頁痛點併入第 5 頁，或第 13 頁差異化併入第 12 頁，內容頁減為 13。
 
 ## 頁次對照
 
 | 檔案頁 | 代碼 | 章節 | 標題 | 圖 | 報告 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 封面 | — | Lexus車主流失預警與 AI 溝通系統 | — | 模板封面，改作品名／主題／團隊 |
-| 2 | 摘要 | 提案摘要 | 提案摘要（表格右欄） | — | 會議記錄 §四；模型現況見 T8、T9 |
-| 3 | TOC | 大綱（計入 15 頁） | 六個章節、兩大產出，對照頁碼 | — | `raw/bh-challenge.txt` |
-| 4 | P1 | 1 提案概述 | 提案是兩份產出：輿情洞察，以及對準客群的溝通 | — | `raw/bh-challenge.txt`、`reports/T7_stats_tests.md`、`reports/T3_residual_split_report.md` |
-| 5 | P2 | 2 目標對象與痛點分析 | 售後是人走了才知道；輿情能提前預警 | — | `reports/T7_stats_tests.md`、`專案架構_2026-09-23.md`、`reports/T10_risk_persona_report.md`、`輿情訊號對應CRM欄位_草稿_2026-09-28.md` |
-| 6 | P3 | 2 目標對象與痛點分析 | 等料和價格送走人；態度抱怨多，卻少有人走 | F1.png | `reports/T7_stats_tests.md` |
-| 7 | P4 | 2 目標對象與痛點分析 | 出口是一般外廠；過保後價差把人推走 | F3.png | `reports/T10_risk_persona_report.md`、`專案架構_2026-09-23.md`、`reports/T11_kb_prices_report.md` |
-| 8 | P5 | 2 目標對象與痛點分析 | 2.1 萬句售後語料，品質過關、全數去識別 | F9_pipeline.png | `題目選擇分析_2026-09-22.md`、`reports/T7_data_quality.md`、`reports/T7_deid_report.md`、`reports/T15_trend_reports.md` |
-| 9 | P6 | 3 解決方案設計 | 洞察每日產出；關懷由事件觸發、人工核准才發 | F8.png | `L7運作流程_2026-09-30.md`、`專案架構_2026-09-23.md` |
-| 10 | P7 | 3 解決方案設計 | 四種流失車主，過保精算派最多（511 人） | F5.png | `reports/T10_risk_persona_report.md`、`會議記錄_2026-09-30.md` |
-| 11 | P8 | 3 解決方案設計 | 高風險車主 74% 確有流失句，分級可信 | F7.png | `reports/T10_risk_persona_report.md` |
-| 12 | P9 | 4 AI 應用方法 | 兩段式標註：先寬抓、再複核，一致率 98.4% | — | `專案架構_2026-09-23.md`、`reports/T1_dcard_verify_report.md`、`reports/T2_other_refine_report.md`、`reports/T3_residual_split_report.md` |
-| 13 | P10 | 4 AI 應用方法 | 本機小模型勝過雲端 Haiku，零 API 費 | — | `reports/T8_r4_report.md`、`專案架構_2026-09-23.md` |
-| 14 | P11 | 5 獨特優勢與差異化 | 看得見沒抱怨就走的人，分數說得出原因 | — | `reports/T10_risk_persona_report.md`、`reports/T8_r4_report.md`、`專案架構_2026-09-23.md` |
-| 15 | P12 | 6 預期效益與落地評估 | 對的人、對的時機開口；12 則話術全數查核 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md`、`knowledge/lexus_aftersales_kb.md` |
-| 16 | P13 | 6 預期效益與落地評估 | 人工篩選工時省九成以上；五項風險都有對策 | — | `iPAS骨架頁_草稿.md`、`會議記錄_2026-09-30.md`、`iPAS導入對照_2026-09-25.md` |
-| 17 | P14 | 6 預期效益與落地評估 | 24 週導入，目標高風險回廠率 +10 個百分點 | — | `iPAS骨架頁_草稿.md`、`會議記錄_2026-09-30.md`、`reports/T9_human_eval.md`、`reports/T8_r4_report.md` |
-| 18 | A0 | 附錄 A0 補充資料（不計入 15 頁） | 每則話術都經人工核准；決賽提供可操作版 | F8.png | `L7運作流程_2026-09-30.md` |
-| 19 | A1 | 附錄 A1 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
-| 20 | A2 | 附錄 A2 補充圖表（不計入 15 頁） | 三站發言者流失率，與發言者風險分布 | F2.png、F4.png | `reports/T7_stats_tests.md`、`reports/T10_risk_persona_report.md` |
-| 21 | A2b | 附錄 A2b 補充圖表（不計入 15 頁） | 校準曲線，與季趨勢預警 | F6.png、F9.png | `reports/T8_r4_report.md`、`reports/T15_trend_reports.md` |
-| 22 | A3 | 附錄 A3 待料通知話術（不計入 15 頁） | 待料逾 7 天就主動通知，話術不寫到貨日 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md` |
-| 23 | A4 | 附錄 A4 CRM 觸發門檻（不計入 15 頁） | 八條規則的欄位與門檻；投影片只留欄位名 | — | `reports/T10_risk_persona_report.md`、`L7運作流程_草稿.md` |
-| 24 | A5 | 附錄 A5 客訴回訪話術（不計入 15 頁） | 客訴結案第 7 天回訪，不推銷、不要求刪評 | — | `客訴關懷策略_草稿.md`、`knowledge/generated_examples.md` |
+| 1 | 摘要 | 提案摘要（不計入 15 頁） | 提案摘要（表格右欄；團隊名與作品名在第 1、2 列） | — | 會議記錄 §四；模型現況見 T8、T9 |
+| 2 | TOC | 大綱（計入 15 頁） | 六個章節、兩大產出，對照頁碼 | — | `raw/bh-challenge.txt` |
+| 3 | P1 | 1 提案概述 | 提案是兩份產出：輿情洞察，以及對準客群的溝通 | — | `raw/bh-challenge.txt`、`reports/T7_stats_tests.md`、`reports/T3_residual_split_report.md` |
+| 4 | P2 | 2 目標對象與痛點分析 | 售後是人走了才知道；輿情能提前預警 | — | `reports/T7_stats_tests.md`、`專案架構_2026-09-23.md`、`reports/T10_risk_persona_report.md`、`輿情訊號對應CRM欄位_草稿_2026-09-28.md` |
+| 5 | P3 | 2 目標對象與痛點分析 | 等料和價格送走人；態度抱怨多，卻少有人走 | F1.png | `reports/T7_stats_tests.md` |
+| 6 | P4 | 2 目標對象與痛點分析 | 出口是一般外廠；過保後價差把人推走 | F3.png | `reports/T10_risk_persona_report.md`、`專案架構_2026-09-23.md`、`reports/T11_kb_prices_report.md` |
+| 7 | P5 | 2 目標對象與痛點分析 | 2.1 萬句售後語料，品質過關、全數去識別 | F9_pipeline.png | `題目選擇分析_2026-09-22.md`、`reports/T7_data_quality.md`、`reports/T7_deid_report.md`、`reports/T15_trend_reports.md` |
+| 8 | P6 | 3 解決方案設計 | 洞察每日產出；關懷由事件觸發、人工核准才發 | F8.png | `L7運作流程_2026-09-30.md`、`專案架構_2026-09-23.md` |
+| 9 | P7 | 3 解決方案設計 | 四種流失車主，過保精算派最多（511 人） | F5.png | `reports/T10_risk_persona_report.md`、`會議記錄_2026-09-30.md` |
+| 10 | P8 | 3 解決方案設計 | 高風險車主 74% 確有流失句，分級可信 | F7.png | `reports/T10_risk_persona_report.md` |
+| 11 | P9 | 4 AI 應用方法 | 兩段式標註：先寬抓、再複核，一致率 98.4% | — | `專案架構_2026-09-23.md`、`reports/T1_dcard_verify_report.md`、`reports/T2_other_refine_report.md`、`reports/T3_residual_split_report.md` |
+| 12 | P10 | 4 AI 應用方法 | 本機小模型勝過雲端 Haiku，零 API 費 | — | `reports/T8_r4_report.md`、`專案架構_2026-09-23.md` |
+| 13 | P11 | 5 獨特優勢與差異化 | 看得見沒抱怨就走的人，分數說得出原因 | — | `reports/T10_risk_persona_report.md`、`reports/T8_r4_report.md`、`專案架構_2026-09-23.md` |
+| 14 | P12 | 6 預期效益與落地評估 | 對的人、對的時機開口；12 則話術全數查核 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md`、`knowledge/lexus_aftersales_kb.md` |
+| 15 | P13 | 6 預期效益與落地評估 | 人工篩選工時省九成以上；五項風險都有對策 | — | `iPAS骨架頁_草稿.md`、`會議記錄_2026-09-30.md`、`iPAS導入對照_2026-09-25.md` |
+| 16 | P14 | 6 預期效益與落地評估 | 24 週導入，目標高風險回廠率 +10 個百分點 | — | `iPAS骨架頁_草稿.md`、`會議記錄_2026-09-30.md`、`reports/T9_human_eval.md`、`reports/T8_r4_report.md` |
+| 17 | A0 | 附錄 A0 補充資料（不計入 15 頁） | 每則話術都經人工核准；決賽提供可操作版 | F8.png | `L7運作流程_2026-09-30.md` |
+| 18 | A1 | 附錄 A1 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
+| 19 | A2 | 附錄 A2 補充圖表（不計入 15 頁） | 三站發言者流失率，與發言者風險分布 | F2.png、F4.png | `reports/T7_stats_tests.md`、`reports/T10_risk_persona_report.md` |
+| 20 | A2b | 附錄 A2b 補充圖表（不計入 15 頁） | 校準曲線，與季趨勢預警 | F6.png、F9.png | `reports/T8_r4_report.md`、`reports/T15_trend_reports.md` |
+| 21 | A3 | 附錄 A3 待料通知話術（不計入 15 頁） | 待料逾 7 天就主動通知，話術不寫到貨日 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md` |
+| 22 | A4 | 附錄 A4 CRM 觸發門檻（不計入 15 頁） | 八條規則的欄位與門檻；投影片只留欄位名 | — | `reports/T10_risk_persona_report.md`、`L7運作流程_草稿.md` |
+| 23 | A5 | 附錄 A5 客訴回訪話術（不計入 15 頁） | 客訴結案第 7 天回訪，不推銷、不要求刪評 | — | `客訴關懷策略_草稿.md`、`knowledge/generated_examples.md` |
 
-圖欄是該頁對應的報告圖。自 v3.3 起 F1–F7 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 9 頁與附錄 A0 都用原生形狀（`draw_f8`）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。
+圖欄是該頁對應的報告圖。自 v3.3 起 F1–F7 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 8 頁與附錄 A0 都用原生形狀（`draw_f8`）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。
 
 ## 占位清單
 
@@ -73,7 +73,7 @@
 python deck/build_deck.py --version X.Y --note "一句變更說明"
 ```
 
-需要 Python 3.12 與 python-pptx。`--note` 必填。腳本開官方模板，保留封面與摘要左欄，刪掉七張章節分隔頁，再依 `SLIDES` 與各頁 builder 重畫。改文案請改本檔前半的 dict，不要改投影片後再存，否則重跑會蓋掉。同版號已存在時加上 `--force` 才會覆寫。
+需要 Python 3.12 與 python-pptx。`--note` 必填。腳本開官方模板，刪掉第 1 張規則說明頁與七張章節分隔頁，只留提案摘要頁並保留其左欄，再依 `SLIDES` 與各頁 builder 重畫。改文案請改本檔前半的 dict，不要改投影片後再存，否則重跑會蓋掉。同版號已存在時加上 `--force` 才會覆寫。
 
 本機若裝了 PowerPoint，腳本會用 pywin32 把每頁匯出成 PNG，並把整份匯出成 PDF，放在 `deck/preview/` 的版號檔與 `vX.Y/` 資料夾。
 
@@ -88,6 +88,6 @@ python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.4.pdf` 與 `deck/preview/v3.4/slide-01.png`–`slide-24.png`。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.5.pdf` 與 `deck/preview/v3.5/slide-01.png`–`slide-23.png`。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
