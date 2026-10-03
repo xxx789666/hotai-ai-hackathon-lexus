@@ -8,7 +8,8 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.3（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+內容是 v3.4（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+v3.4：第 21 頁 F9 季趨勢圖重畫，兩張子圖的圖例移到圖外上方（標題與圖區之間），不再壓到折線與資料點；其他頁不動。
 v3.3 全頁版面重做：第 3–24 頁的卡片、字級、標籤位置統一；F1–F7 與資料處理鏈改用 pptx 原生形狀畫，
 數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only）；F8 在第 9 頁與附錄 A0
 都用原生形狀（draw_f8）；只有 F9 季趨勢仍貼 PNG。封面與摘要左欄是模板，不動。
@@ -38,7 +39,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.3"
+DECK_VERSION = "3.4"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -2202,6 +2203,7 @@ def build_a2(slide, y):
 
 def build_a2b(slide, y):
     # F6 原生散點在上；F9 季趨勢 PNG 依本格尺寸重畫（12.42×2.62 吋），貼進來不縮放、填滿整格。
+    # v3.4 起 F9 的圖例畫在圖外上方（pipeline/trend_reports.py fig_quarterly），不壓資料。
     cap_h = 0.50
     gap = 0.08
     f6 = figv()["F6"]["bins"]
