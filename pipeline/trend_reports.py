@@ -117,15 +117,20 @@ def style(ax):
 
 
 def fig_quarterly(qs, g, ea):
-    # 尺寸對齊附錄 A2b 下半格（12.42×2.62 吋），貼進簡報不縮放；字級 15–17，1920px 預覽約 30px。
-    # 季別隔季標示、只斜 20 度；圖例留在圖內上方，縱軸拉高一倍讓圖例不壓到資料。
+    # 尺寸對齊附錄 A2b 下半格（12.42×2.62 吋），貼進簡報不縮放；字級 14–17，1920px 預覽約 28–30px。
+    # 圖例放在圖外、標題與圖區之間（loc=lower left 錨在軸頂，各兩列），不壓任何長條、折線、誤差棒或資料點；
+    # 圖例設 in_layout=False，tight_layout 不會為了塞下圖例而把圖區壓窄，空間改由標題 pad 預留。
+    # 縱軸只留約 1.2 倍餘裕，讓資料填滿圖區。
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.42, 2.62), dpi=160, gridspec_kw={"width_ratios": [1.1, 1]})
     fig.patch.set_facecolor("#F4F7FB")
     ax1.set_facecolor("#F4F7FB")
     ax2.set_facecolor("#F4F7FB")
+    legend_kw = {"frameon": False, "fontsize": 15, "borderaxespad": 0.0, "borderpad": 0.1,
+                 "handletextpad": 0.5, "columnspacing": 1.4, "labelspacing": 0.25}
+    title_pad = 41  # 標題抬高，中間放兩列圖例
     x = list(range(len(qs)))
     ax1.bar(x, g["n"], color=BLUE_LIGHT, label="售後句數")
-    ax1.set_ylim(0, float(g["n"].max()) * 2.1)
+    ax1.set_ylim(0, float(g["n"].max()) * 1.18)
     ax1.set_ylabel("售後句數（三站）", fontsize=15)
     ax1.set_xticks(x[::2], qs[::2], rotation=20, ha="right", fontsize=14)
     ax1.tick_params(axis="y", labelsize=15)
@@ -134,12 +139,13 @@ def fig_quarterly(qs, g, ea):
                   color=RED, marker="o", lw=2, capsize=3, label="流失率（金標）與 Wilson 95% 區間")
     ax1b.set_ylabel("流失率 %", color=RED, fontsize=15)
     ax1b.tick_params(axis="y", labelsize=15)
-    ax1b.set_ylim(0, max(25, 100 * g["hi"].max() + 2))
+    ax1b.set_ylim(0, max(15.0, 100 * float(g["hi"].max()) * 1.1))
     ax1b.spines["top"].set_visible(False)
-    ax1.set_title("季報：售後討論量與流失率（近 12 季）", loc="left", fontsize=17, fontweight="bold")
+    ax1.set_title("季報：售後討論量與流失率（近 12 季）", loc="left", fontsize=17, fontweight="bold", pad=title_pad)
     h1, l1 = ax1.get_legend_handles_labels()
     h2, l2 = ax1b.get_legend_handles_labels()
-    ax1.legend(h1 + h2, l1 + l2, loc="upper left", frameon=False, fontsize=15, handlelength=1.4)
+    ax1.legend(h1 + h2, l1 + l2, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=1, handlelength=1.4,
+               **legend_kw).set_in_layout(False)
     top = ea.groupby("aspects")["churn"].sum().sort_values(ascending=False).head(5).index
     piv = ea[ea["aspects"].isin(top)].pivot(index="quarter", columns="aspects", values="churn").reindex(qs).fillna(0)
     for col, color in zip(top, [RED, BLUE, "#E07A72", "#5C84B0", GREY]):
@@ -147,9 +153,9 @@ def fig_quarterly(qs, g, ea):
     ax2.set_xticks(x[::2], qs[::2], rotation=20, ha="right", fontsize=14)
     ax2.tick_params(axis="y", labelsize=15)
     ax2.set_ylabel("流失句數", fontsize=15)
-    ax2.set_title("流失句主要面向的季走勢（前 5 面向）", loc="left", fontsize=17, fontweight="bold")
-    ax2.set_ylim(0, float(piv.values.max()) * 2.1)
-    ax2.legend(frameon=False, fontsize=15, ncol=3, loc="upper right", handlelength=1.2, columnspacing=0.8)
+    ax2.set_title("流失句主要面向的季走勢（前 5 面向）", loc="left", fontsize=17, fontweight="bold", pad=title_pad)
+    ax2.set_ylim(0, float(piv.values.max()) * 1.18)
+    ax2.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=3, handlelength=1.2, **legend_kw).set_in_layout(False)
     style(ax1)
     style(ax2)
     fig.text(0.01, 0.015, "母體是三站論壇發言者，最後一季只到 9/19；季報上線後改用 CRM／DMS 資料。", fontsize=14, color=GREY)

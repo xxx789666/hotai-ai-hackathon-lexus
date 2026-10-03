@@ -8,7 +8,10 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.3（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+內容是 v3.4（封面、摘要、大綱、P1–P14、附錄 A0–A5）。投影片 24 張。
+v3.4：第 21 頁 F9 圖例移到圖外上方、F6 的 n 標籤避開對角線且圖區加高；全冊文字套用中日韓換行禁則
+（eaLnBrk／hangingPunct、lang=zh-TW），標點不再落行首；第 10 頁人物卡加高；封面版號由 fill_cover 帶入；
+第 11、20 頁數值標籤上移；第 13 頁流程卡標題齊頂；第 10 頁 Persona 補（客群輪廓）、第 17 頁改「客群輪廓」。
 v3.3 全頁版面重做：第 3–24 頁的卡片、字級、標籤位置統一；F1–F7 與資料處理鏈改用 pptx 原生形狀畫，
 數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only）；F8 在第 9 頁與附錄 A0
 都用原生形狀（draw_f8）；只有 F9 季趨勢仍貼 PNG。封面與摘要左欄是模板，不動。
@@ -38,7 +41,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.3"
+DECK_VERSION = "3.4"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -374,6 +377,7 @@ def style_run(run, size_pt: float, bold: bool, color: RGBColor) -> None:
     run.font.color.rgb = color
     run.font.name = "Arial"
     r_pr = run._r.get_or_add_rPr()
+    r_pr.set("lang", "zh-TW")  # 配合段落的 eaLnBrk，PowerPoint 才套用中日韓換行禁則
     for tag, face in (("a:latin", "Arial"), ("a:ea", "微軟正黑體"), ("a:cs", "Arial")):
         el = r_pr.find(qn(tag))
         if el is None:
@@ -393,6 +397,10 @@ def set_tf(tf, blocks, size: float, align=None, anchor: str = "t", space_after: 
         p.space_before = Pt(0)
         p.space_after = Pt(space_after)
         p.line_spacing = 1.0
+        # 中日韓換行禁則：行首不出現「，」「。」「）」等，句尾標點可懸掛在右邊界外。
+        p_pr = p._p.get_or_add_pPr()
+        p_pr.set("eaLnBrk", "1")
+        p_pr.set("hangingPunct", "1")
         for item in runs:
             text, color, bold = item[0], item[1], item[2]
             sz = item[3] if len(item) > 3 else size
@@ -782,9 +790,10 @@ def nice_ticks(ymax: float, n: int = 4):
 def chart_bars(slide, x, y, w, h, cats, vals, *, errs=None, highlight=None, title=None,
                ylabel=None, fmt="{:.1f}", ymax=None, ticks=True, tick_fmt=None,
                label_size=15, value_size=16, title_size=16, color=BLUE, hi_color=RED,
-               name="chart", card=True, bar_frac=0.62, pad=0.14):
+               name="chart", card=True, bar_frac=0.62, pad=0.14, value_lift=0.0, value_fill=None):
     """長條圖：方塊、數值標籤、類別標籤、刻度與縱軸標籤都是 pptx 物件。
-    errs：每根的 (lo, hi) 絕對值，畫成誤差線。highlight：要標紅的索引。"""
+    errs：每根的 (lo, hi) 絕對值，畫成誤差線。highlight：要標紅的索引。
+    value_lift：數值標籤再往上移的吋數（離開誤差線頂端）。value_fill：標籤框底色，蓋住穿過的格線。"""
     if card:
         add_card(slide, x, y, w, h, fill=CHART_FILL, name=f"{name}:card")
     top = y + 0.08
@@ -841,9 +850,17 @@ def chart_bars(slide, x, y, w, h, cats, vals, *, errs=None, highlight=None, titl
             add_line(slide, cx - 0.08, y_lo, cx + 0.08, y_lo, color=INK, width=1.25)
             label_bottom = min(by, y_hi)
         lx = bx + bw / 2 - lab_w / 2
-        add_text(slide, lx, label_bottom - 0.30, lab_w, 0.28,
-                 [[(fmt.format(v), INK, True, value_size)]], size=value_size,
-                 align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:value")
+        txt = fmt.format(v)
+        vx, vw = lx, lab_w
+        if value_fill:  # 有底色時框只比字寬一點，格線只在字的位置被遮住；類別標籤仍用 lx／lab_w
+            vw = min(lab_w, sum(0.06 if ch in ".," else 0.115 for ch in txt) * value_size / 16 + 0.10)
+            vx = bx + bw / 2 - vw / 2
+        vbox = add_text(slide, vx, label_bottom - 0.30 - value_lift, vw, 0.28,
+                        [[(txt, INK, True, value_size)]], size=value_size,
+                        align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:value")
+        if value_fill:
+            vbox.fill.solid()
+            vbox.fill.fore_color.rgb = RGBColor.from_string(value_fill)
         add_text(slide, lx, py + ph + 0.03, lab_w, cat_h - 0.03,
                  [[(cat, INK, False, label_size)]], size=label_size,
                  align=PP_ALIGN.CENTER, anchor="t", margin=0.0, name=f"{name}:cat")
@@ -857,7 +874,7 @@ def ylabel_box(slide, left, top, avail_h, text, name):
 
 
 def chart_stacked(slide, x, y, w, h, cats, series, colors_by_cat, *, title=None, ylabel=None,
-                  legend=None, totals=True, name="chart", pad=0.14):
+                  legend=None, totals=True, name="chart", pad=0.14, value_lift=0.0):
     """堆疊長條：series = [(label, [v per cat]), ...] 由下往上疊；colors_by_cat[cat_index][series_index]。"""
     add_card(slide, x, y, w, h, fill=CHART_FILL, name=f"{name}:card")
     top = y + 0.08
@@ -904,7 +921,7 @@ def chart_stacked(slide, x, y, w, h, cats, series, colors_by_cat, *, title=None,
                 add_rect(slide, bx, y1, bw, y0 - y1, fill=colors_by_cat[i][s], name=f"{name}:bar")
             base += v
         if totals:
-            add_text(slide, bx - 0.25, ypos(sums[i]) - 0.30, bw + 0.5, 0.28,
+            add_text(slide, bx - 0.25, ypos(sums[i]) - 0.30 - value_lift, bw + 0.5, 0.28,
                      [[(fmt_int(sums[i]), INK, True, 16)]], size=16,
                      align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:value")
         add_text(slide, bx - 0.2, py + ph + 0.03, bw + 0.4, cat_h - 0.03,
@@ -987,12 +1004,12 @@ def chart_scatter(slide, x, y, w, h, points, *, title=None, xlabel=None, ylabel=
         top += 0.36
     tick_h = 0.26
     xl_h = 0.26
-    py = top + 0.24
+    py = top + 0.10  # v3.4：n 標籤不再放到圖區上方，頂端留白縮到 0.10，圖區加高
     left = x + pad
     tick_w = 0.42
     px = left + 0.36 + tick_w + 0.04
     pw = x + w - pad - 0.30 - px
-    ph = y + h - 0.10 - xl_h - tick_h - py
+    ph = y + h - 0.06 - xl_h - tick_h - py
     if ylabel:
         ylabel_box(slide, left, y_top, py + ph + tick_h - y_top, ylabel, name)
 
@@ -1013,16 +1030,37 @@ def chart_scatter(slide, x, y, w, h, points, *, title=None, xlabel=None, ylabel=
     add_line(slide, px, py + ph, px + pw, py + ph, color=AXIS, width=1.0)
     add_line(slide, px, py, px, py + ph, color=AXIS, width=1.0)
     # 完美校準的對角虛線：用旋轉的極薄矩形畫，外框不會像斜向連接線那樣罩住整個圖區。
+    # 淡灰細線，先畫、再畫點與 n 標籤，所以在標籤之下。
     import math
 
     length = math.hypot(pw, ph)
     diag = add_rect(slide, px + pw / 2 - length / 2, py + ph / 2 - 0.005, length, 0.01,
-                    fill=None, line=AXIS, width=1.0, dashed=True, name=f"{name}:diag")
+                    fill=None, line=GRID, width=0.75, dashed=True, name=f"{name}:diag")
     diag.rotation = -math.degrees(math.atan2(ph, pw))
     if xlabel:
         add_text(slide, px, py + ph + tick_h, pw, xl_h, [[(xlabel, MUTED, False, 14)]], size=14,
                  align=PP_ALIGN.CENTER, anchor="t", margin=0.0, name=f"{name}:xlabel")
     nmax = max(n for _, _, n in points)
+    lab_w, lab_h = 0.62, 0.24
+
+    def place_label(cx, cy, d):
+        """n 標籤位置：依序試「點上方、點下方、點右側、右上」，取第一個在圖區內、又不被對角線穿過的。
+        對角線是 y=x（百分比座標），穿過矩形 [x0,x1]×[y0,y1] 的條件是 x0 <= y1 且 y0 <= x1。"""
+        cands = [
+            (cx - lab_w / 2, cy - d / 2 - 0.02 - lab_h, PP_ALIGN.CENTER),
+            (cx - lab_w / 2, cy + d / 2 + 0.02, PP_ALIGN.CENTER),
+            (cx + d / 2 + 0.05, cy - lab_h / 2, PP_ALIGN.LEFT),
+            (cx + d / 2 + 0.05, cy - d / 2 - 0.02 - lab_h, PP_ALIGN.LEFT),
+        ]
+        for lx, ly, align in cands:
+            x0, x1 = (lx - px) / pw * 100, (lx + lab_w - px) / pw * 100
+            y1, y0 = (py + ph - ly) / ph * 100, (py + ph - ly - lab_h) / ph * 100
+            inside = lx >= px - 0.02 and lx + lab_w <= px + pw + 0.02 and ly >= py - 0.02 and ly + lab_h <= py + ph + 0.01
+            crossed = x0 <= y1 and y0 <= x1
+            if inside and not crossed:
+                return lx, ly, align
+        raise SystemExit(f"F6 的 n 標籤找不到不被對角線穿過的位置（點 {cx:.2f},{cy:.2f}）")
+
     for mx, ry, n in points:
         d = 0.14 + 0.14 * (n / nmax) ** 0.5
         cx, cy = xpos(mx), ypos(ry)
@@ -1031,12 +1069,9 @@ def chart_scatter(slide, x, y, w, h, points, *, title=None, xlabel=None, ylabel=
         dot.fill.fore_color.rgb = RED if mx >= 80 else BLUE
         dot.line.fill.background()
         dot.name = f"{name}:dot"
-        if mx < 10:  # 貼近原點的桶，標籤放右邊，不壓到刻度
-            add_text(slide, cx + d / 2 + 0.04, cy - 0.16, 1.0, 0.28, [[(f"n={n}", INK, False, 15)]], size=15,
-                     anchor="ctr", margin=0.0, name=f"{name}:n")
-        else:
-            add_text(slide, cx - 0.5, cy - d / 2 - 0.30, 1.0, 0.28, [[(f"n={n}", INK, False, 15)]], size=15,
-                     align=PP_ALIGN.CENTER, anchor="b", margin=0.0, name=f"{name}:n")
+        lx, ly, align = place_label(cx, cy, d)
+        add_text(slide, lx, ly, lab_w, lab_h, [[(f"n={n}", INK, False, 15)]], size=15,
+                 align=align, anchor="ctr", margin=0.0, name=f"{name}:n")
 
 
 # ---------------------------------------------------------------------------
@@ -1627,7 +1662,7 @@ def build_p6(slide, y):
 def build_p7(slide, y):
     gap = 0.10
     card_w = (CW - 3 * gap) / 4
-    card_h = 1.62
+    card_h = 1.72  # v3.4：加高 0.10 吋，第 1 張卡兩行引言不再貼到卡片下緣
     for i, (name, people, share, feature, quote) in enumerate(PERSONAS):
         x = ML + i * (card_w + gap)
         card_text(
@@ -1650,7 +1685,7 @@ def build_p7(slide, y):
         legend="格內數字為面向出現比例（%）", name="chart:F5",
     )
     note_bar(slide, BOT - foot_h, foot_h,
-             "分母：高、中風險 1,280 人。未分類 199 人列觀察名單，不投遞。Persona 為規則定義，每項可回溯原句。", size=15)
+             "分母：高、中風險 1,280 人。未分類 199 人列觀察名單，不投遞。Persona（客群輪廓）為規則定義，每項可回溯原句。", size=15)
 
 
 def build_p8(slide, y):
@@ -1664,10 +1699,10 @@ def build_p8(slide, y):
     peak = max(range(len(f7["risks"])), key=lambda i: f7["risks"][i])
     chart_bars(slide, ML, y + 0.40, half, chart_h - 0.40, f7["personas"], f7["counts"],
                highlight=peak, fmt="{:,.0f}", ylabel="發言者數", tick_fmt=fmt_int,
-               name="chart:F7a", card=False, label_size=13)
+               name="chart:F7a", card=False, label_size=13, value_lift=0.05, value_fill=CHART_FILL)
     chart_bars(slide, ML + half + 0.30, y + 0.40, half, chart_h - 0.40, f7["personas"], f7["risks"],
                highlight=peak, fmt="{:.2f}", ylabel="平均風險分", ymax=1.0,
-               name="chart:F7b", card=False, label_size=13)
+               name="chart:F7b", card=False, label_size=13, value_lift=0.05, value_fill=CHART_FILL)
     note_y = y + chart_h + 0.08
     note_h = 0.50
     note_bar(slide, note_y, note_h,
@@ -1807,7 +1842,7 @@ def build_p10(slide, y):
         x = ML + i * (cw + gap)
         blocks = [[(line, BLUE, True, 16)] for line in head.split("\n")]
         blocks.append([(body, INK, False, 16)])
-        card_text(slide, x, sy, cw, step_h, blocks, size=16, pad_x=0.10, anchor="ctr")
+        card_text(slide, x, sy, cw, step_h, blocks, size=16, pad_x=0.10, anchor="t")  # 齊頂：五張卡標題同一高度
     card_text(
         slide, ML, bar_y, CW, bar_h,
         [
@@ -2012,7 +2047,7 @@ def build_p14(slide, y):
         ("模型校準", "4 週", "重標 300 句金標\n重驗 r4\n再調觸發門檻"),
         ("單一據點試行", "8 週", "一個服務廠跑完\n專員審核後投遞\n未核准不發出"),
         ("擴大至全台", "8 週", "依試行調話術\n與渠道分批上線\n不一次開全台"),
-        ("持續監控", "不設終點", "日監控、週收樣本\n月重評 Persona\n季重驗模型"),
+        ("持續監控", "不設終點", "日監控、週收樣本\n月重評客群輪廓\n季重驗模型"),  # 「Persona（客群輪廓）」一行放不下，改中文
     ]
     gap = 0.12
     card_w = (CW - 4 * gap) / 5
@@ -2181,7 +2216,7 @@ def build_a2(slide, y):
         errs=[(r["lo"] * 100, r["hi"] * 100) for r in f2],
         highlight=max(range(len(f2)), key=lambda i: f2[i]["p"]),
         title="Mobile01 論壇發言者流失率 18.2%，高於 Dcard 的 6.8%", ylabel="論壇發言者流失率（%）",
-        name="chart:F2", bar_frac=0.5,
+        name="chart:F2", bar_frac=0.5, value_lift=0.05,
     )
     caption_bar(slide, y + chart_h + gap, cap_h, "F2", "論壇發言者流失率。",
                 "　Mobile01 18.2%、PTT 14.1%、Dcard 6.8%。母體是論壇發言者，χ²=99.5。")
@@ -2194,7 +2229,7 @@ def build_a2(slide, y):
     chart_stacked(
         slide, ML, y2, CW, chart_h, f4["levels"], series, colors,
         title=f"高風險發言者 {f4['n_high']:,} 人，占全部發言者 {100 * f4['n_high'] / f4['n_all']:.1f}%",
-        ylabel="發言者數", legend=list(zip(f4["sources"], blue_set)), name="chart:F4",
+        ylabel="發言者數", legend=list(zip(f4["sources"], blue_set)), name="chart:F4", value_lift=0.05,
     )
     caption_bar(slide, y2 + chart_h + gap, cap_h, "F4", "發言者風險分布。",
                 "　高風險發言者 1,049 人（16.4%）；約八成在低風險。風險等級：紅＝高。")
@@ -2202,6 +2237,7 @@ def build_a2(slide, y):
 
 def build_a2b(slide, y):
     # F6 原生散點在上；F9 季趨勢 PNG 依本格尺寸重畫（12.42×2.62 吋），貼進來不縮放、填滿整格。
+    # v3.4 起 F9 的圖例畫在圖外上方（pipeline/trend_reports.py fig_quarterly），不壓資料。
     cap_h = 0.50
     gap = 0.08
     f6 = figv()["F6"]["bins"]
@@ -2269,12 +2305,13 @@ def message_cards(slide, y, msgs, touch_label):
     card_h = (BOT - y - 0.12) / 2
     for i, msg in enumerate(msgs):
         yy = y + i * (card_h + 0.12)
+        text = re.sub(r"([，。、；：！？）】」])\s+", r"\1", msg["text"])  # 全形標點後的空格不進簡報，行首才不會多一格
         card_text(
             slide, ML, yy, CW, card_h,
             [
                 [(f"{msg['persona']} × {touch_label}　{msg['channel']}", BLUE, True, 18)],
                 [(f"引用條目　{msg['cites']}", NAVY, True, 18)],
-                [(msg["text"], INK, False, 24)],
+                [(text, INK, False, 24)],
                 [(f"查核結果　{msg['check']}", MUTED, False, 15)],
             ],
             size=18, pad_y=0.10, anchor="ctr",
@@ -2594,8 +2631,8 @@ def assert_notes() -> None:
             raise SystemExit(f"第 {i} 頁旁白 {n} 字（要 25–35）：{note}")
 
 
-def fill_cover(slide) -> None:
-    """封面：標題改作品名，說明框改主題／團隊／場次。"""
+def fill_cover(slide, version: str) -> None:
+    """封面：標題改作品名，說明框改主題／團隊／場次。版號與年月由建置帶入，不手改 pptx。"""
     texts = [sh for sh in slide.shapes if sh.has_text_frame]
     title = [sh for sh in texts if sh.text_frame.text.strip().startswith("2026")]
     note = [sh for sh in texts if "說明" in sh.text_frame.text]
@@ -2611,8 +2648,9 @@ def fill_cover(slide) -> None:
         run_para.runs[0].font.bold = True
     if note:
         tf = note[0].text_frame
-        lines = ["2026 和泰 AI 黑客松｜AI 流失風險洞察與智慧溝通：打造Lexus車主忠誠度的終極防線",
-                 "團隊：回廠率研究所", "初賽提案簡報（v2，2026-10）"]
+        lines = ["2026 和泰 AI 黑客松｜AI 流失風險洞察與智慧溝通：",
+                 "打造Lexus車主忠誠度的終極防線",
+                 "團隊：回廠率研究所", f"初賽提案簡報（v{version}，{date.today():%Y-%m}）"]
         for para in list(tf.paragraphs)[1:]:
             para._p.getparent().remove(para._p)
         first = tf.paragraphs[0]
@@ -2641,7 +2679,7 @@ def main() -> None:
         raise SystemExit(f"模板應為 9 頁，實際 {len(prs.slides)}")
     while len(prs.slides) > 2:
         delete_slide(prs, len(prs.slides) - 1)
-    fill_cover(prs.slides[0])
+    fill_cover(prs.slides[0], version)
     fill_summary(prs.slides[1])
     set_notes(prs.slides[0], NOTES[0])
     set_notes(prs.slides[1], NOTES[1])
