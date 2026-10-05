@@ -1275,7 +1275,7 @@ def build_p1(slide, y):
     add_card(slide, x, node_y, node_w, node_h, fill="F4F7FB", line=NAVY)
     add_text(
         slide, x + 0.08, node_y + 0.06, node_w - 0.16, node_h - 0.12,
-        [[("車主回廠", INK, True, 15)], [("點擊・預約", INK, False, 13)], [("回廠，寫回 CRM", INK, False, 14)],
+        [[("車主回廠", INK, True, 15)], [("點擊・預約", INK, False, 13)], [("回廠", INK, False, 13)], [("寫回 CRM", INK, False, 14)],
          [("KPI 回饋", MUTED, False, 13)], [("回頭校正門檻", MUTED, False, 13)]],
         size=14, align=PP_ALIGN.CENTER, anchor="ctr",
     )
