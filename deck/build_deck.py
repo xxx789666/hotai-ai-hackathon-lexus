@@ -1209,9 +1209,17 @@ def build_p1(slide, y):
         shape.line.fill.background()
         return shape
 
+    # 光帶：三段淡色底，從左緣穿過兩個箭頭槽到右緣，面板壓在上面；起點與終點節點坐在帶上。
+    # 左右兩段把節點整個包住（check_layout 視為外框，不算卡片留白），中段只含箭頭。
+    p1x = ML + node_w + slot
+    p2x = p1x + panel_w + slot
+    track_y, track_h = node_y - 0.30, node_h + 0.60
+    for tx, tw in ((ML, node_w + slot), (p1x + panel_w, slot), (p2x + panel_w, slot + node_w)):
+        add_card(slide, tx, track_y, tw, track_h, fill="F4F7FB", radius=0.04)
+
     # 起點：公開論壇輿情
     x = ML
-    add_card(slide, x, node_y, node_w, node_h, fill="F4F7FB", line=NAVY)
+    add_card(slide, x, node_y, node_w, node_h, fill="EAF1F8", line=NAVY)
     add_text(
         slide, x + 0.08, node_y + 0.06, node_w - 0.16, node_h - 0.12,
         [[("公開論壇輿情", INK, True, 15)], [("Mobile01", INK, False, 14)], [("PTT", INK, False, 14)],
@@ -1272,7 +1280,7 @@ def build_p1(slide, y):
         x += slot
 
     # 終點：車主回廠
-    add_card(slide, x, node_y, node_w, node_h, fill="F4F7FB", line=NAVY)
+    add_card(slide, x, node_y, node_w, node_h, fill="EAF1F8", line=NAVY)
     add_text(
         slide, x + 0.08, node_y + 0.06, node_w - 0.16, node_h - 0.12,
         [[("車主回廠", INK, True, 15)], [("點擊・預約", INK, False, 13)], [("回廠", INK, False, 13)], [("寫回 CRM", INK, False, 14)],
