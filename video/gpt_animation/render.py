@@ -2,7 +2,7 @@ import argparse, concurrent.futures, csv, json, math, os, subprocess, wave
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
-from art import Art, W,H,BLUE,INK,MUTED,font,make_scene,background
+from art import Art, W,H,BLUE,INK,MUTED,font,make_scene,background,opencard
 
 ROOT=Path(__file__).resolve().parent
 OUT=Path(os.environ.get('ANIMATION_OUTPUT',str(ROOT/'output')))
@@ -45,9 +45,33 @@ class Scene:
         for j in range(120):
             x=(j*761+97)%W;y=(j*317+71)%H;r=1+(j%3)
             d.ellipse((x-r,y-r,x+r,y+r),fill=['#6281A6','#A4BAD5','#DCE8F5'][j%3])
+        # 片頭字卡（只有 timeline 第 0 段帶 open 秒數時啟用）：深色夜景粒子上疊字卡，再白光溶接進原畫面。
+        self.open=s.get('open',0)
+        if self.open:
+            self.card=opencard();self.dusk=Image.new('RGB',(W,H),'#2A4A75')
+
+    def opencard_frame(self,t):
+        o=self.open;im=Image.blend(self.night,self.dusk,.55*smooth(t/o));d=ImageDraw.Draw(im)
+        for j in range(120):  # 粒子緩慢上飄，和靜態夜景同一組位置。
+            x=((j*761+97)+t*(5+j%5*3))%W;y=((j*317+71)-t*(6+j%3*3))%H;r=1+(j%3)
+            d.ellipse((x-r,y-r,x+r,y+r),fill=['#6281A6','#A4BAD5','#DCE8F5'][j%3])
+        im=im.convert('RGBA')
+        alpha=smooth(t/.45);card=self.card.copy()
+        card.putalpha(card.getchannel('A').point(lambda a:int(a*alpha)))
+        im.alpha_composite(card,(0,round((1-smooth(t/.9))*22)));im=im.convert('RGB')
+        # 白光溶接：先由中央暈開，再整面淡成白，於 open 秒整到達全白。
+        halo=smooth((t-(o-.55))/.55)
+        if halo>0:
+            mask=self.bloom.point(lambda v:round(min(255,v*halo*2.4)))
+            im=Image.composite(self.white,im,mask)
+        fade=smooth((t-(o-.3))/.3)
+        if fade>0:im=Image.blend(im,self.white,fade)
+        return im
 
     def frame(self,t):
-        s=self.s;im=self.bg.copy();d=ImageDraw.Draw(im)
+        s=self.s
+        if self.open and t<self.open:return self.opencard_frame(t)
+        im=self.bg.copy();d=ImageDraw.Draw(im)
         for k in range(7):
             u=((s['start']+t)*.027+k/7)%1
             x,y=self.path[round(u*300)];r=3+(k%2)
@@ -63,7 +87,7 @@ class Scene:
                 layer=layer.copy();layer.putalpha(layer.getchannel('A').point(lambda a:int(a*alpha)))
             im.alpha_composite(layer,(round(l['x']+dx),round(l['y']+dy)))
         # A slow push, with a new gentle camera beat every five seconds.
-        push=.0025*(1-math.cos(t*math.pi/5))
+        push=.0025*(1-math.cos((t-self.open)*math.pi/5))
         if push:
             nw=round(W*(1+push));nh=round(H*(1+push))
             im=im.resize((nw,nh),Image.Resampling.BILINEAR).crop(((nw-W)//2,(nh-H)//2,(nw+W)//2,(nh+H)//2))
@@ -71,7 +95,7 @@ class Scene:
             if c['start']<=t-s['lead']<c['end']:
                 im.alpha_composite(cap,(bb[0],bb[1]));break
         im=im.convert('RGB')
-        if s['id']==0 and t<1.45:im=Image.blend(self.night,im,smooth(t/1.45))
+        if s['id']==0 and t<1.45 and not self.open:im=Image.blend(self.night,im,smooth(t/1.45))
         # A single broader halo crossing between output 1 and output 2.
         halo=0
         if s['id']==4:halo=smooth((t-(s['duration']-.65))/.45)
@@ -79,7 +103,7 @@ class Scene:
         if halo>0:
             mask=self.bloom.point(lambda v:round(min(255,v*halo*2.4)))
             im=Image.composite(self.white,im,mask)
-        enter=1-smooth(t/.3) if s['id']>0 else 0
+        enter=1-smooth(t/.3) if s['id']>0 else (1-smooth((t-self.open)/.3) if self.open else 0)
         leave=smooth((t-(s['duration']-.3))/.3) if s['id']<9 else 0
         fade=max(enter,leave)
         if fade>0:im=Image.blend(im,self.white,fade)
