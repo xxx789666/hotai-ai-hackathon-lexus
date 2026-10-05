@@ -3,9 +3,11 @@
 tts.py：用 edge-tts（zh-TW-HsiaoYuNeural）逐段合成旁白，量實長並取得逐字時間戳。
 
 用法：
-  python tts.py                 # 用 RATE 合成三段，輸出到 ../out/tts/
+  python tts.py                 # 用 script.json 的 rate 合成全部段落，輸出到 ../out/tts/
   python tts.py --rates         # 試 -5% / -3% / +0% 三種語速，輸出每段實長與字速到 rates_trial.csv
-  python tts.py --rate=-5%      # 指定語速
+  python tts.py --rate=+10%     # 指定語速
+  python tts.py --cuts=2        # 套用 script.json cuts 的前 2 項（v2 第五節的刪減順序）
+  python tts.py --only=3,4      # 只重合成指定段
 
 輸出（video/out/tts/）：
   seg{n}.mp3 / seg{n}.wav       旁白（wav 為 48 kHz 單聲道，供 ffmpeg 混音）
@@ -29,7 +31,7 @@ OUT = HERE.parent / "out" / "tts"
 OUT.mkdir(parents=True, exist_ok=True)
 SCRIPT = json.loads((HERE / "script.json").read_text(encoding="utf-8"))
 VOICE = SCRIPT["voice"]
-RATE = "+0%"  # 預設語速；見 README「語速選擇」
+RATE = SCRIPT.get("rate", "+0%")  # 預設語速取 script.json；見 README「語速選擇」
 
 
 def count_chars(s: str) -> int:
@@ -89,7 +91,9 @@ def map_words_to_text(narration: str, words: list) -> dict:
 
 def time_at(narration: str, char_time: dict, phrase: str, which: str = "start") -> float:
     i = narration.find(phrase)
-    assert i >= 0, f"旁白找不到：{phrase}"
+    if i < 0:
+        print(f"   （旁白已刪去「{phrase}」，節拍以 0 代入）")
+        return 0.0
     if which == "start":
         for k in range(i, len(narration)):
             if k in char_time:
@@ -99,6 +103,26 @@ def time_at(narration: str, char_time: dict, phrase: str, which: str = "start") 
             if k in char_time:
                 return char_time[k][1]
     return 0.0
+
+
+def apply_cuts(script: dict, n: int) -> list:
+    """回傳套用前 n 項刪減後的段落清單（深拷貝），每項 edit 同時套到旁白與字幕句。"""
+    import copy
+    segs = copy.deepcopy(script["segments"])
+    applied = []
+    for cut in script.get("cuts", [])[:n]:
+        seg = next(s for s in segs if s["id"] == cut["seg"])
+        removed = 0
+        for old, new in cut["edits"]:
+            assert old in seg["narration"], f"cut {cut['id']}：旁白找不到「{old}」"
+            seg["narration"] = seg["narration"].replace(old, new, 1)
+            hit = [c for c in seg["cues"] if old in c]
+            assert hit, f"cut {cut['id']}：「{old}」不在單一字幕句內"
+            seg["cues"] = [c.replace(old, new, 1) for c in seg["cues"]]
+            removed += count_chars(old) - count_chars(new)
+        seg["cues"] = [c for c in seg["cues"] if count_chars(c) > 0]
+        applied.append({"id": cut["id"], "name": cut["name"], "seg": cut["seg"], "chars_removed": removed})
+    return segs, applied
 
 
 def build_timing(seg: dict, words: list, dur: float) -> dict:
@@ -145,8 +169,23 @@ async def main():
             w.writeheader()
             w.writerows(rows)
         return
-    timing = {"voice": VOICE, "rate": rate, "segments": []}
-    for seg in SCRIPT["segments"]:
+    ncuts = 0
+    only = None
+    for a in args:
+        if a.startswith("--cuts="):
+            ncuts = int(a.split("=", 1)[1])
+        if a.startswith("--only="):
+            only = {int(x) for x in a.split("=", 1)[1].split(",")}
+    segments, applied = apply_cuts(SCRIPT, ncuts)
+    prev = (OUT / "tts_timing.json")
+    prev = json.loads(prev.read_text(encoding="utf-8")) if (only and prev.exists()) else None
+    timing = {"voice": VOICE, "rate": rate, "cuts": applied, "segments": []}
+    total_speech = 0.0
+    for seg in segments:
+        if only is not None and seg["id"] not in only and prev:
+            old = next((s for s in prev["segments"] if s["id"] == seg["id"]), None)
+            if old:
+                timing["segments"].append(old); total_speech += old["speech_end"]; continue
         mp3 = OUT / f"seg{seg['id']}.mp3"
         wav = OUT / f"seg{seg['id']}.wav"
         words = await synth(seg["narration"], mp3, rate)
@@ -155,12 +194,15 @@ async def main():
         (OUT / f"seg{seg['id']}.words.json").write_text(json.dumps(words, ensure_ascii=False, indent=1),
                                                          encoding="utf-8")
         t = build_timing(seg, words, dur)
+        t["narration"] = seg["narration"]
         timing["segments"].append(t)
+        total_speech += t["speech_end"]
         ks = {k: round(v, 2) for k, v in t["keys"].items()}
         print(f"seg{seg['id']}: {t['chars']} 字, {dur:.2f} s, {t['chars'] / dur:.2f} 字/秒; keys={ks}")
         for c in t["cues"]:
             flag = "  <2s!" if c["too_short"] else ""
             print(f"   {c['start']:6.2f}-{c['show_end']:6.2f} {c['text']}{flag}")
+    print(f"合計語音（最後一字）{total_speech:.1f} s；套用刪減：{[a['id'] for a in applied]}")
     (OUT / "tts_timing.json").write_text(json.dumps(timing, ensure_ascii=False, indent=1), encoding="utf-8")
 
 

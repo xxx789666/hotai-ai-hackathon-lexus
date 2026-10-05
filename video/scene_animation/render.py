@@ -7,13 +7,14 @@ render.py：用 Playwright 逐格決定論渲染三個場景 → ffmpeg 合成 1
   2. 每段場景長度 = lead（進場／開場）＋ 語音實長（最後一字結束）＋ 0.8 秒停留 ＋ 出場轉場。
   3. 開 scenes/seg{n}.html?T=..&lead=..&k_xxx=..，注入字幕 cue，逐格 seek(t) 截 1920×1080 幀到 ../out/frames/seg{n}/。
   4. 每段編成 seg{n}.mp4，concat；旁白依時間軸 adelay，鋪底（music.py）壓到旁白 RMS 之下 20 dB，amix。
-  5. 另輸出 sample_seg0-2.srt、sample_timing.csv、sample_contact.png（每 3 秒抽一格）。
+  5. 另輸出 scene_animation_full.srt、timing.csv、full_contact.png（每 4 秒抽一格）。
 
 用法：
   python render.py            # 全部重跑
   python render.py --snap     # 只每 3 秒抽格出縮圖總表（快速看版面）
   python render.py --no-frames  # 跳過截圖，只重做編碼／混音（frames 已存在時）
   python render.py --png      # 幀存 PNG（無損但慢約 8 倍）；預設 JPEG q95
+  python render.py --segs=0,1,2 --name=sample_seg0-2   # 只做部分段落（樣片）
   （截圖三段平行跑，各自一個 Chromium；約 2,000 格需數分鐘）
 """
 import csv
@@ -34,13 +35,23 @@ W, H = 1920, 1080
 FRAME_EXT = "jpg"   # 預設 JPEG q95（PNG 編碼約慢 8 倍）；--png 改存 PNG
 FRAME_KW = {"type": "jpeg", "quality": 95}
 HOLD_AFTER_SPEECH = 0.8   # 旁白結束後畫面至少停 0.8 秒
-NAME = "sample_seg0-2"
+NAME = "scene_animation_full"
+CONTACT_EVERY = 4.0       # 縮圖總表每幾秒抽一格
 
-# 每段的轉場與開場設定（秒）。seg0 開場是深色粒子，lead 較長；最後一段尾端加 0.8 秒淡白。
+# 每段的轉場與開場設定（秒）。段間停頓＝出場半段＋進場半段：光掃 0.3+0.3、大光暈 0.4+0.4（1→2、4→5：產出 1 → 產出 2）。
+# seg0 開場是深色粒子（intro 2.4）；seg9 的 dout 是片尾字卡 4 秒（字卡畫在場景裡），最後 0.8 秒由 ffmpeg 淡白。
+SW, GL = 0.3, 0.4
 SEG_CFG = {
-    0: {"in": "none", "din": 0.0, "out": "sweep", "dout": 0.6, "intro": 2.4},
-    1: {"in": "sweep", "din": 0.6, "out": "glow", "dout": 0.8, "intro": 0.5},
-    2: {"in": "glow", "din": 0.8, "out": "none", "dout": 1.0, "intro": 0.5},
+    0: {"in": "none", "din": 0.0, "out": "sweep", "dout": SW, "intro": 2.4},
+    1: {"in": "sweep", "din": SW, "out": "glow", "dout": GL, "intro": 0.0},
+    2: {"in": "glow", "din": GL, "out": "sweep", "dout": SW, "intro": 0.0},
+    3: {"in": "sweep", "din": SW, "out": "sweep", "dout": SW, "intro": 0.0},
+    4: {"in": "sweep", "din": SW, "out": "glow", "dout": GL, "intro": 0.0},
+    5: {"in": "glow", "din": GL, "out": "sweep", "dout": SW, "intro": 0.0},
+    6: {"in": "sweep", "din": SW, "out": "sweep", "dout": SW, "intro": 0.0},
+    7: {"in": "sweep", "din": SW, "out": "sweep", "dout": SW, "intro": 0.0},
+    8: {"in": "sweep", "din": SW, "out": "sweep", "dout": SW, "intro": 0.0},
+    9: {"in": "sweep", "din": SW, "out": "none", "dout": 4.0, "intro": 0.0},
 }
 END_FADE = 0.8
 
@@ -50,12 +61,14 @@ def run(cmd, **kw):
     subprocess.run([str(c) for c in cmd], check=True, **kw)
 
 
-def plan():
+def plan(only=None):
     """算每段 lead / T / 全域起點，回傳清單。"""
     timing = json.loads((TTS / "tts_timing.json").read_text(encoding="utf-8"))
     segs = []
     cursor = 0.0
     for s in timing["segments"]:
+        if only is not None and s["id"] not in only:
+            continue
         c = SEG_CFG[s["id"]]
         lead = c["din"] + c["intro"]
         T = lead + s["speech_end"] + HOLD_AFTER_SPEECH + c["dout"]
@@ -127,7 +140,7 @@ def render_frames(segs, snap=False):
     from concurrent.futures import ProcessPoolExecutor
     for seg in segs:
         print(f"seg{seg['id']}: T={seg['T']:.2f}s, {int(round(seg['T'] * FPS))} 格, lead={seg['lead']:.2f}", flush=True)
-    with ProcessPoolExecutor(max_workers=len(segs)) as ex:
+    with ProcessPoolExecutor(max_workers=min(5, len(segs))) as ex:
         for sid, n in ex.map(render_one, segs):
             print(f"seg{sid} done: {n} 格", flush=True)
     return snaps
@@ -201,7 +214,8 @@ def write_srt(segs):
 
 
 def write_csv(segs, timing):
-    with open(OUT / "sample_timing.csv", "w", newline="", encoding="utf-8-sig") as f:
+    csvname = "timing.csv" if NAME == "scene_animation_full" else f"{NAME}_timing.csv"
+    with open(OUT / csvname, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
         w.writerow(["段", "段落", "旁白字數", "語音秒數(檔長)", "語音秒數(最後一字)", "旁白起點(段內)", "場景秒數", "累計秒數", "語速", "聲音"])
         cum = 0.0
@@ -209,6 +223,8 @@ def write_csv(segs, timing):
             cum += s["T"]
             w.writerow([s["id"], s["title"], s["chars"], f"{s['audio_len']:.2f}", f"{s['speech_end']:.2f}",
                         f"{s['lead']:.2f}", f"{s['T']:.2f}", f"{cum:.2f}", timing["rate"], timing["voice"]])
+        for c in timing.get("cuts", []):
+            w.writerow([f"刪減 {c['id']}", c["name"], f"-{c['chars_removed']}", "", "", "", "", "", "", ""])
 
 
 def contact_sheet(segs, total, video: Path):
@@ -216,22 +232,28 @@ def contact_sheet(segs, total, video: Path):
     d = OUT / "contact"; d.mkdir(exist_ok=True)
     for f in d.glob("*.png"):
         f.unlink()
-    run(["ffmpeg", "-y", "-v", "error", "-i", video, "-vf", "fps=1/3,scale=480:270", d / "c%03d.png"])
+    run(["ffmpeg", "-y", "-v", "error", "-i", video, "-vf", f"fps=1/{CONTACT_EVERY},scale=480:270", d / "c%03d.png"])
     fs = sorted(d.glob("c*.png"))
     cols = 5
     rows = (len(fs) + cols - 1) // cols
     sheet = Image.new("RGB", (480 * cols, 270 * rows), "white")
     for i, f in enumerate(fs):
         sheet.paste(Image.open(f), ((i % cols) * 480, (i // cols) * 270))
-    sheet.save(OUT / "sample_contact.png")
+    sheet.save(OUT / f"{NAME.replace('scene_animation_', '')}_contact.png")
 
 
 def main():
-    global FRAME_EXT, FRAME_KW
+    global FRAME_EXT, FRAME_KW, NAME
     args = sys.argv[1:]
     if "--png" in args:
         FRAME_EXT, FRAME_KW = "png", {}
-    timing, segs, total = plan()
+    only = None
+    for a in args:
+        if a.startswith("--segs="):
+            only = {int(x) for x in a.split("=", 1)[1].split(",")}
+        if a.startswith("--name="):
+            NAME = a.split("=", 1)[1]
+    timing, segs, total = plan(only)
     for s in segs:
         print(f"seg{s['id']}: start={s['start']:.2f} lead={s['lead']:.2f} speech={s['speech_end']:.2f} T={s['T']:.2f}")
     print(f"total ≈ {total:.2f}s")

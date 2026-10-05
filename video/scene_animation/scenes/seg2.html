@@ -41,6 +41,7 @@
   .row { display: grid; grid-template-columns: 200px 1fr 130px; align-items: center; height: 46px; gap: 16px; }
   .row .nm { font-size: 26px; font-weight: 700; color: var(--ink); text-align: right; }
   .row .nm.faint { color: #9AA6B8; font-weight: 400; font-size: 22px; }
+  .row .nm { font-size: 24px; } .row .val { font-size: 26px; }
   .row .trk { height: 26px; border-radius: 13px; background: var(--pale); position: relative; overflow: hidden; }
   .row .trk i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; border-radius: 13px; background: var(--sky); transform-origin: left; }
   .row.r0 .trk i { background: var(--red); } .row.r1 .trk i { background: var(--yellow); }
@@ -111,7 +112,7 @@
   <div id="chart" class="panel" data-base="perspective(1600px) rotateY(6deg)" data-init="o:0,y:50,s:.96">
     <div class="hd"><div class="h2">車主最在意的事・九面向流失率</div><span class="tag demo">示意</span></div>
     <div class="rows" id="rows"></div>
-    <div class="note" style="position:absolute;left:40px;right:40px;bottom:18px;font-size:18px">流失率＝該面向語句中被判為流失句的比例。僅標示旁白提到的兩項，其餘七面向淡色示意、數值略。論壇公開資料 2007–2026/9</div>
+    <div class="note" style="position:absolute;left:40px;right:40px;bottom:18px;font-size:18px">流失率＝該面向語句中被判為流失句的比例（分母 21,183 句）。論壇公開資料 2007–2026/9・示意</div>
   </div>
 
   <div id="subtitle"></div>
@@ -148,11 +149,11 @@ Scene.float('#chart', 3, 6, 0.8);
 Scene.float('.bk', 10, 6, 0);
 
 // --- 長條圖資料：只用第四節的數字；其餘七面向淡色、無數值 ---
-const rowsData = [
-  { nm: '零件供應', v: 17.3, show: true },
-  { nm: '價格', v: 15.0, show: true },
-  { nm: '其他面向', v: 11.5 }, { nm: '其他面向', v: 10.2 }, { nm: '其他面向', v: 9.0 }, { nm: '其他面向', v: 8.1 },
-  { nm: '其他面向', v: 7.2 }, { nm: '其他面向', v: 6.4 }, { nm: '其他面向', v: 5.5 },
+const rowsData = [   // 來源：簡報第 5 頁／reports/T7_stats_tests.md（流失率＝該面向語句中流失句比例）
+  { nm: '零件供應', v: 17.3, show: true }, { nm: '價格', v: 15.0, show: true },
+  { nm: '報價透明', v: 9.5, show: true }, { nm: '技術品質', v: 8.9, show: true }, { nm: '等待預約', v: 7.4, show: true },
+  { nm: '保固延保', v: 7.2, show: true }, { nm: '態度', v: 4.7, show: true }, { nm: '便利設施', v: 3.0, show: true },
+  { nm: '銷售交車', v: 1.4, show: true },
 ];
 const rowsEl = document.getElementById('rows');
 rowsEl.innerHTML = rowsData.map((r, i) => `<div class="row r${i}">
