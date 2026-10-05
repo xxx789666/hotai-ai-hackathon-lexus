@@ -8,7 +8,8 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.7（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+內容是 v3.8（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+v3.8：只改第 9 頁標題「四種流失車主」→「四種流失論壇發言者」（母體是論壇發言者，與第 10 頁一致）；其餘不動。
 v3.7：摘要頁預期效益欄四處修字（+10 個百分點、≥、零成本推論）與 AI 技術欄補回兩段式標註；第 2–23 頁底部「來源：」列
 全部移除（SLIDES 不再有 source 欄，chrome() 不畫來源），內容區下緣 BOT 由 7.02 延伸到 7.36，頁碼移到右側邊界內
 （x 12.92–13.30）不與內容區重疊；第 10 頁標題「高風險車主」改「高風險論壇發言者」。報告對照仍在 README 頁次表。
@@ -50,7 +51,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.7"
+DECK_VERSION = "3.8"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -212,7 +213,7 @@ SLIDES = [
     {
         "id": "P7",
         "section": "3 解決方案設計",
-        "title": "四種流失車主，過保精算派最多（511 人）",
+        "title": "四種流失論壇發言者，過保精算派最多（511 人）",  # v3.8：母體是論壇發言者，與第 10 頁一致
         "reports": ["reports/T10_risk_persona_report.md", "會議記錄_2026-09-30.md"],
         "figures": ["reports/figures/F5.png"],
     },
