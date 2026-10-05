@@ -8,7 +8,10 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.6（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+內容是 v3.7（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+v3.7：摘要頁預期效益欄四處修字（+10 個百分點、≥、零成本推論）與 AI 技術欄補回兩段式標註；第 2–23 頁底部「來源：」列
+全部移除（SLIDES 不再有 source 欄，chrome() 不畫來源），內容區下緣 BOT 由 7.02 延伸到 7.36，頁碼移到右側邊界內
+（x 12.92–13.30）不與內容區重疊；第 10 頁標題「高風險車主」改「高風險論壇發言者」。報告對照仍在 README 頁次表。
 v3.6：併入使用者手改（摘要三格逐字照抄、第 4 頁標題、第 5 頁說明條與來源列、附錄 A1 移到最後、A3／A4 標題）
 與手寫修改清單：大綱改純目錄；第 3 頁兩張大卡各四個編號小塊；第 4 頁被動應對／主動掌握並排；第 5 頁零件紅、價格黃；
 第 7 頁去識別框併進流程方塊；第 8 頁 L3／L6／L7 黃標；第 9 頁 48、43 兩格紅；第 10 頁改風險等級對照表；
@@ -47,7 +50,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.6"
+DECK_VERSION = "3.7"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -65,7 +68,10 @@ YELLOW = RGBColor(0xF2, 0xB6, 0x00)  # 第 5 頁價格、第 8 頁 L3／L6／L7 
 
 ML = 0.46
 CW = 12.42
+# 頁碼：右下角，框在內容區右緣 12.88 之外的邊界內（12.92–13.30），與內容區不重疊。v3.7 起沒有來源列。
 FOOTER_Y = 7.16
+PAGE_X = 12.92
+PAGE_W = 0.38
 
 
 def zi(text: str) -> int:
@@ -116,27 +122,30 @@ SUMMARY_RIGHT = {
         [("3. Persona（客群輪廓） × 接觸點的 RAG 關懷內容生成。", INK, False)],
     ],
     # 手改版這格是一段、中間一個換行（a:br）；粗體段也照抄。
+    # v3.7：核心模型那一行補回兩段式標註（與第 11 頁一致），其餘字不動。
     "ai": [[
         ("核心模型：Claude / GPT /  Qwen3-4B QLoRA ", INK, False),
         ("自訓決策模型（LLM2Jev 架構，支援本地部署）", INK, True),
+        ("；Haiku 初篩＋Sonnet／GPT 複核（兩段式標註）", INK, False),
         ("\v", INK, False),
         ("技術與統計：RAG 官方保修知識庫、K-means 分群、χ² 檢定、勝算比與 Wilson CI 驗證", INK, False),
     ]],
+    # v3.7：使用者決定「改」的四點：+10 個百分點（假設值，基期實測校正）、三處「大於等於」改 ≥（k→κ）、
+    # 「零本推論」改「零成本推論」。其餘字（含手改的標點與空格）不動。
     "benefit": [
-        [("回廠成長 : 高風險車主回廠率 +10%（基期實測校正）", INK, False, 12)],
-        [("工時提效 :名單篩選工時 -90%、話術核准率大於等於80%", INK, False, 12)],
-        [("模型嚴謹: 隨機層F1大於等於0.8、k大於等於0.6（季驗 300 句）", INK, False, 12)],
-        [("零本推論: 每句 0.7 秒 高速回應，達成 地端 0 API 費。", INK, False, 12)],
+        [("回廠成長 : 高風險車主回廠率 +10 個百分點（假設值，基期實測校正）", INK, False, 12)],
+        [("工時提效 :名單篩選工時 -90%、話術核准率 ≥ 80%", INK, False, 12)],
+        [("模型嚴謹: 隨機層F1 ≥ 0.8、κ ≥ 0.6（季驗 300 句）", INK, False, 12)],
+        [("零成本推論: 每句 0.7 秒 高速回應，達成 地端 0 API 費。", INK, False, 12)],
     ],
 }
 
-# 每頁：章節標、結論標題、來源（寫進頁腳與 README）、圖檔
+# 每頁：章節標、結論標題、對應報告（只寫進 README 頁次表；v3.7 起頁腳沒有來源列）、圖檔
 SLIDES = [
     {
         "id": "TOC",
         "section": "大綱（計入 15 頁）",
         "title": "六個章節與附錄，對照頁碼",
-        "source": "來源：本簡報章節；兩大產出依企業挑戰題",
         "reports": ["raw/bh-challenge.txt"],
         "figures": [],
     },
@@ -144,7 +153,6 @@ SLIDES = [
         "id": "P1",
         "section": "1 提案概述",
         "title": "提案是兩份產出：輿情洞察，以及對準客群的溝通",
-        "source": "來源：企業挑戰題、統計檢定報告（T7）、殘餘切分報告（T3）",
         "reports": [
             "raw/bh-challenge.txt",
             "reports/T7_stats_tests.md",
@@ -156,7 +164,6 @@ SLIDES = [
         "id": "P2",
         "section": "2 目標對象與痛點分析",
         "title": "輿情能提前預警，降低客戶流失率",
-        "source": "來源：統計檢定（T7）、專案架構、風險報告（T10）；門檻見附錄 A4",
         "reports": [
             "reports/T7_stats_tests.md",
             "專案架構_2026-09-23.md",
@@ -169,7 +176,6 @@ SLIDES = [
         "id": "P3",
         "section": "2 目標對象與痛點分析",
         "title": "等料和價格送走人；態度抱怨多，卻少有人走",
-        "source": "",  # v3.6：使用者手改版刪掉了這頁的來源列，照辦（README 報告欄仍列 T7）
         "reports": ["reports/T7_stats_tests.md"],
         "figures": ["reports/figures/F1.png"],
     },
@@ -177,7 +183,6 @@ SLIDES = [
         "id": "P4",
         "section": "2 目標對象與痛點分析",
         "title": "出口是一般外廠；過保後價差把人推走",
-        "source": "來源：風險與 Persona（客群輪廓）報告（T10）、專案架構、知識庫價格摘錄（T11）",
         "reports": [
             "reports/T10_risk_persona_report.md",
             "專案架構_2026-09-23.md",
@@ -189,7 +194,6 @@ SLIDES = [
         "id": "P5",
         "section": "2 目標對象與痛點分析",
         "title": "2.1 萬句售後語料，品質過關、全數去識別",
-        "source": "來源：資料品質與去識別（T7）、趨勢報告（T15）；圖 F9_pipeline。季趨勢圖見附錄 A2b",
         "reports": [
             "題目選擇分析_2026-09-22.md",
             "reports/T7_data_quality.md",
@@ -202,7 +206,6 @@ SLIDES = [
         "id": "P6",
         "section": "3 解決方案設計",
         "title": "洞察每日產出；關懷由事件觸發、人工核准才發",
-        "source": "來源：L7 運作流程、專案架構；圖 F8",
         "reports": ["L7運作流程_2026-09-30.md", "專案架構_2026-09-23.md"],
         "figures": ["reports/figures/F8.png"],
     },
@@ -210,15 +213,13 @@ SLIDES = [
         "id": "P7",
         "section": "3 解決方案設計",
         "title": "四種流失車主，過保精算派最多（511 人）",
-        "source": "來源：風險與 Persona（客群輪廓）報告（T10）；圖 F5。未分類處置見 9/30 會議記錄",
         "reports": ["reports/T10_risk_persona_report.md", "會議記錄_2026-09-30.md"],
         "figures": ["reports/figures/F5.png"],
     },
     {
         "id": "P8",
         "section": "3 解決方案設計",
-        "title": "高風險車主 74% 確有流失句，分級可信",
-        "source": "來源：風險與 Persona（客群輪廓）報告（T10）「等級與來源」表與風險分公式（初版權重）",
+        "title": "高風險論壇發言者 74% 確有流失句，分級可信",  # v3.7：母體是論壇發言者，不是車主
         "reports": ["reports/T10_risk_persona_report.md"],
         "figures": [],
     },
@@ -226,7 +227,6 @@ SLIDES = [
         "id": "P9",
         "section": "4 AI 應用方法",
         "title": "兩段式標註：先寬抓、再複核，一致率 98.4%",
-        "source": "來源：專案架構、Dcard 複核報告（T1）、其他精煉報告（T2）、殘餘切分報告（T3）",
         "reports": [
             "專案架構_2026-09-23.md",
             "reports/T1_dcard_verify_report.md",
@@ -239,7 +239,6 @@ SLIDES = [
         "id": "P10",
         "section": "4 AI 應用方法",
         "title": "本機小模型勝過雲端 Haiku，零 API 費",
-        "source": "來源：本機模型報告（T8）；校準曲線見附錄 A2b",
         "reports": ["reports/T8_r4_report.md", "專案架構_2026-09-23.md"],
         "figures": [],
     },
@@ -247,7 +246,6 @@ SLIDES = [
         "id": "P11",
         "section": "5 獨特優勢與差異化",
         "title": "看得見沒抱怨就走的人，分數說得出原因",
-        "source": "來源：風險與 Persona（客群輪廓）報告（T10）、本機模型報告（T8）、專案架構",
         "reports": [
             "reports/T10_risk_persona_report.md",
             "reports/T8_r4_report.md",
@@ -259,7 +257,6 @@ SLIDES = [
         "id": "P12",
         "section": "6 預期效益與落地評估",
         "title": "對的人、對的時機開口；12 則話術全數查核",
-        "source": "來源：話術範例、生成與查核報告（T14）",
         "reports": [
             "knowledge/generated_examples.md",
             "reports/T14_generation_report.md",
@@ -271,7 +268,6 @@ SLIDES = [
         "id": "P13",
         "section": "6 預期效益與落地評估",
         "title": "人工篩選工時省九成以上；五項風險都有對策",
-        "source": "來源：iPAS 骨架頁、9/30 會議記錄、iPAS 導入對照",
         "reports": [
             "iPAS骨架頁_草稿.md",
             "會議記錄_2026-09-30.md",
@@ -283,7 +279,6 @@ SLIDES = [
         "id": "P14",
         "section": "6 預期效益與落地評估",
         "title": "24 週導入，目標高風險回廠率 +10 個百分點",
-        "source": "來源：iPAS 骨架頁、9/30 會議記錄；模型現況見人工評估（T9）與本機模型報告（T8）",
         "reports": [
             "iPAS骨架頁_草稿.md",
             "會議記錄_2026-09-30.md",
@@ -296,7 +291,6 @@ SLIDES = [
         "id": "A0",
         "section": "附錄 A0 Dashboard 示意（不計入 15 頁）",
         "title": "五個看板：洞察三個、知識庫與審核佇列各一個",
-        "source": "來源：L7 運作流程 §4 Dashboard；數字取自 T10、T15 與知識庫。示意畫面，非實際介面",
         "reports": [
             "L7運作流程_2026-09-30.md",
             "reports/T10_risk_persona_report.md",
@@ -620,22 +614,18 @@ def strip_placeholders(slide) -> None:
         element.getparent().remove(element)
 
 
-def chrome(slide, section: str, page: int, source: str) -> None:
+def chrome(slide, section: str, page: int) -> None:
+    """頁首章節標與右下角頁碼。v3.7 起沒有來源列；頁碼框放在內容區右緣（ML+CW）之外的右側邊界內，
+    內容區才能往下延伸到 BOT 而不壓到頁碼。"""
     add_text(
         slide, ML, 0.10, 9.2, 0.26,
         [[(section, NAVY, False)]],
         size=12, margin=0.0,
     )
-    if source:  # 第 5 頁依使用者手改版沒有來源列
-        add_text(
-            slide, ML, FOOTER_Y, 10.3, 0.24,
-            [[(source, MUTED, False)]],
-            size=10, margin=0.0,
-        )
     add_text(
-        slide, 11.35, FOOTER_Y, 1.52, 0.24,
+        slide, PAGE_X, FOOTER_Y, PAGE_W, 0.24,
         [[(str(page), NAVY, False)]],
-        size=12, align=PP_ALIGN.RIGHT, margin=0.0,
+        size=12, align=PP_ALIGN.RIGHT, margin=0.0, name="page-number",
     )
 
 
@@ -671,14 +661,15 @@ def page_span(ids: list[str]) -> str:
     return "、".join(ranges)
 
 
-# 內容區：標題下緣 1.08 吋到頁尾來源列上方 7.02 吋。
-BOT = 7.02
+# 內容區：標題下緣 1.08 吋到 7.36 吋。v3.6 以前到 7.02（來源列上方）；v3.7 拿掉來源列後下延 0.34 吋，
+# 頁碼在內容區右緣之外，所以內容區下緣不必避開它。
+BOT = 7.36
 
 
 def new_content_slide(prs, meta: dict, page: int):
     slide = prs.slides.add_slide(blank_layout(prs))
     strip_placeholders(slide)
-    chrome(slide, meta["section"], page, meta["source"])
+    chrome(slide, meta["section"], page)
     y = add_title(slide, meta["title"])
     return slide, y
 
@@ -1470,9 +1461,11 @@ def draw_f8(slide, y, *, compact=False):
     size = F8_FONT
     # ---- 上帶：產出 1，七個方塊，欄寬依內文最長一行配置 ----
     # compact 只把上帶標題併成一行；下帶的溝通迴路說明太長，仍維持兩行。
+    # v3.7：內容區下延 0.34 吋，分給上下兩列方塊各 +0.08、資料庫列 +0.10、圖例 +0.08（bot_h 預留 1.02）。
     head_h = 0.34 if compact else 0.56
     bot_head_h = 0.56
-    top_y, top_h = y, head_h + 1.10
+    box_h = 1.06 if compact else 1.14
+    top_y, top_h = y, head_h + box_h + 0.04
     add_card(slide, ML, top_y, CW, top_h, fill=F8_BAND_TOP)
     if compact:
         add_text(slide, ML + 0.10, top_y + 0.05, CW - 0.2, 0.26,
@@ -1493,7 +1486,7 @@ def draw_f8(slide, y, *, compact=False):
         ("資料庫 A", ["報告池", "日／週／季報、", "預警紀錄"], F8_DB, F8_DB_EDGE, None, False),
         ("Dashboard 1–3", ["1 戰情總覽", "2 報告池・", "3 原始輿情"], F8_PROC, BLUE, None, True),
     ]
-    box_y, box_h = top_y + head_h, 1.06
+    box_y = top_y + head_h
     xs = []
     x = ML
     for w in tw:
@@ -1510,12 +1503,12 @@ def draw_f8(slide, y, *, compact=False):
     mid_y = top_y + top_h + band_gap / 2
     bot_y = top_y + top_h + band_gap
     gut_x = ML + 0.10  # 直向線走帶內左緣
-    bot_box_y, bot_box_h = bot_y + bot_head_h, 1.06
-    db_h = 0.80 if compact else 0.98
+    bot_box_y, bot_box_h = bot_y + bot_head_h, box_h
+    db_h = 0.80 if compact else 1.08
     db_y = bot_box_y + bot_box_h + 0.16
     red_y = db_y + db_h + 0.08
-    # 底卡先畫，灰線與紅線才不會被蓋住。第 8 頁沿用 v3.2 的高度（留 0.94 吋給圖例與說明列）。
-    bot_h = (red_y + 0.10 - bot_y) if compact else (BOT - 0.94 - bot_y)
+    # 底卡先畫，灰線與紅線才不會被蓋住。第 8 頁留 1.02 吋給圖例與說明列（v3.7；v3.2–v3.6 是 0.94）。
+    bot_h = (red_y + 0.10 - bot_y) if compact else (BOT - 1.02 - bot_y)
     add_card(slide, ML, bot_y, CW, bot_h, fill=F8_BAND_BOT)
     add_arrow(slide, risk_x, box_y + box_h, risk_x, mid_y, color=F8_GREY, width=1.25, head=False)
     add_arrow(slide, risk_x, mid_y, gut_x, mid_y, color=F8_GREY, width=1.25, head=False)
@@ -2203,8 +2196,8 @@ def build_p15(slide, y):
     add_text(slide, x + 0.20, by + 0.02, rw - 0.16, filt_h - 0.04,
              [[("篩選：來源 ▾　日期 ▾　流失等級 ▾　面向 ▾", NAVY, True, 12)]], size=12, anchor="ctr", margin=0.0)
     sents = [  # 取自 T10 代表句（去識別檔），來源、p_churn 與面向照報告；第一則兩行、第二則一行
-        ("PTT", "p 0.998", "保固", "10萬耶，過保外廠處理吧，說不定一萬都不用就幫你解決", 0.92),
-        ("Mobile01", "p 0.998", "價格", "電瓶、輪胎都不用在原廠換", 0.66),
+        ("PTT", "p 0.998", "保固", "10萬耶，過保外廠處理吧，說不定一萬都不用就幫你解決", 1.00),  # v3.7：各 +0.08／+0.09
+        ("Mobile01", "p 0.998", "價格", "電瓶、輪胎都不用在原廠換", 0.75),
     ]
     yy = by + filt_h + 0.10
     for src_, p, aspect, text, h in sents:
@@ -2236,7 +2229,7 @@ def build_p15(slide, y):
     # ---- Dashboard 5 溝通審核佇列：沿用原線框 ----
     x = ML + bot_w + gap
     by, bh = mock_frame(slide, x, y2, bot_w, row_h, "Dashboard 5　溝通審核佇列")
-    item_h = 1.20
+    item_h = 1.37  # v3.7：列高 +0.17，整個給草稿卡
     card_text(slide, x + 0.12, by, rw, item_h,
               [
                   [("車主 H-7F3A　風險 高", INK, True, 18)],
@@ -2264,7 +2257,6 @@ SLIDES.append({
     "id": "A2",
     "section": "附錄 A2 補充圖表（不計入 15 頁）",
     "title": "三站發言者流失率，與發言者風險分布",
-    "source": "來源：統計檢定報告（T7）、風險與 Persona（客群輪廓）報告（T10）；圖 F2、F4",
     "reports": ["reports/T7_stats_tests.md", "reports/T10_risk_persona_report.md"],
     "figures": ["reports/figures/F2.png", "reports/figures/F4.png"],
 })
@@ -2272,7 +2264,6 @@ SLIDES.append({
     "id": "A2b",
     "section": "附錄 A2b 補充圖表（不計入 15 頁）",
     "title": "校準曲線，與季趨勢預警",
-    "source": "來源：本機模型報告（T8）、趨勢報告（T15）；圖 F6、F9",
     "reports": ["reports/T8_r4_report.md", "reports/T15_trend_reports.md"],
     "figures": ["reports/figures/F6.png", "reports/figures/F9.png"],
 })
@@ -2280,7 +2271,6 @@ SLIDES.append({
     "id": "A3",
     "section": "附錄 A3 待料通知話術（不計入 15 頁）",
     "title": "待料逾 7 天就主動通知",
-    "source": "來源：話術範例、生成與查核報告（T14）",
     "reports": ["knowledge/generated_examples.md", "reports/T14_generation_report.md"],
     "figures": [],
 })
@@ -2288,7 +2278,6 @@ SLIDES.append({
     "id": "A4",
     "section": "附錄 A4 CRM 觸發門檻（不計入 15 頁）",
     "title": "八條規則的欄位與門檻",
-    "source": "來源：風險與 Persona（客群輪廓）報告（T10）、L7 運作流程",
     "reports": ["reports/T10_risk_persona_report.md", "L7運作流程_草稿.md"],
     "figures": [],
 })
@@ -2296,7 +2285,6 @@ SLIDES.append({
     "id": "A5",
     "section": "附錄 A5 客訴回訪話術（不計入 15 頁）",
     "title": "客訴結案第 7 天回訪，不推銷、不要求刪評",
-    "source": "來源：客訴關懷策略、話術範例",
     "reports": ["客訴關懷策略_草稿.md", "knowledge/generated_examples.md"],
     "figures": [],
 })
@@ -2305,7 +2293,6 @@ SLIDES.append({
     "id": "A1",
     "section": "附錄 A1 術語表（不計入 15 頁）",
     "title": "本案用到的技術名詞：定義與在本案的用法",
-    "source": "來源：本機模型報告（T8）、人工評估（T9）、風險與 Persona（客群輪廓）報告（T10）",
     "reports": ["reports/T8_r4_report.md", "reports/T9_human_eval.md", "reports/T10_risk_persona_report.md"],
     "figures": [],
 })
@@ -2382,7 +2369,8 @@ def build_a2b(slide, y):
     cap_h = 0.50
     gap = 0.08
     f6 = figv()["F6"]["bins"]
-    chart_h = 2.08
+    f9_h = 2.62  # F9.png 是依 12.42×2.62 吋重畫的，格高固定；v3.7 內容區下延的 0.34 吋全給上方 F6 散點圖
+    chart_h = BOT - y - 2 * cap_h - 3 * gap - f9_h
     hi = max(f6, key=lambda b: b["mean"])
     chart_scatter(
         slide, ML, y, CW, chart_h,
@@ -2593,7 +2581,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         )
     lines += [
         "",
-        "圖欄是該頁對應的報告圖。自 v3.3 起 F1–F6 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 8 頁用原生形狀（`draw_f8`）；v3.6 起第 10 頁不再畫 F7（改風險等級對照表），附錄 A0 改五個 Dashboard 示意（原生形狀）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。",
+        "報告欄是該頁數字轉抄的來源文件（專案文件，保留）；v3.7 起投影片頁腳不再印「來源：」列，頁碼在右下角。圖欄是該頁對應的報告圖。自 v3.3 起 F1–F6 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 8 頁用原生形狀（`draw_f8`）；v3.6 起第 10 頁不再畫 F7（改風險等級對照表），附錄 A0 改五個 Dashboard 示意（原生形狀）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。",
         "",
         "## 占位清單",
         "",
@@ -2613,7 +2601,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "- P3「態度負面 61%」依本任務大綱。`專案架構_2026-09-23.md` §0.1 寫的是 68%。`reports/T7_stats_tests.md` 只給態度面向的流失率 4.7%（62／1,306），沒有負面占比。簡報先用 61%。",
         "- P10 表格的 r4 用架構頁四捨五入（P 0.62、R 0.77、κ 0.64）。T8 ep2 原值 P 0.617、R 0.769、κ 0.642 在該頁備註。校準曲線在附錄 A2b。F1 0.685 沒有放進 25–35 字備註。",
         "- P1 內文不再寫 p<.001 與 Cramér's V=0.125。檢定見統計檢定報告（T7），χ²=99.5 仍在頁上。",
-        "- P2 刪三站流失率表。Dcard 偏購車階段留在頁腳來源。χ²(2)=99.5、V=0.125 與 P1 重複，依清單刪掉。",
+        "- P2 刪三站流失率表。Dcard 偏購車階段不在頁上（v3.7 起頁腳沒有來源列）。χ²(2)=99.5、V=0.125 與 P1 重複，依清單刪掉。",
         "- P3 備註只放得下零件勝算比 2.58、價格勝算比 2.64、分母 21,183 句。銷售交車勝算比 0.15 放這裡。",
         "- P4 內文依清單只留定保口述價。機油口述中位仍是原廠 5,000、外廠 1,950，不是公告價。",
         "- P14 備註放每季 300 句、兩人共 5 小時，以及「人工審核回饋持續再訓練」。話術由模型生成、人工每則只審約 1–2 分鐘（估），放這裡。旁白：別家買雲端 API，資料和經驗都留在別人那裡；我們每多審一則話術、多標一批句子，模型和知識庫就更懂 Lexus 車主。",
@@ -2634,7 +2622,7 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "python deck/check_layout.py deck/初賽簡報_vX.Y.pptx",
         "```",
         "",
-        "腳本列出非包含關係的形狀重疊、超出頁面或壓到頁尾來源列的形狀，以及每張預覽圖的 PIL 空白比例。文字放在卡片上、標籤放在方塊內這種包含關係不算重疊。",
+        "腳本列出非包含關係的形狀重疊、超出頁面或壓到右下角頁碼的形狀，以及每張預覽圖的 PIL 空白比例。文字放在卡片上、標籤放在方塊內這種包含關係不算重疊。",
         "另列卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，低於 0.7 的會印出來；全冊每張文字卡都要達 0.7。名稱以 `chart` 開頭的形狀是原生圖表的圖區與長條，不是文字卡，不列入這項檢查。",
         "",
         "## 預覽",

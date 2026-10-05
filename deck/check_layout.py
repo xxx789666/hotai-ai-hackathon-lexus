@@ -1,13 +1,15 @@
-"""檢查簡報形狀是否交疊，或超出頁面、壓到頁尾來源列。
+"""檢查簡報形狀是否交疊，或超出頁面、壓到右下角頁碼。
 
   python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 
 包含關係（文字框在卡片裡、小標在大方塊裡）不算重疊。
+v3.7 起沒有頁尾來源列：內容區到 7.36 吋，頁碼框在 12.92–13.30 × 7.16–7.40 吋（內容區右緣之外）。
+「壓到頁碼」＝任何不是頁碼本身的形狀與頁碼框相交超過 0.04 吋。
 卡片內留白：文字實際高度（依字級與換行估算）除以底下卡片高度，
 低於 0.7 的列出來。高度不到 0.7 吋的小卡、頁尾與頁首標籤不列入。
 名稱以 chart 開頭的形狀是原生圖表的圖區、長條與熱圖格，不是文字卡，也不列入。
 若同版預覽圖存在，另外印出每張的 PIL 空白比例：
-內容區（約 1.05 吋到 7.05 吋）裡 R、G、B 都 ≥ 250 的像素占比。
+內容區（約 1.05 吋到 7.36 吋）裡 R、G、B 都 ≥ 250 的像素占比。
 淺底色卡片不算白。
 """
 from __future__ import annotations
@@ -22,7 +24,9 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 EMU = 914400
 OVERLAP_IN = 0.04
 CONTAIN_TOL = 0.03
-FOOTER_Y = 7.16
+FOOTER_Y = 7.16  # 頁碼框上緣
+BOT = 7.36  # 內容區下緣（build_deck.BOT）
+PAGE_BOX = (12.92, FOOTER_Y, 13.30, FOOTER_Y + 0.24)  # 頁碼框（build_deck.chrome）
 SLIDE_PAD = 0.02
 
 
@@ -97,9 +101,11 @@ def check_slide(slide, index: int, slide_w: float, slide_h: float):
         reasons = []
         if x0 < -SLIDE_PAD or y0 < -SLIDE_PAD or x1 > slide_w + SLIDE_PAD or y1 > slide_h + SLIDE_PAD:
             reasons.append("超出頁面")
-        # 頁尾來源列與頁碼本身從 FOOTER_Y 起算，不當作壓線。
-        if y0 < FOOTER_Y - 0.02 and y1 > FOOTER_Y + 0.02:
-            reasons.append("壓到頁尾來源列")
+        # 頁碼本身（名稱 page-number）不算；其他形狀碰到頁碼框就列出。
+        if (shape.name or "") != "page-number":
+            iw, ih = intersection(rect, PAGE_BOX)
+            if iw > OVERLAP_IN and ih > OVERLAP_IN:
+                reasons.append("壓到頁碼")
         if reasons:
             outside.append((label(shape, text), ",".join(reasons), rect))
     return overlaps, outside
@@ -155,7 +161,7 @@ def card_fill(items):
         h = rect[3] - rect[1]
         if (shape.name or "").startswith("chart"):
             continue
-        if shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE and h >= 0.70 and rect[1] < FOOTER_Y - 0.05:
+        if shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE and h >= 0.70 and rect[1] < BOT - 0.05:
             cards.append(rect)
             continue
         if not text.strip():
@@ -206,7 +212,7 @@ def whitespace(png: Path, slide_w: float, slide_h: float) -> float:
     x0 = int(0.30 * px_per_in)
     x1 = int((slide_w - 0.30) * px_per_in)
     y0 = int(1.05 * px_per_in)
-    y1 = int(min(7.05, slide_h) * px_per_in)
+    y1 = int(min(BOT, slide_h) * px_per_in)
     crop = im.crop((x0, y0, x1, y1))
     white = 0
     total = crop.width * crop.height
