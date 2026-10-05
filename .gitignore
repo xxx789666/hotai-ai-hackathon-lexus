@@ -16,3 +16,6 @@ _buildtest.pdf
 
 # 外部學習資料，不進 repo
 AI應用規劃師*.pdf
+
+# 使用場景動畫成品與 PNG 幀（不進 git）
+video/out/

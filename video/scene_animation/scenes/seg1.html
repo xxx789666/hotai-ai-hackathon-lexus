@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>第 1 段：資料來源與去識別</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  .title { left: 120px; top: 90px; }
+  .title .sub { font-size: 26px; color: #6B7A90; margin-top: 8px; }
+  /* 新的幫手 */
+  #helper { left: 700px; top: 96px; width: 560px; height: 96px; display: flex; align-items: center; gap: 18px; padding: 0 26px; box-sizing: border-box; }
+  #helper .txt { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  #helper .txt small { display: block; font-size: 18px; font-weight: 400; opacity: .8; }
+  /* 論壇節點 */
+  .forum { left: 150px; width: 250px; height: 110px; display: flex; align-items: center; gap: 16px; padding: 0 22px; box-sizing: border-box; }
+  .forum .name { font-size: 30px; font-weight: 700; color: var(--ink); }
+  .forum .name small { display: block; font-size: 16px; color: #6B7A90; font-weight: 400; }
+  .forum .ico { width: 54px; height: 54px; border-radius: 14px; background: var(--light); position: relative; flex: none; }
+  .forum .ico::before { content: ""; position: absolute; left: 10px; top: 12px; width: 34px; height: 22px; border-radius: 8px; background: var(--blue); }
+  .forum .ico::after { content: ""; position: absolute; left: 16px; top: 32px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 9px solid var(--blue); }
+  /* 流動的對話泡泡 */
+  .bub { width: 196px; height: 74px; background: #fff; border-radius: 14px; box-shadow: 0 10px 24px rgba(47,93,159,.14); padding: 10px 14px; box-sizing: border-box; margin: -37px 0 0 -98px; }
+  .bub .ln { height: 12px; border-radius: 6px; margin-bottom: 9px; background: var(--light); }
+  .bub .id { white-space: nowrap; font-size: 14px; color: #8A96A8; line-height: 1; }
+  .bub .id span { display: inline-block; margin-right: 6px; }
+  .bub .id .v { color: var(--navy); }
+  .bub .id .v.masked { color: transparent; background: repeating-conic-gradient(#8F9BAD 0 25%, #C5CDD8 0 50%) 0 0/8px 8px; border-radius: 3px; }
+  /* 漏斗 */
+  #funnel { left: 880px; top: 440px; width: 240px; height: 320px; }
+  /* 語料計數 */
+  #count { left: 1300px; top: 250px; width: 500px; height: 250px; padding: 24px 30px; box-sizing: border-box; }
+  #count .lbl { font-size: 26px; color: var(--navy); display: flex; justify-content: space-between; align-items: center; }
+  #count .big { margin-top: 6px; font-size: 100px; white-space: nowrap; }
+  #count .big small { font-size: 40px; color: var(--navy); margin-left: 8px; letter-spacing: 0; }
+  /* 內網／鎖 */
+  #lock { left: 1300px; top: 560px; width: 480px; height: 230px; padding: 24px 30px; box-sizing: border-box; display: flex; gap: 22px; align-items: center; }
+  #lock .t { font-size: 30px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+  #lock .t small { display: block; font-size: 18px; color: #6B7A90; font-weight: 400; margin-top: 6px; }
+  #net { left: 850px; top: 220px; width: 980px; height: 620px; border: 3px dashed var(--sky); border-radius: 32px; box-sizing: border-box; }
+  #net .lb { position: absolute; left: 30px; top: -20px; background: var(--pale); color: var(--blue); font-size: 22px; font-weight: 700; padding: 4px 16px; border-radius: 999px; border: 2px solid var(--sky); }
+  /* 要點列 */
+  #points { left: 150px; top: 836px; display: flex; gap: 40px; }
+  #points .check { font-size: 28px; }
+  /* 遮蔽標籤 */
+  #maskTag { left: 150px; top: 770px; }
+  #maskTag .tag { font-size: 24px; padding: 6px 18px; color: var(--blue); font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="halo blue" style="left:1100px;top:-350px;width:1300px;height:1300px;"></div>
+  <div class="halo white" style="left:-300px;top:400px;width:1100px;height:1100px;"></div>
+  <div class="beam" data-base="rotate(22deg)" style="left:980px;top:-300px;"></div>
+  <div class="beam" data-base="rotate(22deg)" style="left:1700px;top:-300px;opacity:.3"></div>
+  <div class="bokeh soft bk" style="left:1500px;top:120px;width:140px;height:140px;"></div>
+  <div class="bokeh bk" style="left:700px;top:900px;width:36px;height:36px;"></div>
+  <div class="bokeh soft bk" style="left:80px;top:860px;width:120px;height:120px;"></div>
+  <div class="bokeh bk" style="left:1180px;top:140px;width:26px;height:26px;"></div>
+
+  <div class="title" data-init="o:0,y:30">
+    <div class="h2">產出 1・AI 網路輿情洞察系統</div>
+    <div class="sub">資料來源與去識別</div>
+  </div>
+
+  <!-- 新的幫手 -->
+  <div id="helper" class="panel deep" data-init="o:0,y:-30,s:.96">
+    <svg width="52" height="52" viewBox="0 0 52 52"><rect x="8" y="8" width="36" height="36" rx="8" fill="#DCE8F5"/><rect x="16" y="16" width="20" height="20" rx="4" fill="#2F5D9F"/>
+      <g stroke="#DCE8F5" stroke-width="3" stroke-linecap="round"><path d="M18 2v6M26 2v6M34 2v6M18 44v6M26 44v6M34 44v6M2 18h6M2 26h6M2 34h6M44 18h6M44 26h6M44 34h6"/></g></svg>
+    <div class="txt">新的幫手<small>AI 網路輿情洞察系統・示意</small></div>
+  </div>
+
+  <!-- 光帶（三條分支匯入漏斗）-->
+  <svg class="band" width="1920" height="1080" style="left:0;top:0" data-init="o:0">
+    <defs><filter id="blur"><feGaussianBlur stdDeviation="14"/></filter></defs>
+    <g id="bandpaths">
+      <path class="glowpath" d="M 400 340 C 620 340, 700 420, 860 420 C 940 420, 980 440, 1000 480"/>
+      <path class="glowpath" d="M 400 510 C 600 510, 760 470, 860 450 C 940 435, 980 450, 1000 480"/>
+      <path class="glowpath" d="M 400 680 C 620 680, 760 520, 860 480 C 940 450, 980 460, 1000 480"/>
+      <path class="corepath" d="M 400 340 C 620 340, 700 420, 860 420 C 940 420, 980 440, 1000 480"/>
+      <path class="corepath" d="M 400 510 C 600 510, 760 470, 860 450 C 940 435, 980 450, 1000 480"/>
+      <path class="corepath" d="M 400 680 C 620 680, 760 520, 860 480 C 940 450, 980 460, 1000 480"/>
+    </g>
+    <!-- 泡泡用的完整路徑（含漏斗內下落）-->
+    <path id="p0" fill="none" stroke="none" d="M 400 340 C 620 340, 700 420, 860 420 C 940 420, 980 440, 1000 480 L 1000 700"/>
+    <path id="p1" fill="none" stroke="none" d="M 400 510 C 600 510, 760 470, 860 450 C 940 435, 980 450, 1000 480 L 1000 700"/>
+    <path id="p2" fill="none" stroke="none" d="M 400 680 C 620 680, 760 520, 860 480 C 940 450, 980 460, 1000 480 L 1000 700"/>
+  </svg>
+
+  <!-- 論壇節點 -->
+  <div class="forum panel f0" style="top:285px" data-init="o:0,x:-40"><div class="ico"></div><div class="name">PTT<small>公開論壇</small></div></div>
+  <div class="forum panel f1" style="top:455px" data-init="o:0,x:-40"><div class="ico"></div><div class="name">Mobile01<small>公開論壇</small></div></div>
+  <div class="forum panel f2" style="top:625px" data-init="o:0,x:-40"><div class="ico"></div><div class="name">Dcard<small>公開論壇</small></div></div>
+
+  <!-- 內網邊界 -->
+  <div id="net" data-init="o:0"><div class="lb">和泰內網</div></div>
+
+  <!-- 流動的泡泡（由 JS 產生）-->
+  <div id="bubbles" style="left:0;top:0;width:0;height:0"></div>
+  <!-- 漏斗 -->
+  <svg id="funnel" viewBox="0 0 240 320" data-init="o:0,y:30">
+    <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DCE8F5"/><stop offset="1" stop-color="#9FC2E8"/></linearGradient></defs>
+    <path d="M 10 20 H 230 L 150 190 V 290 a 30 12 0 0 1 -60 0 V 190 Z" fill="url(#fg)" opacity=".92"/>
+    <ellipse cx="120" cy="20" rx="110" ry="18" fill="#fff" stroke="#9FC2E8" stroke-width="3"/>
+    <text x="120" y="250" text-anchor="middle" font-size="18" fill="#2F5D9F" font-weight="700">逐句</text>
+  </svg>
+
+
+  <!-- 計數 -->
+  <div id="count" class="panel" data-base="perspective(1500px) rotateY(-10deg)" data-init="o:0,x:60,s:.96">
+    <div class="lbl"><span>售後語料・逐句累積</span><span class="tag demo">示意</span></div>
+    <div class="big"><span id="cnum">0</span><small>句</small></div>
+    <div class="note" style="margin-top:14px">三個公開論壇的 Lexus 討論，2007–2026/9</div>
+  </div>
+
+  <!-- 鎖 -->
+  <div id="lock" class="panel" data-base="perspective(1500px) rotateY(-10deg)" data-init="o:0,x:60,s:.96">
+    <svg width="96" height="110" viewBox="0 0 96 110"><path d="M48 4 L88 20 V56 C88 82 68 98 48 106 C28 98 8 82 8 56 V20 Z" fill="#2F5D9F"/>
+      <rect x="30" y="50" width="36" height="30" rx="6" fill="#fff"/><path d="M36 50 V42 a12 12 0 0 1 24 0 V50" fill="none" stroke="#fff" stroke-width="6"/><circle cx="48" cy="64" r="4" fill="#2F5D9F"/></svg>
+    <div class="t">資料與模型<br>都留在和泰內網<small>本機模型・不出門</small></div>
+  </div>
+
+  <!-- 遮蔽標籤 -->
+  <div id="maskTag" data-init="o:0,y:10"><span class="tag">去識別：人名、店名、帳號先遮蔽</span></div>
+
+  <!-- 要點 -->
+  <div id="points">
+    <div class="check pt0" data-init="o:0,y:16">三個公開論壇</div>
+    <div class="check pt1" data-init="o:0,y:16">21,183 句</div>
+    <div class="check pt2" data-init="o:0,y:16">去識別</div>
+    <div class="check pt3" data-init="o:0,y:16">資料不出門</div>
+  </div>
+
+  <div id="subtitle"></div>
+  <div id="sweep"><div class="veil"></div><div class="band-light"></div></div>
+  <div id="glow"><div class="ring"></div><div class="core"></div></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+const S = Scene.init({
+  T: 24, lead: 1.1, in: 'sweep', out: 'glow', din: 0.6, dout: 0.8,
+  keys: { k_helper: 0.1, k_forums: 3.46, k_count: 10.85, k_mask: 14.14, k_lock: 17.1 },
+  cues: [{text:'（預覽）字幕由 render.py 注入', start: 0, show_end: 999}],
+});
+const K = S.keys, L = S.lead;
+
+Scene.tween('.title', 0.2, 0.9, { o: 1, y: 0 });
+Scene.tween('#helper', K.k_helper + 0.3, 0.9, { o: 1, y: 0, s: 1 });
+Scene.float('#helper', 3, 5, 0.5);
+Scene.tween('.band', K.k_forums - 0.2, 1.2, { o: 1 });
+['.f0', '.f1', '.f2'].forEach((s, i) => { Scene.tween(s, K.k_forums + i * 0.35, 0.7, { o: 1, x: 0 }); Scene.float(s, 4, 4.5 + i * 0.4, i); });
+Scene.tween('#funnel', K.k_forums + 0.6, 0.9, { o: 1, y: 0 });
+Scene.tween('#count', K.k_count - 0.3, 0.9, { o: 1, x: 0, s: 1 });
+Scene.float('#count', 4, 5.2, 1.7);
+Scene.tween('#maskTag', K.k_mask, 0.6, { o: 1, y: 0 });
+Scene.tween('#lock', K.k_lock - 0.2, 0.9, { o: 1, x: 0, s: 1 });
+Scene.float('#lock', 4, 4.8, 2.9);
+Scene.tween('#net', K.k_lock + 0.3, 1.0, { o: 1 });
+Scene.tween('.pt0', K.k_forums + 1.2, 0.6, { o: 1, y: 0 });
+Scene.tween('.pt1', K.k_count + 0.6, 0.6, { o: 1, y: 0 });
+Scene.tween('.pt2', K.k_mask + 0.4, 0.6, { o: 1, y: 0 });
+Scene.tween('.pt3', K.k_lock + 0.4, 0.6, { o: 1, y: 0 });
+Scene.float('.bk', 10, 6, 0);
+
+// --- 泡泡沿三條路徑流入漏斗（決定論）---
+const R = Scene.rng(7);
+const paths = [0, 1, 2].map(i => document.getElementById('p' + i));
+const lens = paths.map(p => p.getTotalLength());
+const NB = 15, TRAVEL = 5.5, GAP = 0.95;
+const box = document.getElementById('bubbles');
+const bubs = Array.from({ length: NB }, (_, i) => {
+  const el = document.createElement('div');
+  el.className = 'bub abs';
+  const w1 = 40 + Math.floor(R() * 70), w2 = 30 + Math.floor(R() * 60);
+  el.innerHTML = `<div class="ln" style="width:${w1}%"></div><div class="ln" style="width:${w2}%"></div>
+    <div class="id"><span>帳號</span><span class="v">示意</span><span>店名</span><span class="v">示意</span></div>`;
+  box.appendChild(el);
+  return { el, path: i % 3, t0: K.k_forums + 0.5 + i * GAP, vs: [...el.querySelectorAll('.v')] };
+});
+const cnum = document.getElementById('cnum');
+Scene.hook(t => {
+  // 計數
+  const p = Scene.prog(t, K.k_count, 2.4, 'out');
+  cnum.textContent = Scene.fmt(Math.round(21183 * p));
+  for (const b of bubs) {
+    if (t < b.t0) { b.el.style.opacity = 0; continue; }
+    const q = ((t - b.t0) / TRAVEL) % 1;             // 0..1 沿路徑循環
+    const L_ = lens[b.path];
+    const pt = paths[b.path].getPointAtLength(q * L_);
+    const inFunnel = q > 0.86;
+    const s = inFunnel ? Scene.lerp(1, 0.25, (q - 0.86) / 0.14) : 1;
+    const o = Math.min(1, (q / 0.06)) * (inFunnel ? 1 - (q - 0.86) / 0.14 : 1);
+    b.el.style.opacity = o;
+    b.el.style.transform = `translate(${pt.x}px,${pt.y}px) scale(${s})`;
+    // 遮蔽：k_mask 之後，新進入的泡泡（以及畫面上的）逐一打上馬賽克
+    const masked = t >= K.k_mask + (b.t0 % GAP) * 0.5;
+    b.vs.forEach(v => v.classList.toggle('masked', masked));
+  }
+});
+
+Scene.seek(0);
+Scene.preview();
+</script>
+</body>
+</html>

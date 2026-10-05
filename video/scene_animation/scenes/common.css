@@ -1,0 +1,81 @@
+/* common.css：共用舞台、配色、面板、人形、字幕、轉場。配色沿用簡報藍系。 */
+:root {
+  --blue: #2F5D9F;      /* 主色 */
+  --navy: #44546A;      /* 深色 */
+  --ink: #1F3A6B;       /* 字幕／標題深藍 */
+  --light: #DCE8F5;     /* 淺色 */
+  --sky: #9FC2E8;
+  --pale: #EEF4FB;
+  --red: #C0392B;       /* 高風險／最高 */
+  --yellow: #F2B600;    /* 次高 */
+  --grey: #B7C2D0;
+  --skin: #F1D2BE;
+}
+html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; overflow: hidden; background: #fff; }
+body { font-family: "Noto Sans TC", "Microsoft JhengHei", "微軟正黑體", sans-serif; color: var(--ink); }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden;
+  background: linear-gradient(160deg, #FFFFFF 0%, #F3F7FC 35%, #DCE8F5 100%); }
+#stage > * { position: absolute; }
+.abs { position: absolute; }
+[data-init], .tw { will-change: transform, opacity; }
+
+/* 柔光光暈與散景 */
+.halo { border-radius: 50%; filter: blur(60px); pointer-events: none; }
+.halo.blue { background: radial-gradient(circle, rgba(159,194,232,.75) 0%, rgba(159,194,232,0) 70%); }
+.halo.white { background: radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 70%); }
+.bokeh { border-radius: 50%; background: rgba(47,93,159,.14); filter: blur(2px); }
+.bokeh.soft { filter: blur(10px); background: rgba(159,194,232,.35); }
+.beam { width: 180px; height: 1600px; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.75) 50%, rgba(255,255,255,0) 100%);
+  opacity: .55; filter: blur(14px); transform-origin: center; }
+
+/* 光帶：貫穿全片的 SVG 路徑（由各場景放置）*/
+.band path { fill: none; stroke-linecap: round; }
+.band .glowpath { stroke: #BFD8F3; stroke-width: 70; filter: blur(18px); opacity: .9; }
+.band .corepath { stroke: #FFFFFF; stroke-width: 26; opacity: .95; }
+.band .edgepath { stroke: #9FC2E8; stroke-width: 4; opacity: .9; }
+
+/* 漂浮斜切面板 */
+.panel { background: #fff; border-radius: 18px; box-shadow: 0 24px 60px rgba(47,93,159,.16), 0 2px 0 rgba(255,255,255,.9) inset;
+  transform-style: preserve-3d; }
+.panel.tint { background: linear-gradient(145deg, #FFFFFF 0%, #EEF4FB 100%); }
+.panel.deep { background: linear-gradient(145deg, #2F5D9F 0%, #44546A 100%); color: #fff; }
+.slab { background: linear-gradient(135deg, #DCE8F5 0%, #C7DBF1 100%); border-radius: 14px; }
+
+/* 文字階層 */
+.h1 { font-size: 64px; font-weight: 700; letter-spacing: 2px; color: var(--ink); }
+.h2 { font-size: 40px; font-weight: 700; color: var(--ink); }
+.h3 { font-size: 30px; font-weight: 500; color: var(--navy); }
+.big { font-size: 120px; font-weight: 700; color: var(--blue); line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.num { font-size: 72px; font-weight: 700; color: var(--blue); line-height: 1; font-variant-numeric: tabular-nums; }
+.note { font-size: 20px; color: #6B7A90; }
+.tag { display: inline-block; font-size: 18px; color: var(--navy); border: 1.5px solid var(--sky); border-radius: 999px; padding: 2px 12px; background: rgba(255,255,255,.7); }
+.tag.demo { color: #7A8798; border-color: #CBD6E2; }   /* 「示意」標示 */
+.check { font-size: 30px; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 14px; }
+.check::before { content: ""; width: 30px; height: 30px; border-radius: 8px; background: var(--blue);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='black'/><path d='M6 12.5l4 4 8-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='black'/><path d='M6 12.5l4 4 8-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat; flex: none; }
+
+/* 字幕：底部置中、單行、深藍、無底框 */
+#subtitle { position: absolute; left: 0; right: 0; top: 982px; text-align: center; font-size: 42px; font-weight: 500; color: var(--ink);
+  letter-spacing: 1px; white-space: nowrap; text-shadow: 0 0 14px rgba(255,255,255,.95), 0 0 4px rgba(255,255,255,.9); z-index: 50; }
+
+/* 轉場層 */
+#sweep { position: absolute; inset: 0; z-index: 60; opacity: 0; pointer-events: none; --sx: -900px; }
+#sweep .veil { position: absolute; top: -200px; height: 1500px; background: #fff; opacity: .92; }
+#sweep .band-light { position: absolute; top: -300px; left: var(--sx); width: 520px; height: 1700px; margin-left: -260px;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.85) 35%, #ffffff 50%, rgba(220,232,245,.85) 65%, rgba(255,255,255,0) 100%);
+  transform: skewX(-16deg); filter: blur(10px); }
+#glow { position: absolute; inset: 0; z-index: 60; opacity: 0; pointer-events: none; --gs: 0; --go: 0; }
+#glow .core { position: absolute; left: 960px; top: 540px; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,.98) 40%, rgba(220,232,245,.9) 62%, rgba(159,194,232,0) 72%);
+  transform: scale(var(--gs)); opacity: var(--go); filter: blur(6px); }
+#glow .ring { position: absolute; left: 960px; top: 540px; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%;
+  border: 18px solid rgba(255,255,255,.9); transform: scale(calc(var(--gs) * 1.25)); opacity: calc(var(--go) * .7); filter: blur(14px); }
+
+/* 無五官人形（SVG），用 class 指定服裝色 */
+.fig .skin { fill: var(--skin); }
+.fig .hair { fill: var(--navy); }
+.fig.manager .cloth { fill: #44546A; }  .fig.manager .shirt { fill: #FFFFFF; }
+.fig.advisor .cloth { fill: #2F5D9F; }  .fig.advisor .shirt { fill: #DCE8F5; }
+.fig.owner .cloth { fill: #7FA6D6; }    .fig.owner .shirt { fill: #EEF4FB; }
+.fig.grey .cloth, .fig.grey .shirt, .fig.grey .skin, .fig.grey .hair { fill: #C5CDD8; }
+.fig.red .cloth { fill: #C0392B; }
