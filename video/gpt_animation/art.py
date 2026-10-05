@@ -115,7 +115,9 @@ def make_scene(s):
     source='論壇公開資料｜母體為論壇發言者' if i<=4 else '示意｜流程與介面示意'
     a.text(110,903,source,23,MUTED)
     a.text(1810,903,'回廠率研究所',23,MUTED,anchor='rt')
-    layer(a,.35 if i else 1.05,0)
+    # 第 0 段若有片頭字卡（open 秒），標題改在字卡白光溶接後進場；否則沿用夜景淡入的 1.05 秒。
+    opening=s.get('open',0)
+    layer(a,(opening+.1) if opening else (.35 if i else 1.05),0)
 
     if i==0:
         a=Art();a.plane(100,577,890,258)
@@ -123,7 +125,7 @@ def make_scene(s):
         for x in [180,346,512]: a.rect((x,330,x+139,545),'#DDEAF6',8)
         a.desk(344,594,470);a.monitor(386,352,344,218);a.person(260,455,1.27,BLUE,'point')
         a.pill(188,762,'售後服務部經理');a.pill(440,657,'月報',size=23)
-        layer(a,1.25)
+        layer(a,(opening+.3) if opening else 1.25)
         a=Art();a.card(1112,276,670,190);a.text(1150,300,'售後發言者',26,MUTED)
         for n in range(6):a.person(1195+n*99,365,.33,RED if n==5 else BLUE)
         layer(a,when('在公開論壇上'))
@@ -300,6 +302,16 @@ def make_scene(s):
         a.text(960,722,'聯絡：anlixu5223333@gmail.com',24,MUTED,False,anchor='mt')
         layer(a,.4)
     return layers
+
+def opencard():
+    """片頭字卡：沿用第 9 段片尾字卡的四行排版與字級（不放聯絡信箱），改用淺色字以配合深色夜景。
+    四行整塊置中於 y≈582，即第 9 段五行版各行再下移 21 px。"""
+    a=Art()
+    a.text(960,441,'Lexus 車主流失預警',62,'#FFFFFF',True,anchor='mt')
+    a.text(960,536,'與 AI 溝通系統',62,'#9CC4F2',True,anchor='mt')
+    a.text(960,652,'回廠率研究所',31,'#C9D6E6',False,anchor='mt')
+    a.text(960,699,'2026 和泰 AI 黑客松',24,'#A4BAD5',False,anchor='mt')
+    return a.finish()
 
 def background():
     import numpy as np
