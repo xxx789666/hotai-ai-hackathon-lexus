@@ -8,7 +8,10 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.8（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+內容是 v3.9（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+v3.9：只改第 3 頁（提案概述）。原本八張「編號＋頁碼」小卡太像第 2 頁的目錄，改成由左到右的流程
+（公開論壇輿情 → 產出 1 → 產出 2 → 車主回廠）加兩個勾選面板（產出 1 藍、產出 2 紅，各列官方題目四個子項與一個現有數字），
+上方數據帶縮成一條並補一句主張，底部一句粗體收尾；頁上不再出現「第 N 頁」，只留「各章節頁碼見第 2 頁」。其餘頁不動。
 v3.8：只改第 9 頁標題「四種流失車主」→「四種流失論壇發言者」（母體是論壇發言者，與第 10 頁一致）；其餘不動。
 v3.7：摘要頁預期效益欄四處修字（+10 個百分點、≥、零成本推論）與 AI 技術欄補回兩段式標註；第 2–23 頁底部「來源：」列
 全部移除（SLIDES 不再有 source 欄，chrome() 不畫來源），內容區下緣 BOT 由 7.02 延伸到 7.36，頁碼移到右側邊界內
@@ -51,7 +54,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.8"
+DECK_VERSION = "3.9"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -88,7 +91,7 @@ def zi(text: str) -> int:
 NOTES = [
     "摘要給評審三層目標：回廠率假設加十點，核准八成，模型每季重驗。",
     "大綱只列六個章節與附錄的頁碼；兩大產出的對照放在第三頁。",
-    "提案分成兩份產出：一份輿情洞察，一份對準四種客群的溝通。",
+    "由輿情到回廠：產出一看見誰有風險，產出二經人工核准後關懷。",
     "三個前兆並行，不是依序發生：過保、刪項、間隔拉長。",
     "零件勝算比二點五八、價格二點六四，分母兩萬一千句。",
     "出口在一般外廠；定保口述中位原廠九千、外廠三千五，不是公告價。",
@@ -1144,73 +1147,146 @@ def build_toc(slide, y):
 
 
 def build_p1(slide, y):
-    # 上帶：三站論壇發言者流失率。下方兩張大卡並排，各含四個編號小塊，每塊最後一行是頁碼。
-    # 與第 2 頁的整齊條列在結構上不同（卡中卡、2×2）。
-    band_h = 1.10
+    """v3.9：第 3 頁改成「由左到右的流程＋勾選面板」，不再是帶頁碼的格子清單（第 2 頁才是目錄）。
+    上：一條「為什麼要做」數據帶（三站流失率、χ²）加一句主張（與第 4 頁一致）。
+    中：公開論壇輿情 → 產出 1（藍）→ 產出 2（紅）→ 車主回廠，用實心箭頭串接；
+        兩個產出是大面板，面板內用勾選清單列官方題目的四個子項，每項接一個現有數字或交付物。
+    下：一句粗體收尾（內容取自第 8 頁），右側一行小字「各章節頁碼見第 2 頁」。本頁沒有「第 N 頁」。"""
+    # ---- 上：數據帶，一條 ----
+    band_h = 0.86
     add_card(slide, ML, y, CW, band_h, fill="EAF1F8")
     add_text(
-        slide, ML + 0.14, y + 0.08, 2.4, band_h - 0.16,
-        [[("為什麼要做", BLUE, True, 18)], [("論壇發言者流失率", INK, True, 15)], [("χ²=99.5", NAVY, False, 15)]],
-        size=15, anchor="ctr",
+        slide, ML + 0.14, y + 0.06, 1.70, band_h - 0.12,
+        [[("為什麼要做", BLUE, True, 18)], [("論壇發言者流失率", INK, True, 13)], [("χ²=99.5", NAVY, False, 13)]],
+        size=13, anchor="ctr",
     )
     stats = [("18.2%", "Mobile01"), ("14.1%", "PTT"), ("6.8%", "Dcard")]
-    sx = ML + 2.7
-    sw = (CW - 2.7 - 0.14) / 3
-    for num, site in stats:
-        add_text(
-            slide, sx, y + 0.06, sw, band_h - 0.12,
-            [[(num, BLUE, True, 30)], [(site, INK, True, 15)]],
-            size=15, align=PP_ALIGN.CENTER, anchor="ctr",
-        )
-        sx += sw
-    gap = 0.14
-    card_w = (CW - gap) / 2
-    card_y = y + band_h + 0.12
-    card_h = BOT - card_y
-    left = [
-        ("客群 Persona（客群輪廓）", "四種流失樣貌；過保精算派 511 人", f"第 {file_page('P7')} 頁"),
-        ("高風險議題", "零件供應 17.3%、價格 15.0%", f"第 {file_page('P3')} 頁"),
-        ("整體市場輿情", "售後語料 21,183 句；186 句沒抱怨就走", f"第 {file_page('P5')} 頁"),
-        ("AI 技術／模型", "r4 本機模型 F1 0.685", f"第 {file_page('P6')}、{file_page('P10')} 頁"),
-    ]
-    right = [
-        ("核心溝通策略", "對的人、對的時機開口", f"第 {file_page('P12')} 頁"),
-        ("AI 生成內容範例", "12 則主表已對 76 條條款查核", f"第 {file_page('P12')} 頁；附錄 A3、A5"),
-        ("精準接觸點", "保固前 60 天、間隔拉長、刪項後", f"第 {file_page('P12')} 頁"),
-        ("運作流程圖", "洞察與溝通雙迴路，人工核准才發", f"第 {file_page('P6')}、{file_page('A0')} 頁"),
-    ]
-    panels = [
-        ("產出 1", "AI 網路輿情洞察系統架構與報告", left),
-        ("產出 2", "針對目標 Persona（客群輪廓）的 AI 溝通計畫與系統流程", right),
-    ]
-    head_h = 0.80
-    tile_gap = 0.10
-    tile_w = (card_w - 0.28 - tile_gap) / 2
-    tile_top = card_y + head_h + 0.10
-    tile_h = (BOT - 0.14 - tile_top - tile_gap) / 2
-    for i, (head, title, items) in enumerate(panels):
-        x = ML + i * (card_w + gap)
-        add_card(slide, x, card_y, card_w, card_h, fill="EAF1F8")
-        add_text(
-            slide, x + 0.14, card_y + 0.08, card_w - 0.28, head_h - 0.10,
-            [[(head, BLUE, True, 22)], [(title, INK, True, 15)]],
-            size=15, anchor="ctr",
-        )
-        for n, (name, body, page) in enumerate(items, start=1):
-            col, row = (n - 1) % 2, (n - 1) // 2
-            tx = x + 0.14 + col * (tile_w + tile_gap)
-            ty = tile_top + row * (tile_h + tile_gap)
-            add_card(slide, tx, ty, tile_w, tile_h, fill="F7FBFF", line=BLUE_LIGHT)
-            add_text(
-                slide, tx + 0.12, ty + 0.04, tile_w - 0.24, tile_h - 0.08,
-                [
-                    [(str(n), BLUE, True, 24), ("　" + name, INK, True, 20)],
-                    [(body, INK, False, 19)],
-                    [(page, BLUE, True, 18)],
-                ],
-                size=19, anchor="ctr",
-            )
+    runs = []
+    for i, (num, site) in enumerate(stats):
+        if i:
+            runs.append(("　", INK, False, 14))
+        runs.append((num, BLUE, True, 24))
+        runs.append((" " + site, INK, True, 14))
+    add_text(slide, ML + 1.90, y + 0.06, 5.10, band_h - 0.12, [runs], size=14, anchor="ctr")
+    add_text(
+        slide, ML + 7.10, y + 0.06, CW - 7.10 - 0.14, band_h - 0.12,
+        [[("公開輿情能在車主離開原廠之前先辨識", NAVY, True, 18)]],
+        size=18, align=PP_ALIGN.RIGHT, anchor="ctr",
+    )
 
+    # ---- 下：一句收尾（粗體）＋頁碼提示 ----
+    bar_h = 0.56
+    bar_y = BOT - bar_h
+    add_card(slide, ML, bar_y, CW, bar_h, fill="EAF1F8")
+    add_text(
+        slide, ML + 0.14, bar_y + 0.04, CW - 0.28 - 2.60, bar_h - 0.08,
+        [[("兩份產出，一個閉環：每日洞察 → 人工核准的關懷 → 結果回寫 CRM", INK, True, 18)]],
+        size=18, anchor="ctr",
+    )
+    add_text(
+        slide, ML + CW - 0.14 - 2.50, bar_y + 0.04, 2.50, bar_h - 0.08,
+        [[("各章節頁碼見第 2 頁", MUTED, False, 12)]],
+        size=12, align=PP_ALIGN.RIGHT, anchor="ctr",
+    )
+
+    # ---- 中：流程列 ----
+    row_y = y + band_h + 0.14
+    row_h = bar_y - 0.14 - row_y
+    node_w = 1.62
+    arrow_w, arrow_h, arrow_pad = 0.30, 0.44, 0.06
+    slot = arrow_w + 2 * arrow_pad
+    panel_w = (CW - 2 * node_w - 3 * slot) / 2
+    node_h = 1.70
+    node_y = row_y + (row_h - node_h) / 2
+    mid_y = row_y + row_h / 2
+
+    def arrow(x, color=BLUE):
+        shape = slide.shapes.add_shape(
+            MSO_SHAPE.RIGHT_ARROW, Inches(x + arrow_pad), Inches(mid_y - arrow_h / 2), Inches(arrow_w), Inches(arrow_h)
+        )
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = color
+        shape.line.fill.background()
+        return shape
+
+    # 光帶：三段淡色底，從左緣穿過兩個箭頭槽到右緣，面板壓在上面；起點與終點節點坐在帶上。
+    # 左右兩段把節點整個包住（check_layout 視為外框，不算卡片留白），中段只含箭頭。
+    p1x = ML + node_w + slot
+    p2x = p1x + panel_w + slot
+    track_y, track_h = node_y - 0.30, node_h + 0.60
+    for tx, tw in ((ML, node_w + slot), (p1x + panel_w, slot), (p2x + panel_w, slot + node_w)):
+        add_card(slide, tx, track_y, tw, track_h, fill="F4F7FB", radius=0.04)
+
+    # 起點：公開論壇輿情
+    x = ML
+    add_card(slide, x, node_y, node_w, node_h, fill="EAF1F8", line=NAVY)
+    add_text(
+        slide, x + 0.08, node_y + 0.06, node_w - 0.16, node_h - 0.12,
+        [[("公開論壇輿情", INK, True, 15)], [("Mobile01", INK, False, 14)], [("PTT", INK, False, 14)],
+         [("Dcard", INK, False, 14)], [("每日抓新留言", MUTED, False, 13)]],
+        size=14, align=PP_ALIGN.CENTER, anchor="ctr",
+    )
+    x += node_w
+    arrow(x)
+    x += slot
+
+    panels = [
+        ("產出 1", "AI 網路輿情洞察系統", "看見誰有風險", BLUE, "EAF1F8", BLUE_LIGHT, [
+            ("客群 Persona（客群輪廓）", "四種客群，過保精算派 511 人"),
+            ("高風險議題分析", "零件等料 17.3%、價格 15.0%"),
+            ("整體市場輿情洞察", "21,183 句售後語料，日週季報"),
+            ("使用的 AI 技術／模型", "Qwen3-4B 本機模型，F1 0.685"),
+        ]),
+        ("產出 2", "AI 溝通計畫", "對的人、對的時機、說對的話，人工核准", F8_HUMAN_EDGE, "FBF3F2", RGBColor(0xE3, 0xA9, 0xA3), [
+            ("核心溝通策略", "四種客群配三種進廠時機"),
+            ("AI 生成內容範例", "12 則話術對 76 條條款查核"),
+            ("精準接觸點規劃", "三個接觸點＋客訴第 7 天回訪"),
+            ("AI 方案運作流程圖", "雙迴路，人工核准才投遞"),
+        ]),
+    ]
+    head_h = 1.02
+    tick = 0.30
+    for head, title, sub, color, fill, edge, items in panels:
+        add_card(slide, x, row_y, panel_w, row_h, fill=fill, line=edge)
+        add_text(
+            slide, x + 0.14, row_y + 0.08, panel_w - 0.28, head_h,
+            [[(head, color, True, 24)], [(title, INK, True, 18)], [(sub, MUTED, False, 14)]],
+            size=14, anchor="t",
+        )
+        list_top = row_y + head_h + 0.16
+        list_h = row_h - head_h - 0.16 - 0.10
+        pitch = list_h / len(items)
+        for n, (name, deliver) in enumerate(items):
+            ry = list_top + n * pitch
+            if n:
+                add_line(slide, x + 0.14, ry - 0.02, x + panel_w - 0.14, ry - 0.02, color=edge, width=0.75, name="chart-sep")
+            circle = slide.shapes.add_shape(
+                MSO_SHAPE.OVAL, Inches(x + 0.16), Inches(ry + (pitch - tick) / 2), Inches(tick), Inches(tick)
+            )
+            circle.fill.solid()
+            circle.fill.fore_color.rgb = color
+            circle.line.fill.background()
+            tf = circle.text_frame
+            for side in ("margin_left", "margin_right", "margin_top", "margin_bottom"):
+                setattr(tf, side, Inches(0.0))
+            set_tf(tf, [[("✓", WHITE, True, 14)]], 14, align=PP_ALIGN.CENTER, anchor="ctr")
+            add_text(
+                slide, x + 0.16 + tick + 0.10, ry + 0.03, panel_w - 0.16 - tick - 0.10 - 0.14, pitch - 0.06,
+                [[(name, INK, True, 18)], [(deliver, INK, False, 16)]],
+                size=16, anchor="ctr",
+            )
+        x += panel_w
+        arrow(x, color=color)
+        x += slot
+
+    # 終點：車主回廠
+    add_card(slide, x, node_y, node_w, node_h, fill="EAF1F8", line=NAVY)
+    add_text(
+        slide, x + 0.08, node_y + 0.06, node_w - 0.16, node_h - 0.12,
+        [[("車主回廠", INK, True, 15)], [("點擊・預約", INK, False, 13)], [("回廠", INK, False, 13)], [("寫回 CRM", INK, False, 14)],
+         [("KPI 回饋", MUTED, False, 13)], [("回頭校正門檻", MUTED, False, 13)]],
+        size=14, align=PP_ALIGN.CENTER, anchor="ctr",
+    )
 
 def flow_box(slide, x, y, w, h, blocks, size=15, line=BLUE, fill="F7FBFF", align=PP_ALIGN.CENTER):
     """流程方塊：淡藍底、藍框、文字置中。全冊的流程圖（第 4、7、8、17 頁）共用。"""
