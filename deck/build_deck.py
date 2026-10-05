@@ -1125,7 +1125,7 @@ def build_toc(slide, y):
         rows.append((key, name, f"第 {page_span(g['ids'])} 頁"))
     rows.append(("附", "附錄（不計入 15 頁）", f"第 {page_span(appendix)} 頁"))
     n = len(rows)
-    row_h = 0.74
+    row_h = 0.78  # v3.7：內容區下延後列高 0.74 → 0.78，列距才不會拉到 0.18
     gap = (BOT - y - n * row_h) / (n - 1)
     pill = 0.56
     axis_x = ML + 0.16 + pill / 2
@@ -1228,7 +1228,7 @@ def down_arrow(slide, cx, y, h=0.22, w=0.22, color=BLUE):
 
 def build_p2(slide, y):
     # 上半：被動應對（現況）與主動掌握（導入後）左右等寬對比；下半：三個前兆並排匯流（已核准的邏輯，不動）。
-    upper = 1.96
+    upper = 2.06  # v3.7：內容區下延 0.34，上半 +0.10、前兆方塊 +0.24 並把字級放大到 26／24／20，留白都維持 ≥ 0.7
     gap = 0.14
     card_w = (CW - gap) / 2
     cols = [
@@ -1272,7 +1272,7 @@ def build_p2(slide, y):
     for i, (head, line, sub) in enumerate(precursors):
         xx = inner_x + i * (bw + gap_x)
         flow_box(slide, xx, by, bw, bh,
-                 [[(head, INK, True, 24)], [(line, BLUE, True, 22)], [(sub, NAVY, False, 18)]], size=18)
+                 [[(head, INK, True, 26)], [(line, BLUE, True, 24)], [(sub, NAVY, False, 20)]], size=20)
         down_arrow(slide, xx + bw / 2, by + bh + 0.02, h=arrow_h - 0.04)
     merge_y = by + bh + arrow_h
     flow_box(slide, inner_x, merge_y, inner_w, merge_h,
@@ -1365,7 +1365,7 @@ def build_p5(slide, y):
                 out.append([cell_text(a), cell_text(b)])
         return out
 
-    table_h = 3.10
+    table_h = 3.44  # v3.7：內容區下延 0.34 全給兩張表格，說明條與下方流程方塊維持原高
     row_h = [0.40] + [(table_h - 0.40) / 5] * 5
     add_table(slide, ML, y, 6.05, table_h, pairs(scale_rows_l, scale_rows_r), [3.15, 2.90], font=15, row_h=row_h)
     add_table(slide, ML + 6.35, y, 6.07, table_h, pairs(qual_l, qual_r), [3.35, 2.72], font=15, row_h=row_h)
@@ -1461,10 +1461,11 @@ def draw_f8(slide, y, *, compact=False):
     size = F8_FONT
     # ---- 上帶：產出 1，七個方塊，欄寬依內文最長一行配置 ----
     # compact 只把上帶標題併成一行；下帶的溝通迴路說明太長，仍維持兩行。
-    # v3.7：內容區下延 0.34 吋，分給上下兩列方塊各 +0.08、資料庫列 +0.10、圖例 +0.08（bot_h 預留 1.02）。
-    head_h = 0.34 if compact else 0.56
-    bot_head_h = 0.56
-    box_h = 1.06 if compact else 1.14
+    # v3.7：內容區下延 0.34 吋。方塊高度不動（加高會讓卡片留白低於 0.7），分給兩帶標題各 +0.06、
+    # 帶間 +0.08、圖例 +0.06、底部說明列 +0.08（bot_h 預留 1.10）。
+    head_h = 0.34 if compact else 0.62
+    bot_head_h = 0.56 if compact else 0.62
+    box_h = 1.06
     top_y, top_h = y, head_h + box_h + 0.04
     add_card(slide, ML, top_y, CW, top_h, fill=F8_BAND_TOP)
     if compact:
@@ -1499,16 +1500,16 @@ def draw_f8(slide, y, *, compact=False):
     risk_x = xs[3] + tw[3] / 2  # 流失判斷底緣中點
 
     # ---- 兩帶之間：風險升為高 → 觸發 ----
-    band_gap = 0.26 if compact else 0.32
+    band_gap = 0.26 if compact else 0.40
     mid_y = top_y + top_h + band_gap / 2
     bot_y = top_y + top_h + band_gap
     gut_x = ML + 0.10  # 直向線走帶內左緣
     bot_box_y, bot_box_h = bot_y + bot_head_h, box_h
-    db_h = 0.80 if compact else 1.08
+    db_h = 0.80 if compact else 0.98
     db_y = bot_box_y + bot_box_h + 0.16
     red_y = db_y + db_h + 0.08
-    # 底卡先畫，灰線與紅線才不會被蓋住。第 8 頁留 1.02 吋給圖例與說明列（v3.7；v3.2–v3.6 是 0.94）。
-    bot_h = (red_y + 0.10 - bot_y) if compact else (BOT - 1.02 - bot_y)
+    # 底卡先畫，灰線與紅線才不會被蓋住。第 8 頁留 1.10 吋給圖例與說明列（v3.7；v3.2–v3.6 是 0.94）。
+    bot_h = (red_y + 0.10 - bot_y) if compact else (BOT - 1.10 - bot_y)
     add_card(slide, ML, bot_y, CW, bot_h, fill=F8_BAND_BOT)
     add_arrow(slide, risk_x, box_y + box_h, risk_x, mid_y, color=F8_GREY, width=1.25, head=False)
     add_arrow(slide, risk_x, mid_y, gut_x, mid_y, color=F8_GREY, width=1.25, head=False)
@@ -1573,7 +1574,7 @@ def draw_f8(slide, y, *, compact=False):
 
     # ---- 八層圖例 ----
     legend_y = bot_y + bot_h + 0.06
-    bar_h = 0.30
+    bar_h = 0.38
     bar_y = BOT - bar_h
     legend_h = bar_y - 0.06 - legend_y
     lgap = 0.08
@@ -1706,9 +1707,9 @@ def build_p9(slide, y):
             slide, ML, yy, left_w, step_h,
             [
                 [(num, BLUE, True, 34), ("   " + head, INK, True, 18)],
-                [(body, INK, False, 17)],
+                [(body, INK, False, 18)],  # v3.7：卡片隨內容區加高，內文 17→18 維持留白 ≥ 0.7
             ],
-            size=17, anchor="ctr",
+            size=18, anchor="ctr",
         )
     right_x = ML + left_w + gap
     right_w = CW - left_w - gap
@@ -1748,7 +1749,7 @@ def build_p10(slide, y):
     add_table(slide, ML, y, left_w, table_h, rows, [2.15, 1.0, 1.0, 1.0, 1.0], font=15, row_h=[0.36, 0.39, 0.39])
     note_y = y + table_h + 0.10
     prefill_x, prefill_w = ML + left_w + 0.25, CW - left_w - 0.25
-    prefill_h = 1.86
+    prefill_h = 2.00  # v3.7：內容區下延 0.34，上區 +0.14、底部說明卡 +0.06、步驟帶標題與註腳 +0.08，步驟方塊 +0.06
     note_h = prefill_h - table_h - 0.10
     card_text(
         slide, ML, note_y, left_w, note_h,
@@ -1791,15 +1792,15 @@ def build_p10(slide, y):
     # v3.6：五張步驟卡只留藍色標題，重排成一條五步驟流程；做法與數字在附錄 A1 術語表與本頁其他處。
     steps = ["ETL＋\n弱監督標註", "資料切分\n（防洩漏）", "任務轉換", "監督式微調\nSFT", "評估與校準"]
     band_y = y + prefill_h + 0.12
-    bar_h = 1.20
+    bar_h = 1.26
     bar_y = BOT - bar_h
     band_h = bar_y - 0.10 - band_y
     add_card(slide, ML, band_y, CW, band_h, fill="EAF1F8")
-    add_text(slide, ML + 0.14, band_y + 0.10, CW - 0.28, 0.34,
+    add_text(slide, ML + 0.14, band_y + 0.12, CW - 0.28, 0.34,
              [[("五個步驟：從語料到可用的本機模型", NAVY, True, 16)]], size=16, anchor="ctr", margin=0.0)
-    cap_h = 0.30
-    box_y = band_y + 0.56
-    box_h = band_h - 0.56 - cap_h - 0.24
+    cap_h = 0.34
+    box_y = band_y + 0.60
+    box_h = band_h - 0.60 - cap_h - 0.24
     gap = 0.26
     bw = (CW - 0.28 - 4 * gap) / 5
     for i, name in enumerate(steps):
@@ -2191,13 +2192,13 @@ def build_p15(slide, y):
     # ---- Dashboard 3 原始輿情：篩選列＋去識別句子 ----
     x = ML + 2 * (top_w + gap)
     by, bh = mock_frame(slide, x, y, top_w, row_h, "Dashboard 3　原始輿情")
-    filt_h = 0.30
+    filt_h = 0.36  # v3.7：+0.06
     add_card(slide, x + 0.12, by, rw, filt_h, fill="EAF1F8")
     add_text(slide, x + 0.20, by + 0.02, rw - 0.16, filt_h - 0.04,
              [[("篩選：來源 ▾　日期 ▾　流失等級 ▾　面向 ▾", NAVY, True, 12)]], size=12, anchor="ctr", margin=0.0)
     sents = [  # 取自 T10 代表句（去識別檔），來源、p_churn 與面向照報告；第一則兩行、第二則一行
         ("PTT", "p 0.998", "保固", "10萬耶，過保外廠處理吧，說不定一萬都不用就幫你解決", 1.00),  # v3.7：各 +0.08／+0.09
-        ("Mobile01", "p 0.998", "價格", "電瓶、輪胎都不用在原廠換", 0.75),
+        ("Mobile01", "p 0.998", "價格", "電瓶、輪胎都不用在原廠換", 0.69),
     ]
     yy = by + filt_h + 0.10
     for src_, p, aspect, text, h in sents:
@@ -2232,9 +2233,9 @@ def build_p15(slide, y):
     item_h = 1.37  # v3.7：列高 +0.17，整個給草稿卡
     card_text(slide, x + 0.12, by, rw, item_h,
               [
-                  [("車主 H-7F3A　風險 高", INK, True, 18)],
-                  [("Persona（客群輪廓）過保精算派　觸發 R1 過保", INK, False, 16)],
-                  [("話術草稿　引用條目 41、52", NAVY, False, 16)],
+                  [("車主 H-7F3A　風險 高", INK, True, 20)],  # v3.7：卡片加高 0.17，字級 18／16 → 20／18
+                  [("Persona（客群輪廓）過保精算派　觸發 R1 過保", INK, False, 18)],
+                  [("話術草稿　引用條目 41、52", NAVY, False, 18)],
               ],
               size=16, fill="EAF1F8", anchor="ctr", pad_x=0.12)
     btn_w, btn_gap, btn_h = 1.30, 0.10, 0.46
@@ -2430,7 +2431,7 @@ def load_a3_messages() -> list[dict]:
 
 
 def message_cards(slide, y, msgs, touch_label):
-    """A3／A5 共用：兩張話術卡，全文 24pt，標題與引用 18pt，查核 15pt。"""
+    """A3／A5 共用：兩張話術卡，全文 24pt，標題與引用 20pt，查核 16pt（v3.7 卡片隨內容區加高 0.17，字級 18／15 → 20／16）。"""
     card_h = (BOT - y - 0.12) / 2
     for i, msg in enumerate(msgs):
         yy = y + i * (card_h + 0.12)
@@ -2438,12 +2439,12 @@ def message_cards(slide, y, msgs, touch_label):
         card_text(
             slide, ML, yy, CW, card_h,
             [
-                [(f"{msg['persona']} × {touch_label}　{msg['channel']}", BLUE, True, 18)],
-                [(f"引用條目　{msg['cites']}", NAVY, True, 18)],
+                [(f"{msg['persona']} × {touch_label}　{msg['channel']}", BLUE, True, 20)],
+                [(f"引用條目　{msg['cites']}", NAVY, True, 20)],
                 [(text, INK, False, 24)],
-                [(f"查核結果　{msg['check']}", MUTED, False, 15)],
+                [(f"查核結果　{msg['check']}", MUTED, False, 16)],
             ],
-            size=18, pad_y=0.10, anchor="ctr",
+            size=20, pad_y=0.10, anchor="ctr",
         )
 
 
