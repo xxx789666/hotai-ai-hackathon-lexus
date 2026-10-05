@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>第 9 段：收尾</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  #loops { left: 0; top: 0; }
+  #loops circle, #loops path { fill: none; }
+  #loops .g { stroke: #BFD8F3; stroke-width: 44; filter: blur(12px); opacity: .9; }
+  #loops .c { stroke: #fff; stroke-width: 16; }
+  #loops .e { stroke: #9FC2E8; stroke-width: 4; }
+  .lp { width: 320px; text-align: center; }
+  .lp .t { font-size: 40px; font-weight: 700; color: var(--ink); }
+  .lp .s { font-size: 22px; color: #6B7A90; margin-top: 6px; }
+  #l1 { left: 420px; top: 330px; } #l2 { left: 1180px; top: 330px; }
+  #arrow1 { left: 870px; top: 250px; } #arrow2 { left: 870px; top: 540px; }
+  .arr { font-size: 22px; color: var(--navy); background: rgba(255,255,255,.85); border-radius: 999px; padding: 6px 16px; }
+  /* 經理與專員同框 */
+  #people { left: 760px; top: 640px; width: 400px; height: 260px; }
+  #people svg.fig { position: absolute; bottom: 20px; width: 170px; height: 170px; }
+  #people .board { position: absolute; left: 110px; top: 0; width: 180px; height: 60px; border-radius: 10px; background: var(--light); }
+  #people .board i { position: absolute; left: 12px; top: 14px; height: 8px; border-radius: 4px; background: var(--blue); }
+  /* 片尾字卡 */
+  #cardhalo { left: 960px; top: 540px; width: 1500px; height: 1500px; margin: -750px 0 0 -750px; }
+  #endcard { left: 0; right: 0; top: 370px; text-align: center; }
+  #endcard .a { font-size: 34px; font-weight: 500; color: var(--navy); letter-spacing: 6px; }
+  #endcard .b { font-size: 66px; font-weight: 700; color: var(--ink); margin-top: 18px; letter-spacing: 2px; }
+  #endcard .c { font-size: 30px; color: var(--blue); margin-top: 26px; letter-spacing: 4px; }
+  #endcard .line { width: 120px; height: 4px; background: var(--blue); margin: 26px auto 0; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="halo blue" style="left:-200px;top:-300px;width:1200px;height:1200px;"></div>
+  <div class="halo blue" style="left:1000px;top:200px;width:1200px;height:1200px;"></div>
+  <div class="beam" data-base="rotate(22deg)" style="left:1400px;top:-300px;"></div>
+  <div class="bokeh soft bk" style="left:200px;top:800px;width:140px;height:140px;"></div>
+  <div class="bokeh bk" style="left:1650px;top:880px;width:34px;height:34px;"></div>
+  <div class="bokeh bk" style="left:300px;top:200px;width:26px;height:26px;"></div>
+
+  <!-- 兩個迴路連成一圈 -->
+  <svg id="loops" width="1920" height="1080">
+    <g class="g"><path class="lp1" d="M 960 440 A 260 180 0 1 0 960 460"/><path class="lp2" d="M 960 460 A 260 180 0 1 0 960 440"/></g>
+    <g class="c"><path class="lp1" d="M 960 440 A 260 180 0 1 0 960 460"/><path class="lp2" d="M 960 460 A 260 180 0 1 0 960 440"/></g>
+    <g class="e"><path class="lp1" d="M 960 440 A 260 180 0 1 0 960 460"/><path class="lp2" d="M 960 460 A 260 180 0 1 0 960 440"/></g>
+  </svg>
+  <div id="l1" class="lp" data-init="o:0,y:20"><div class="t">看見風險</div><div class="s">產出 1・輿情洞察迴路</div></div>
+  <div id="l2" class="lp" data-init="o:0,y:20"><div class="t">說對的話</div><div class="s">產出 2・AI 溝通迴路</div></div>
+  <div id="arrow1" class="arr" data-init="o:0">名單 →</div>
+  <div id="arrow2" class="arr" data-init="o:0">← 回饋</div>
+
+  <div id="people" data-init="o:0,y:30">
+    <div class="board"><i style="width:90px"></i><i style="width:60px;top:32px"></i></div>
+    <svg data-fig class="fig manager" style="left:30px"></svg>
+    <svg data-fig class="fig advisor" style="left:200px"></svg>
+  </div>
+
+  <!-- 片尾字卡 -->
+  <div id="cardhalo" class="halo white" data-init="o:0,s:.3"></div>
+  <div id="endcard" data-init="o:0,y:20">
+    <div class="a">回廠率研究所</div>
+    <div class="b">Lexus車主流失預警與 AI 溝通系統</div>
+    <div class="line"></div>
+    <div class="c">2026 和泰 AI 黑客松</div>
+  </div>
+
+  <div id="subtitle"></div>
+  <div id="sweep"><div class="veil"></div><div class="band-light"></div></div>
+  <div id="glow"><div class="ring"></div><div class="core"></div></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+const S = Scene.init({
+  T: 13, lead: 0.3, in: 'sweep', out: 'none',
+  keys: { k_loop: 0.1, k_say: 1.52, k_title: 3.47 },
+  cues: [{text:'（預覽）字幕由 render.py 注入', start: 0, show_end: 999}],
+});
+const K = S.keys;
+// 片尾字卡：narration 結束後 0.8 秒停留，接著 4 秒字卡（T 的最後 4 秒）
+const tCard = S.T - 4.0;
+Scene.tween('#l1', K.k_loop + 0.6, 0.8, { o: 1, y: 0 });
+Scene.tween('#l2', K.k_say + 0.2, 0.8, { o: 1, y: 0 });
+Scene.tween('#arrow1', K.k_say + 0.8, 0.6, { o: 1 });
+Scene.tween('#arrow2', K.k_say + 1.1, 0.6, { o: 1 });
+Scene.tween('#people', K.k_title - 0.2, 0.9, { o: 1, y: 0 });
+Scene.float('#people', 3, 5, 0.5);
+// 字卡：迴路與人物淡出、淺色光暈中淡入
+['#l1', '#l2', '#arrow1', '#arrow2', '#people'].forEach(s => Scene.tween(s, tCard - 0.4, 0.7, { o: 0 }, { e: 'in' }));
+Scene.tween('#cardhalo', tCard - 0.4, 1.4, { o: 1, s: 1 }, { e: 'inout' });
+Scene.tween('#endcard', tCard, 1.0, { o: 1, y: 0 });
+Scene.float('.bk', 10, 6, 0);
+// 迴路以描邊方式畫出
+const paths1 = [...document.querySelectorAll('#loops .lp1')], paths2 = [...document.querySelectorAll('#loops .lp2')];
+const len = paths1[0].getTotalLength();
+Scene.hook(t => {
+  const p1 = Scene.prog(t, K.k_loop, 1.6, 'inout'), p2 = Scene.prog(t, K.k_say, 1.6, 'inout');
+  const fade = 1 - Scene.prog(t, tCard - 0.4, 0.7, 'in');
+  paths1.forEach(p => { p.style.strokeDasharray = len; p.style.strokeDashoffset = len * (1 - p1); });
+  paths2.forEach(p => { p.style.strokeDasharray = len; p.style.strokeDashoffset = len * (1 - p2); });
+  document.getElementById('loops').style.opacity = fade;
+  // 光點沿迴路流動
+});
+Scene.seek(0);
+Scene.preview();
+</script>
+</body>
+</html>

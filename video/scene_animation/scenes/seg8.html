@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>第 8 段：投遞與回饋</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  .title { left: 120px; top: 90px; }
+  .title .sub { font-size: 26px; color: #6B7A90; margin-top: 8px; }
+  /* 系統 */
+  #sys { left: 150px; top: 330px; width: 380px; height: 400px; padding: 22px 24px; box-sizing: border-box; color: #fff; }
+  #sys .t { font-size: 26px; font-weight: 700; }
+  #sys .t small { display: block; font-size: 17px; opacity: .8; font-weight: 400; margin-top: 4px; }
+  #sys .gears { position: absolute; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; gap: 26px; }
+  #sys .gear { text-align: center; font-size: 18px; color: #DCE8F5; }
+  #sys .gear svg { display: block; margin: 0 auto 6px; }
+  /* 管道 */
+  #bands { left: 0; top: 0; }
+  #bands path { fill: none; stroke-linecap: round; }
+  #bands .g { stroke: #BFD8F3; stroke-width: 34; filter: blur(10px); opacity: .9; }
+  #bands .c { stroke: #fff; stroke-width: 12; }
+  #bands .ret { stroke: #9FC2E8; stroke-width: 4; stroke-dasharray: 14 12; }
+  .ch { width: 250px; height: 76px; padding: 0 18px; box-sizing: border-box; display: flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 700; color: var(--ink); }
+  .ch svg { flex: none; }
+  #c1 { left: 640px; top: 250px; } #c2 { left: 640px; top: 400px; } #c3 { left: 640px; top: 550px; } #c4 { left: 640px; top: 700px; }
+  #advisor { left: 520px; top: 760px; width: 110px; height: 110px; }
+  /* 車主與手機 */
+  #phone { left: 1180px; top: 240px; width: 300px; height: 560px; border-radius: 40px; background: #44546A; padding: 18px; box-sizing: border-box; }
+  #phone .scr { width: 100%; height: 100%; border-radius: 26px; background: linear-gradient(180deg, #EEF4FB, #DCE8F5); position: relative; overflow: hidden; }
+  #phone .notch { position: absolute; left: 50%; top: 10px; width: 90px; height: 10px; margin-left: -45px; border-radius: 5px; background: #44546A; }
+  #msg { position: absolute; left: 14px; right: 14px; top: 60px; background: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 10px 24px rgba(47,93,159,.16); }
+  #msg .f { font-size: 17px; color: var(--navy); font-weight: 700; display: flex; justify-content: space-between; }
+  #msg .ln { height: 9px; border-radius: 5px; background: var(--light); margin-top: 10px; }
+  #owner { left: 1500px; top: 520px; width: 280px; height: 280px; }
+  /* 訊號 */
+  .sig { width: 120px; height: 52px; border-radius: 999px; background: #fff; border: 3px solid var(--blue); color: var(--blue); font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: -26px 0 0 -60px; }
+  .foot { left: 150px; top: 920px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="halo blue" style="left:1000px;top:-400px;width:1300px;height:1300px;"></div>
+  <div class="halo white" style="left:-300px;top:300px;width:1100px;height:1100px;"></div>
+  <div class="beam" data-base="rotate(22deg)" style="left:1000px;top:-300px;"></div>
+  <div class="bokeh soft bk" style="left:1750px;top:120px;width:140px;height:140px;"></div>
+  <div class="bokeh bk" style="left:900px;top:930px;width:34px;height:34px;"></div>
+
+  <div class="title" data-init="o:0,y:30">
+    <div class="h2">產出 2・投遞與回饋</div>
+    <div class="sub">依客群選管道；結果寫回系統</div>
+  </div>
+
+  <!-- 光帶：四路出去、一路回來 -->
+  <svg id="bands" width="1920" height="1080" data-init="o:0">
+    <g id="outb">
+      <path class="g" d="M 530 520 C 580 520, 580 288, 640 288"/><path class="c" d="M 530 520 C 580 520, 580 288, 640 288"/>
+      <path class="g" d="M 530 520 C 580 520, 580 438, 640 438"/><path class="c" d="M 530 520 C 580 520, 580 438, 640 438"/>
+      <path class="g" d="M 530 520 C 580 520, 580 588, 640 588"/><path class="c" d="M 530 520 C 580 520, 580 588, 640 588"/>
+      <path class="g" d="M 530 520 C 580 520, 580 738, 640 738"/><path class="c" d="M 530 520 C 580 520, 580 738, 640 738"/>
+      <path class="g" d="M 890 288 C 1000 288, 1050 420, 1180 420"/><path class="c" d="M 890 288 C 1000 288, 1050 420, 1180 420"/>
+      <path class="g" d="M 890 438 C 1000 438, 1050 460, 1180 460"/><path class="c" d="M 890 438 C 1000 438, 1050 460, 1180 460"/>
+      <path class="g" d="M 890 588 C 1000 588, 1050 500, 1180 500"/><path class="c" d="M 890 588 C 1000 588, 1050 500, 1180 500"/>
+      <path class="g" d="M 890 738 C 1000 738, 1050 540, 1180 540"/><path class="c" d="M 890 738 C 1000 738, 1050 540, 1180 540"/>
+    </g>
+    <path id="retp" class="ret" d="M 1330 820 C 1330 900, 900 900, 700 880 C 500 860, 340 820, 340 730" data-init="o:0"/>
+  </svg>
+
+  <!-- 系統 -->
+  <div id="sys" class="panel deep" data-base="perspective(1500px) rotateY(10deg)" data-init="o:0,x:-40,s:.96">
+    <div class="t">AI 溝通系統<small>核准後的訊息，依客群選擇管道・示意</small></div>
+    <div class="gears">
+      <div class="gear"><svg id="g1" width="90" height="90" viewBox="-45 -45 90 90"><path id="gp1" fill="#9FC2E8"/><circle r="12" fill="#2F5D9F"/></svg>觸發門檻</div>
+      <div class="gear"><svg id="g2" width="90" height="90" viewBox="-45 -45 90 90"><path id="gp2" fill="#DCE8F5"/><circle r="12" fill="#2F5D9F"/></svg>模型</div>
+    </div>
+  </div>
+
+  <!-- 四個管道 -->
+  <div id="c1" class="ch panel" data-init="o:0,x:-30"><svg width="40" height="40" viewBox="0 0 40 40"><rect x="4" y="6" width="32" height="24" rx="8" fill="#2F5D9F"/><path d="M12 30 l-2 8 10 -8z" fill="#2F5D9F"/><g fill="#DCE8F5"><circle cx="13" cy="18" r="3"/><circle cx="20" cy="18" r="3"/><circle cx="27" cy="18" r="3"/></g></svg>LINE</div>
+  <div id="c2" class="ch panel" data-init="o:0,x:-30"><svg width="40" height="40" viewBox="0 0 40 40"><rect x="4" y="9" width="32" height="22" rx="4" fill="#fff" stroke="#2F5D9F" stroke-width="3"/><path d="M4 11 l16 12 16 -12" fill="none" stroke="#2F5D9F" stroke-width="3"/></svg>Email</div>
+  <div id="c3" class="ch panel" data-init="o:0,x:-30"><svg width="40" height="40" viewBox="0 0 40 40"><rect x="10" y="3" width="20" height="34" rx="5" fill="#2F5D9F"/><rect x="13" y="8" width="14" height="22" rx="2" fill="#DCE8F5"/></svg>App</div>
+  <div id="c4" class="ch panel" data-init="o:0,x:-30"><svg width="40" height="40" viewBox="0 0 40 40"><path d="M10 6 l6 2 3 8 -4 4 c2 5 6 9 11 11 l4 -4 8 3 2 6 c0 2 -2 4 -4 4 C19 40 2 23 2 10 c0 -2 2 -4 4 -4z" fill="#2F5D9F"/></svg>專員電話</div>
+  <svg id="advisor" data-fig class="fig advisor" data-init="o:0"></svg>
+
+  <!-- 車主手機 -->
+  <div id="phone" data-init="o:0,y:30">
+    <div class="scr"><div class="notch"></div>
+      <div id="msg" data-init="o:0,y:-20"><div class="f"><span>關懷訊息</span><span class="tag demo" style="font-size:14px">示意</span></div><div class="ln"></div><div class="ln" style="width:80%"></div><div class="ln" style="width:60%"></div></div>
+    </div>
+  </div>
+  <svg id="owner" data-fig class="fig owner" data-init="o:0,x:30"></svg>
+
+  <!-- 三個回饋訊號 -->
+  <div class="sig s1 abs" data-init="o:0" style="left:0;top:0">點開</div>
+  <div class="sig s2 abs" data-init="o:0" style="left:0;top:0">預約</div>
+  <div class="sig s3 abs" data-init="o:0" style="left:0;top:0">回廠</div>
+  <div class="foot note" data-init="o:0">點開、預約、回廠寫回系統，校正觸發門檻並再訓練模型（設計中的回饋迴路，非已實測成效）・示意</div>
+
+  <div id="subtitle"></div>
+  <div id="sweep"><div class="veil"></div><div class="band-light"></div></div>
+  <div id="glow"><div class="ring"></div><div class="core"></div></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+const S = Scene.init({
+  T: 16, lead: 0.3, in: 'sweep', out: 'sweep',
+  keys: { k_send: 0.1, k_channels: 1.68, k_phone: 4.63, k_signals: 7.9, k_feedback: 10.82 },
+  cues: [{text:'（預覽）字幕由 render.py 注入', start: 0, show_end: 999}],
+});
+const K = S.keys;
+// 齒輪形狀
+function gearPath(n, r1, r2) {
+  let d = '';
+  for (let i = 0; i < n * 2; i++) {
+    const a0 = (i / (n * 2)) * Math.PI * 2, a1 = ((i + 1) / (n * 2)) * Math.PI * 2, r = i % 2 ? r1 : r2;
+    d += (i ? 'L' : 'M') + (Math.cos(a0) * r).toFixed(1) + ' ' + (Math.sin(a0) * r).toFixed(1) + ' L' + (Math.cos(a1) * r).toFixed(1) + ' ' + (Math.sin(a1) * r).toFixed(1) + ' ';
+  }
+  return d + 'Z';
+}
+document.getElementById('gp1').setAttribute('d', gearPath(9, 30, 40));
+document.getElementById('gp2').setAttribute('d', gearPath(9, 30, 40));
+
+Scene.tween('.title', 0.2, 0.9, { o: 1, y: 0 });
+Scene.tween('#sys', K.k_send + 0.1, 0.9, { o: 1, x: 0, s: 1 });
+Scene.float('#sys', 3, 5, 0.3);
+Scene.tween('#bands', K.k_channels - 0.2, 0.8, { o: 1 });
+['#c1', '#c2', '#c3'].forEach((s, i) => { Scene.tween(s, K.k_channels + i * 0.3, 0.6, { o: 1, x: 0 }); Scene.float(s, 3, 4.2 + i * 0.3, i); });
+Scene.tween('#c4', K.k_phone - 0.1, 0.6, { o: 1, x: 0 }); Scene.float('#c4', 3, 5, 3);
+Scene.tween('#advisor', K.k_phone + 0.2, 0.6, { o: 1 });
+Scene.tween('#phone', K.k_channels + 0.8, 0.9, { o: 1, y: 0 });
+Scene.float('#phone', 4, 5.4, 1.2);
+Scene.tween('#owner', K.k_channels + 1.0, 0.8, { o: 1, x: 0 });
+Scene.tween('#msg', K.k_channels + 1.8, 0.6, { o: 1, y: 0 }, { e: 'back' });
+Scene.tween('#retp', K.k_signals - 0.2, 0.6, { o: 1 });
+Scene.tween('.foot', K.k_feedback + 0.6, 0.8, { o: 1 });
+Scene.float('.bk', 10, 6, 0);
+// 訊號沿回程路徑流回系統
+const ret = document.getElementById('retp'), L = ret.getTotalLength();
+const sigs = ['.s1', '.s2', '.s3'].map((s, i) => ({ el: document.querySelector(s), t0: K.k_signals + i * 0.7 }));
+Scene.hook(t => {
+  for (const s of sigs) {
+    const q = (t - s.t0) / 2.6;
+    if (q < 0 || q > 1) { s.el.style.opacity = 0; continue; }
+    const p = ret.getPointAtLength(Scene.E.inout(q) * L);
+    s.el.style.opacity = q < 0.08 ? q / 0.08 : q > 0.9 ? (1 - q) / 0.1 : 1;
+    s.el.style.transform = `translate(${p.x}px,${p.y}px)`;
+  }
+  // 齒輪：回饋到達後轉動
+  const spin = Math.max(0, t - K.k_feedback) * 40;
+  document.getElementById('gp1').setAttribute('transform', `rotate(${spin})`);
+  document.getElementById('gp2').setAttribute('transform', `rotate(${-spin + 20})`);
+  // 手機亮起
+  document.querySelector('#phone .scr').style.filter = t >= K.k_channels + 1.6 ? 'brightness(1.06)' : 'brightness(.85)';
+});
+Scene.seek(0);
+Scene.preview();
+</script>
+</body>
+</html>
