@@ -1,11 +1,11 @@
-# 初賽簡報 v3.7
+# 初賽簡報 v3.8
 
-和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.7.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
+和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v3.8.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
 
 ## 版本
 
-- 目前版號：v3.7。
-- 檔名規則：`deck/初賽簡報_v3.7.pptx`、`deck/preview/初賽簡報_v3.7.pdf`、`deck/preview/v3.7/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
+- 目前版號：v3.8。
+- 檔名規則：`deck/初賽簡報_v3.8.pptx`、`deck/preview/初賽簡報_v3.8.pdf`、`deck/preview/v3.8/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
 - 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。
 - 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。
 - 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。
@@ -30,7 +30,7 @@
 | 6 | P4 | 2 目標對象與痛點分析 | 出口是一般外廠；過保後價差把人推走 | F3.png | `reports/T10_risk_persona_report.md`、`專案架構_2026-09-23.md`、`reports/T11_kb_prices_report.md` |
 | 7 | P5 | 2 目標對象與痛點分析 | 2.1 萬句售後語料，品質過關、全數去識別 | F9_pipeline.png | `題目選擇分析_2026-09-22.md`、`reports/T7_data_quality.md`、`reports/T7_deid_report.md`、`reports/T15_trend_reports.md` |
 | 8 | P6 | 3 解決方案設計 | 洞察每日產出；關懷由事件觸發、人工核准才發 | F8.png | `L7運作流程_2026-09-30.md`、`專案架構_2026-09-23.md` |
-| 9 | P7 | 3 解決方案設計 | 四種流失車主，過保精算派最多（511 人） | F5.png | `reports/T10_risk_persona_report.md`、`會議記錄_2026-09-30.md` |
+| 9 | P7 | 3 解決方案設計 | 四種流失論壇發言者，過保精算派最多（511 人） | F5.png | `reports/T10_risk_persona_report.md`、`會議記錄_2026-09-30.md` |
 | 10 | P8 | 3 解決方案設計 | 高風險論壇發言者 74% 確有流失句，分級可信 | — | `reports/T10_risk_persona_report.md` |
 | 11 | P9 | 4 AI 應用方法 | 兩段式標註：先寬抓、再複核，一致率 98.4% | — | `專案架構_2026-09-23.md`、`reports/T1_dcard_verify_report.md`、`reports/T2_other_refine_report.md`、`reports/T3_residual_split_report.md` |
 | 12 | P10 | 4 AI 應用方法 | 本機小模型勝過雲端 Haiku，零 API 費 | — | `reports/T8_r4_report.md`、`專案架構_2026-09-23.md` |
@@ -88,6 +88,6 @@ python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.7.pdf` 與 `deck/preview/v3.7/slide-01.png`–`slide-23.png`。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v3.8.pdf` 與 `deck/preview/v3.8/slide-01.png`–`slide-23.png`。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
