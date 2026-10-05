@@ -290,11 +290,14 @@ def make_scene(s):
         a=Art();a.plane(184,599,1535,258)
         a.oval((496,300,1435,776),None,LINE,3)
         a.person(344,514,1.2,BLUE,'point');a.person(1514,514,1.2,'#7890AE','point')
-        a.pill(598,326,'輿情洞察',size=27);a.pill(1138,705,'AI 溝通',size=27)
-        a.text(960,441,'Lexus 車主流失預警',62,INK,True,anchor='mt')
-        a.text(960,536,'與 AI 溝通系統',62,BLUE,True,anchor='mt')
-        a.text(960,652,'回廠率研究所',31,MUTED,False,anchor='mt')
-        a.text(960,699,'2026 和泰 AI 黑客松',24,MUTED,False,anchor='mt')
+        # 「AI 溝通」標籤沿環往右下移，避開新增的聯絡方式一行（文字寬約 373 px，x 773–1147）。
+        a.pill(598,326,'輿情洞察',size=27);a.pill(1215,728,'AI 溝通',size=27)
+        # 五行文字整塊置中：原四行區塊中心約 y=582，加一行後整體上移 21 px。
+        a.text(960,420,'Lexus 車主流失預警',62,INK,True,anchor='mt')
+        a.text(960,515,'與 AI 溝通系統',62,BLUE,True,anchor='mt')
+        a.text(960,631,'回廠率研究所',31,MUTED,False,anchor='mt')
+        a.text(960,678,'2026 和泰 AI 黑客松',24,MUTED,False,anchor='mt')
+        a.text(960,722,'聯絡：anlixu5223333@gmail.com',24,MUTED,False,anchor='mt')
         layer(a,.4)
     return layers
 
