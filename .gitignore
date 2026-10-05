@@ -19,3 +19,7 @@ AI應用規劃師*.pdf
 
 # 使用場景動畫成品與 PNG 幀（不進 git）
 video/out/
+video/gpt_animation/assets/
+video/gpt_animation/output/
+video/gpt_animation/__pycache__/
+__pycache__/
