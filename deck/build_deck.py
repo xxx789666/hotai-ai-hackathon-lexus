@@ -1796,10 +1796,7 @@ def build_p10(slide, y):
             )
             chip_x += chip_gap
     # v3.6：五張步驟卡只留藍色標題，重排成一條五步驟流程；做法與數字在附錄 A1 術語表與本頁其他處。
-    steps = ["ETL＋
-弱監督標註", "資料切分
-（防洩漏）", "任務轉換", "監督式微調
-SFT", "評估與校準"]
+    steps = ["ETL＋\n弱監督標註", "資料切分\n（防洩漏）", "任務轉換", "監督式微調\nSFT", "評估與校準"]
     band_y = y + prefill_h + 0.12
     bar_h = 1.20
     bar_y = BOT - bar_h
@@ -1815,8 +1812,7 @@ SFT", "評估與校準"]
     for i, name in enumerate(steps):
         xx = ML + 0.14 + i * (bw + gap)
         flow_box(slide, xx, box_y, bw, box_h,
-                 [[(str(i + 1), BLUE, True, 46)]] + [[(line, BLUE, True, 21)] for line in name.split("
-")], size=21)
+                 [[(str(i + 1), BLUE, True, 46)]] + [[(line, BLUE, True, 21)] for line in name.split("\n")], size=21)
         if i < 4:
             add_arrow(slide, xx + bw + 0.04, box_y + box_h / 2, xx + bw + gap - 0.04, box_y + box_h / 2, width=1.75)
     add_text(slide, ML + 0.14, box_y + box_h + 0.12, CW - 0.28, cap_h,
