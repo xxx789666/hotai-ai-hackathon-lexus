@@ -32,6 +32,9 @@ MODEL = "gpt-5.6-sol-high"
 SKIP_IDS = {"36", "37", "38", "39", "40"}
 # 點數與會員禮遇數字多，和這三個接觸點無關，避免 1.5%、折扣被誤引用。
 SKIP_IDS |= {"29", "30", "66", "67"}
+# 條目 12、13 的延保限制只在官網。留在索引裡，檢索到就改引 2026 手冊條目 52。
+# 不放進 SKIP_IDS：跳過之後 52 未必擠進前 5，正文會失去手冊那一條。
+HANDBOOK_SWAP = {"12": "52", "13": "52"}
 
 BANNED = (
     "車麗屋", "好市多", "愛馬龍", "殺肉", "潭子", "論壇", "Mobile01", "PTT", "Dcard",
@@ -152,8 +155,22 @@ def retrieve(query: str, vecs, idf, k: int = 5) -> list[dict]:
             bonus -= 0.8
         scored.append((dot / (qnorm * norm) + bonus, row))
     scored.sort(key=lambda x: (-x[0], int(x[1]["id"])))
+    rows_by_id = {row["id"]: row for row, _weight, _norm in vecs}
+    swapped = []
+    seen: set[str] = set()
+    for score, row in scored:
+        nid = HANDBOOK_SWAP.get(row["id"], row["id"])
+        if nid in seen:
+            continue
+        if nid != row["id"]:
+            src = rows_by_id.get(nid)
+            if src is None:
+                continue
+            row = src
+        swapped.append((score, row))
+        seen.add(nid)
     out = []
-    for score, row in scored[:k]:
+    for score, row in swapped[:k]:
         item = dict(row)
         item["score"] = round(score, 4)
         out.append(item)
@@ -197,10 +214,10 @@ def specified_ids(note: dict) -> list[str]:
     ids: list[str] = []
     for key in ("force_ids", "required_ids"):
         for value in note.get(key) or []:
-            ids.append(norm_id(value))
+            ids.append(body_source_id(value))
     rule = note.get("mention_rule") or {}
     for value in rule.get("then_required_ids") or []:
-        ids.append(norm_id(value))
+        ids.append(body_source_id(value))
     return list(dict.fromkeys(i for i in ids if i))
 
 
@@ -216,7 +233,7 @@ def retrieve_with_required(query: str, vecs, idf, force_ids: list[str], k: int =
     ordered: list[dict] = []
     seen: set[str] = set()
     for fid in force_ids:
-        fid = norm_id(fid)
+        fid = body_source_id(fid)
         if fid in by_id and fid not in seen:
             ordered.append(by_id[fid])
             seen.add(fid)
@@ -241,7 +258,7 @@ def note_errors(text: str, cited_ids: list[str], note: dict) -> list[str]:
         return []
     errors = []
     compact = compact_text(text)
-    missing_ids = [i for i in (norm_id(x) for x in (note.get("required_ids") or [])) if i not in cited_ids]
+    missing_ids = [i for i in (body_source_id(x) for x in (note.get("required_ids") or [])) if i not in cited_ids]
     if missing_ids:
         errors.append("未引用指定條目：" + "、".join(missing_ids))
     for phrase in note.get("must_include") or []:
@@ -259,7 +276,7 @@ def note_errors(text: str, cited_ids: list[str], note: dict) -> list[str]:
         for phrase in rule.get("then_must_include") or []:
             if compact_text(phrase) not in compact:
                 errors.append(f"提到相關內容時缺少：{phrase}")
-        for fid in (norm_id(x) for x in (rule.get("then_required_ids") or [])):
+        for fid in (body_source_id(x) for x in (rule.get("then_required_ids") or [])):
             if fid and fid not in cited_ids:
                 errors.append(f"提到相關內容時未引用條目 {fid}")
     return errors
@@ -546,7 +563,7 @@ def note_block(cell: dict) -> str:
     instruction = str(note.get("instruction") or "").strip()
     if not instruction:
         return ""
-    req = [norm_id(x) for x in (note.get("required_ids") or [])]
+    req = [body_source_id(x) for x in (note.get("required_ids") or [])]
     lines = [
         "本則額外指示（必須遵守；若與渠道寫法或上面任一條通用規則衝突，以這段為準）：",
         instruction,
@@ -616,12 +633,21 @@ def norm_id(value) -> str:
     return s
 
 
+def body_source_id(value) -> str:
+    """正文可用的條目。官網限定的 12、13 一律改成手冊 52。"""
+    nid = norm_id(value)
+    return HANDBOOK_SWAP.get(nid, nid)
+
+
 def local_errors(text: str, cited_ids: list[str], hits: list[dict], kpi: str, expect_kpi: str) -> list[str]:
     errors = []
     n = char_len(text)
     if not 80 <= n <= 150:
         errors.append(f"字數 {n}，要 80–150（空白不算）")
     allowed = {h["id"] for h in hits}
+    if any(i in HANDBOOK_SWAP for i in cited_ids):
+        kept = "、".join(f"{i}→{HANDBOOK_SWAP[i]}" for i in cited_ids if i in HANDBOOK_SWAP)
+        errors.append(f"只在官網的條目不能當正文來源：{kept}")
     if not cited_ids:
         errors.append("cited_ids 是空的")
     else:
@@ -659,7 +685,7 @@ def generate_cell(cell: dict, kb_index, feedback: str | None = None, attempt: in
     tag = f"{cell['persona']}-{cell['touchpoint']}-a{attempt}"
     obj = call_llm(prompt, tag)
     text = re.sub(r"\s+", " ", str(obj.get("text") or "")).strip()
-    cited = [norm_id(x) for x in (obj.get("cited_ids") or [])]
+    cited = [body_source_id(x) for x in (obj.get("cited_ids") or [])]
     cited = list(dict.fromkeys(cited))
     note = re.sub(r"\s+", " ", str(obj.get("design_note") or "")).strip()
     kpi = str(obj.get("kpi") or "").strip()
