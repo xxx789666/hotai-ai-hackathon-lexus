@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""條目 13 只在官網，檢索進正文時必須改成 2026 手冊條目 52。"""
+"""條目 12、13 只在官網，檢索進正文時必須改成 2026 手冊條目 52。"""
 
 import unittest
 from pathlib import Path
@@ -41,6 +41,48 @@ class HandbookSwapTest(unittest.TestCase):
             self.assertNotIn("13", ids, label)
             self.assertIn("52", ids, label)
             self.assertEqual(len(ids), len(set(ids)), label)
+
+    def test_website_only_entry_12_is_replaced_by_handbook_52(self):
+        hits = gen.retrieve(
+            "半年內準時|失去免費延保資格|第 5 年|14 萬公里",
+            self.vecs,
+            self.idf,
+            k=5,
+        )
+        ids = [hit["id"] for hit in hits]
+        self.assertNotIn("12", ids)
+        self.assertNotIn("13", ids)
+        self.assertIn("52", ids)
+        swapped = next(hit for hit in hits if hit["id"] == "52")
+        self.assertNotIn("第 5 年", swapped["text"])
+        self.assertNotIn("14 萬公里", swapped["text"])
+        self.assertIn("連續準時 8 次定保", swapped["text"])
+
+    def test_quality_t1_query_swaps_12_to_52(self):
+        hits = gen.retrieve(
+            "新車基本保證|120,000|尊榮安檢|25 項|全年免費|免費延長保證|6 個月",
+            self.vecs,
+            self.idf,
+            k=5,
+        )
+        ids = [hit["id"] for hit in hits]
+        self.assertNotIn("12", ids)
+        self.assertNotIn("13", ids)
+        self.assertIn("52", ids)
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_required_12_is_forced_as_52(self):
+        hits = gen.retrieve_with_required(
+            "新車基本保證|120,000|尊榮安檢|全年免費",
+            self.vecs,
+            self.idf,
+            ["12"],
+            k=5,
+        )
+        ids = [hit["id"] for hit in hits]
+        self.assertEqual(ids[0], "52")
+        self.assertNotIn("12", ids)
+        self.assertNotIn("13", ids)
 
     def test_required_13_is_forced_as_52(self):
         hits = gen.retrieve_with_required(
