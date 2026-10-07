@@ -8,7 +8,11 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v3.9（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+內容是 v4.0（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+v4.0：B 的 #20／#8 修正，頁碼不變。第 22 頁（A5）卡片下加一行小註「【】為專員填寫欄位，刻意保留」；
+第 13 頁三張大數字卡換標籤（74%＝高風險確有流失句、0 元＝API 費、R1–R8＝每項可回溯原句，ARI 0.08 只留在表格），
+四張卡各補一行與標籤一致的說明；第 11 頁標題拿掉「一致率 98.4%」、98.4% 卡註明是兩段標註一致率不是準確率、
+底部摘要條改成一句結論；第 10 頁中段改成一句分級結論；第 4 頁「過保 62 句、保固內 17 句」改成兩行不再孤行。
 v3.9：只改第 3 頁（提案概述）。原本八張「編號＋頁碼」小卡太像第 2 頁的目錄，改成由左到右的流程
 （公開論壇輿情 → 產出 1 → 產出 2 → 車主回廠）加兩個勾選面板（產出 1 藍、產出 2 紅，各列官方題目四個子項與一個現有數字），
 上方數據帶縮成一條並補一句主張，底部一句粗體收尾；頁上不再出現「第 N 頁」，只留「各章節頁碼見第 2 頁」。其餘頁不動。
@@ -54,7 +58,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parents[1]
 # 版號。每次改簡報內容都要升號：小改 +0.1，PO 審過的里程碑升整數。
 # --version X.Y 可覆蓋。同版號已在 deck/versions/ 時，未加 --force 會中止。
-DECK_VERSION = "3.9"
+DECK_VERSION = "4.0"
 README = ROOT / "deck" / "README.md"
 PREVIEW = ROOT / "deck" / "preview"
 VERSIONS = ROOT / "deck" / "versions"
@@ -230,7 +234,7 @@ SLIDES = [
     {
         "id": "P9",
         "section": "4 AI 應用方法",
-        "title": "兩段式標註：先寬抓、再複核，一致率 98.4%",
+        "title": "兩段式標註：先寬抓、再複核",  # v4.0：98.4% 是兩段標註一致率，不是準確率，不放標題
         "reports": [
             "專案架構_2026-09-23.md",
             "reports/T1_dcard_verify_report.md",
@@ -1333,8 +1337,9 @@ def build_p2(slide, y):
         [[("三個前兆並排，匯流後才是離開；資料沒有先後順序", NAVY, True, 14)]],
         size=14, margin=0.0, anchor="ctr",
     )
+    # v4.0：第一格藍字 24pt 在 3.97 吋寬會把「句」折成孤行，改在頓號處硬換行（\v → a:br），兩行各自完整。
     precursors = [
-        ("過保", "過保 62 句、保固內 17 句", "觸發：到期前 90 天"),
+        ("過保", "過保 62 句\v保固內 17 句", "觸發：到期前 90 天"),
         ("刪項", "連續 2 次拒項", "拒絕估價項目就列管"),
         ("間隔拉長", "逾期超過建議週期", "1.5 倍"),
     ]
@@ -1348,8 +1353,13 @@ def build_p2(slide, y):
     bh = BOT - 0.14 - out_h - arrow_h - merge_h - arrow_h - by
     for i, (head, line, sub) in enumerate(precursors):
         xx = inner_x + i * (bw + gap_x)
+        line_runs = []
+        for j, part in enumerate(line.split("\v")):
+            if j:
+                line_runs.append(("\v", BLUE, True))
+            line_runs.append((part, BLUE, True, 24))
         flow_box(slide, xx, by, bw, bh,
-                 [[(head, INK, True, 26)], [(line, BLUE, True, 24)], [(sub, NAVY, False, 20)]], size=20)
+                 [[(head, INK, True, 26)], line_runs, [(sub, NAVY, False, 20)]], size=20)
         down_arrow(slide, xx + bw / 2, by + bh + 0.02, h=arrow_h - 0.04)
     merge_y = by + bh + arrow_h
     flow_box(slide, inner_x, merge_y, inner_w, merge_h,
@@ -1744,8 +1754,9 @@ def build_p8(slide, y):
              "風險分＝模型最高流失機率×0.6＋命中規則數/8×0.4（初版權重）", size=15, bold=True)
     note_y = formula_y + formula_h + 0.08
     note_h = 0.50
+    # v4.0：人數與比例都在上表，這條只留一句結論，不再重抄數字列。
     note_bar(slide, note_y, note_h,
-             "高 1,049／中 231／低 5,114。高風險 74% 有流失句，低風險 1.8%。", size=15)
+             "分級方向可信：高風險 74% 真有流失句，低風險只有 1.8%。", size=15)
     header = [cell_text(h, WHITE, True) for h in ("規則", "輿情訊號", "CRM 欄位")]
     body = [header]
     for code, signal in SIGNALS:
@@ -1770,16 +1781,18 @@ def build_p9(slide, y):
     steps = [
         ("57%", "Haiku 初篩", "單獨召回約 57%。先把可能流失的句子留住，不能只靠這一段初篩。"),
         ("3,760", "帶上下文複核", "重疊 3,760 句。Mobile01、PTT 用 Sonnet，Dcard 用 GPT 再看一次。"),
-        ("98.4%", "對得起來", "c≥2 一致率 98.4%。九面向標完，殘餘僅 4 句，不再另開面向。"),
+        # v4.0：98.4% 是兩段標註的一致率，不是模型準確率；卡上明說，標題不再放這個數字。
+        ("98.4%", "對得起來", "c≥2 一致率 98.4%，是兩段標註一致率，不是準確率。九面向標完，殘餘僅 4 句，不再另開面向。"),
     ]
     # v3.6：左三卡縮小（窄、字小），右兩張 F1 卡放大並加粗藍框。
-    note_h = 0.86
+    note_h = 0.62  # v4.0：底部改一句結論（單行），0.86 → 0.62，多出的高度還給上方五張卡
     gap = 0.12
     left_w = 6.0
     body_h = BOT - note_h - gap - y
-    step_h = (body_h - 2 * 0.10) / 3
+    step_gap = 0.22  # v4.0：底部條縮小後，左三卡維持 1.71 吋高（留白 ≥ 0.7），多出的 0.24 吋進卡距
+    step_h = (body_h - 2 * step_gap) / 3
     for i, (num, head, body) in enumerate(steps):
-        yy = y + i * (step_h + 0.10)
+        yy = y + i * (step_h + step_gap)
         card_text(
             slide, ML, yy, left_w, step_h,
             [
@@ -1804,12 +1817,10 @@ def build_p9(slide, y):
         )
         card.line.width = Pt(2.5)
     note_y = BOT - note_h
+    # v4.0：原本兩行是左三卡與右兩卡的重抄，改成一句結論；數字都已在本頁卡上。
     card_text(
         slide, ML, note_y, CW, note_h,
-        [
-            [("九面向全量標完，殘餘僅 4 句。Haiku 單獨召回約 57%，所以第二段才複核。", INK, False, 18)],
-            [("正例僅 9 句，召回區間 0.45–0.94。本機 F1 0.82 還不是穩定成績。", INK, False, 18)],
-        ],
+        [[("Haiku 初篩召回約 57%，所以第二段複核不能省；人工金標 300 句、正例僅 9 句，0.82 不是穩定成績。", INK, False, 18)]],
         size=18, fill="EAF1F8", anchor="ctr",
     )
 
@@ -1902,22 +1913,25 @@ def build_p10(slide, y):
 
 def build_p11(slide, y):
     # v3.6：四張卡只留大數字與藍色標題（解釋文字刪除，內容在下表與第 10、12 頁），字放大。
+    # v4.0（B #8）：標籤要跟數字說同一件事。74% 是「高風險發言者確有流失句」的比例，不是「分數說得出原因」；
+    # 0 元是 API 費；ARI 0.08 不適合當大字，只留在下表「四個客群」列，第四格改以「每項可回溯原句」為主張，
+    # 大字用 R1–R8（八條規則）。每張卡補一行與標籤一致的說明，數字只用本冊已有的。
     cards = [
-        ("128 人", "靜默出走者"),
-        ("74%", "分數說得出原因"),
-        ("0 元", "本機就能跑"),
-        ("0.080", "只有一組被資料分開"),
+        ("128 人", "靜默出走者", "沒抱怨就找出口；只看客訴看不到這群人"),
+        ("74%", "高風險確有流失句", "高風險 1,049 人中 74% 有流失句，低風險 1.8%"),
+        ("0 元", "API 費", "8 GB 本機可訓可推，每句 0.7 秒"),
+        ("R1–R8", "每項可回溯原句", "命中規則與機率一起標出，每句回得到去識別原句"),
     ]
     gap_x, gap_y = 0.14, 0.10
     card_w = (CW - gap_x) / 2
-    card_h = 1.40
-    for i, (num, head) in enumerate(cards):
+    card_h = 1.62  # v4.0：多一行 18pt 說明，1.40 → 1.62；下表列高仍夠放一行 16pt
+    for i, (num, head, sub) in enumerate(cards):
         col, row = i % 2, i // 2
         x = ML + col * (card_w + gap_x)
         yy = y + row * (card_h + gap_y)
         card_text(
             slide, x, yy, card_w, card_h,
-            [[(num, BLUE, True, 48)], [(head, BLUE, True, 26)]],
+            [[(num, BLUE, True, 48)], [(head, BLUE, True, 26)], [(sub, INK, False, 18)]],
             size=26, align=PP_ALIGN.CENTER, anchor="ctr",
         )
     table_y = y + 2 * card_h + gap_y + 0.12
@@ -2507,9 +2521,11 @@ def load_a3_messages() -> list[dict]:
     return items
 
 
-def message_cards(slide, y, msgs, touch_label):
-    """A3／A5 共用：兩張話術卡，全文 24pt，標題與引用 20pt，查核 16pt（v3.7 卡片隨內容區加高 0.17，字級 18／15 → 20／16）。"""
-    card_h = (BOT - y - 0.12) / 2
+def message_cards(slide, y, msgs, touch_label, footnote: str | None = None):
+    """A3／A5 共用：兩張話術卡，全文 24pt，標題與引用 20pt，查核 16pt（v3.7 卡片隨內容區加高 0.17，字級 18／15 → 20／16）。
+    footnote（v4.0，A5 用）：卡片下方一行 18pt 灰字小註，兩張卡各讓出 0.19 吋。"""
+    foot_h = 0.30 if footnote else 0.0
+    card_h = (BOT - foot_h - y - 0.12) / 2
     for i, msg in enumerate(msgs):
         yy = y + i * (card_h + 0.12)
         text = re.sub(r"([，。、；：！？）】」])\s+", r"\1", msg["text"])  # 全形標點後的空格不進簡報，行首才不會多一格
@@ -2523,6 +2539,9 @@ def message_cards(slide, y, msgs, touch_label):
             ],
             size=20, pad_y=0.10, anchor="ctr",
         )
+    if footnote:
+        add_text(slide, ML, BOT - foot_h, CW, foot_h, [[(footnote, MUTED, False, 18)]],
+                 size=18, margin=0.0, anchor="ctr")
 
 
 def build_a3(slide, y):
@@ -2587,7 +2606,9 @@ def load_a5_messages() -> list[dict]:
 
 
 def build_a5(slide, y):
-    message_cards(slide, y, load_a5_messages(), "客訴結案後 7 天回訪")
+    # v4.0（B #20）：第二則的「【改善做法，由專員填入】」是刻意保留的填寫欄位，評審只看 PDF，頁上要說明。
+    message_cards(slide, y, load_a5_messages(), "客訴結案後 7 天回訪",
+                  footnote="【】為專員填寫欄位，刻意保留")
 
 
 BUILDERS = [build_toc, build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15, build_a2, build_a2b, build_a3, build_a4, build_a5, build_a1]
