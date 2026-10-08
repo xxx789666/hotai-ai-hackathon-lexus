@@ -135,11 +135,10 @@ SUMMARY_RIGHT = {
         [("3. Persona（客群輪廓） × 接觸點的 RAG 關懷內容生成。", INK, False)],
     ],
     # 手改版這格是一段、中間一個換行（a:br）；粗體段也照抄。
-    # v3.7：核心模型那一行補回兩段式標註（與第 11 頁一致），其餘字不動。
+    # v4.4：依使用者指示移除兩段式標註句（第 11 頁與附錄 A1 的兩段式標註不動）。
     "ai": [[
         ("核心模型：Claude / GPT /  Qwen3-4B QLoRA ", INK, False),
         ("自訓決策模型（LLM2Jev 架構，支援本地部署）", INK, True),
-        ("；Haiku 初篩＋Sonnet／GPT 複核（兩段式標註）", INK, False),
         ("\v", INK, False),
         ("技術與統計：RAG 官方保修知識庫、K-means 分群、χ² 檢定、勝算比與 Wilson CI 驗證", INK, False),
     ]],
