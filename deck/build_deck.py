@@ -1908,7 +1908,7 @@ def build_p10(slide, y):
     card_text(
         slide, ML, bar_y, CW, bar_h,
         [
-            [("架構沿用開源 LLM2Jev。內網單機可訓可推，推論零 API 費。", INK, False, 16)],
+            [("架構沿用開源 LLM2Jev，推論零 API 費。", INK, False, 16)],  # v4.3：刪與右上卡重複的一句
             [("最高信心桶 n=71、實際約 68%（約七成），見附錄 A2b。", INK, False, 16)],
             [("同一 600 句測試集：r4 F1 0.685，高於 Haiku 零樣本的 F1 0.58。", INK, False, 16)],
         ],
@@ -2667,7 +2667,7 @@ def build_a6(slide, y):
              [[("部署架構", NAVY, True, 16)]], size=16, margin=0.0, anchor="ctr")
     arch = [
         ("部署位置", "和泰內網地端（私有雲），資料不出門；論壇文字只做研究語料，上線改用工單與客訴文字。"
-                   "建議規格：GPU 伺服器 2 台（主＋備援），各 2× L40S 48GB、256 GB RAM、2 TB NVMe；試行可先用 1 台。"),
+                   "建議規格：GPU 伺服器 2 台（主＋備援），各 2× L40S 48 GB、256 GB RAM、2 TB NVMe；試行可先用 1 台。"),
         ("服務封裝", "自有 4B 模型（r4）包成內網 API，四個端點：流失判斷、風險分、Persona（客群輪廓）、RAG 話術。"
                    "CRM／DMS 每日批次呼叫，溝通佇列即時呼叫；每句約 0.7 秒。"),
         ("權限", "Dashboard 依角色分權：服務廠專員只審核與投遞，AI 團隊調門檻與重訓，法務查條款引用與拒收名單。"
@@ -2735,7 +2735,7 @@ def build_a6(slide, y):
     rows = [[cell_text(h, WHITE, True) for h in header]]
     for cyc, what, thr, act in body:
         rows.append([cell_text(cyc, INK, True), cell_text(what), cell_text(thr), cell_text(act)])
-    col_w = [0.70, 2.38, 1.80, r_w - 0.70 - 2.38 - 1.80]
+    col_w = [0.70, 2.56, 1.70, r_w - 0.70 - 2.56 - 1.70]  # v4.3：監控什麼欄加寬，每日列不再孤字
     t_y = loop_y + 0.10
     t_h = y + top_h - t_y
     est, total = table_row_heights(rows, col_w, 12, header_h=0.34, pad=0.10, min_h=0.40)
