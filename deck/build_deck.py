@@ -8,7 +8,11 @@
 模板：attachments/2026和泰AI黑客松＿初賽簡報模板.pptx
 輸出：deck/初賽簡報_vX.Y.pptx、deck/初賽簡報_latest.pptx、deck/README.md；
 若本機有 PowerPoint，另匯 deck/preview/初賽簡報_vX.Y.pdf 與 deck/preview/vX.Y/。
-內容是 v4.0（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A1）。投影片 23 張，沒有封面。
+內容是 v4.2（摘要、大綱、P1–P14、附錄 A0、A2、A2b、A3、A4、A5、A6、A1）。投影片 24 張，沒有封面。
+v4.2：新增附錄 A6「部署架構與 MLOps 閉環」（第 23 頁，對照 iPAS 指引 5.2；A1 術語表移到第 24 頁）：左卡部署位置、
+服務封裝、權限、版本管理；右上四方塊閉環＋日／週／月／季監控表（只有 F1 0.8、κ 0.6 是定案門檻）；底部四部門分工。
+第 16 頁甘特圖第 5 列與護城河模型行改引附錄 A6；第 15 頁組織列對策加「跨部門小組月審」。全冊刪掉「顯卡容量」字樣，
+改寫成內網 GPU 伺服器（建議規格只寫在 A6）；開發期實測（RTX 4060 Ti、5 小時）留在 reports/ 與問答稿。
 v4.0：B 的 #20／#8 修正，頁碼不變。第 22 頁（A5）卡片下加一行小註「【】為專員填寫欄位，刻意保留」；
 第 13 頁三張大數字卡換標籤（74%＝高風險確有流失句、0 元＝API 費、R1–R8＝每項可回溯原句，ARI 0.08 只留在表格），
 四張卡各補一行與標籤一致的說明；第 11 頁標題拿掉「一致率 98.4%」、98.4% 卡註明是兩段標註一致率不是準確率、
@@ -33,7 +37,7 @@ v3.3 全頁版面重做：內容頁與附錄的卡片、字級、標籤位置統
 數字讀 reports/figures/figure_values.json（pipeline/make_figures.py --values-only）；F8 在第 8 頁與附錄 A0
 都用原生形狀（draw_f8）；只有 F9 季趨勢仍貼 PNG。摘要頁左欄是模板，不動。
 頁數算法：提案摘要第 1 頁不計入；計入 15 頁的是大綱 1 張（第 2 頁）加內容頁 14 張（第 3–16 頁）；
-附錄 7 張（第 17–23 頁，含 A0）不計入。依據是主辦方信「15 頁內，提案摘要及附錄不計入頁數」。
+附錄 8 張（第 17–24 頁，含 A0、A6；v4.1 以前是 7 張、第 17–23 頁）不計入。依據是主辦方信「15 頁內，提案摘要及附錄不計入頁數」。
 """
 
 from __future__ import annotations
@@ -115,6 +119,7 @@ NOTES = [
     "附錄待料通知兩則：進度不承諾到貨日，代步車只照知識庫條件。",
     "CRM 八條規則的門檻列在本頁，投影片只留欄位名稱。",
     "客訴結案七天回訪兩則：電話先道歉，LINE 不要求刪評。",
+    "內網地端部署，四級監控設門檻，不達標就重訓；四個部門分工，每月共審。",
     "附錄術語表：每個名詞一句定義、一句本案用法，評審追問時翻這頁。",
 ]
 
@@ -341,7 +346,7 @@ SIGNALS = [
 ADVANTAGES = [
     ("靜默出走者", "只看客訴，看不到沒抱怨就走的人。"),
     ("機率可解釋", "輸出各級機率，並標出命中規則。不是黑箱分數。"),
-    ("本機就能跑", "CRM 資料不能出門。8 GB 可訓可推，零 API 費。"),
+    ("內網就能跑", "CRM 資料不能出門。內網 GPU 伺服器可訓可推，零 API 費。"),
     ("數字回得去", "每個比率有檢定或區間。也能回到去識別原句。"),
 ]
 
@@ -1846,7 +1851,7 @@ def build_p10(slide, y):
     )
     lines = [
         "Prefill-only：只輸出各等級機率，不生成文字。",
-        "8 GB 顯卡可訓（約 5 小時）、可推（每句 0.7 秒）。",
+        "內網單機可訓可推（每句 0.7 秒）；正式規格見附錄 A6。",
         "資料不出門，推論零 API 費。",
         "同一 600 句：r4 F1 0.685，高於 Haiku 的 0.58。",
     ]
@@ -1903,7 +1908,7 @@ def build_p10(slide, y):
     card_text(
         slide, ML, bar_y, CW, bar_h,
         [
-            [("架構沿用開源 LLM2Jev。8 GB 可訓可推，推論零 API 費。", INK, False, 16)],
+            [("架構沿用開源 LLM2Jev，推論零 API 費。", INK, False, 16)],  # v4.3：刪與右上卡重複的一句
             [("最高信心桶 n=71、實際約 68%（約七成），見附錄 A2b。", INK, False, 16)],
             [("同一 600 句測試集：r4 F1 0.685，高於 Haiku 零樣本的 F1 0.58。", INK, False, 16)],
         ],
@@ -1919,7 +1924,7 @@ def build_p11(slide, y):
     cards = [
         ("128 人", "靜默出走者", "沒抱怨就找出口；只看客訴看不到這群人"),
         ("74%", "高風險確有流失句", "高風險 1,049 人中 74% 有流失句，低風險 1.8%"),
-        ("0 元", "API 費", "8 GB 本機可訓可推，每句 0.7 秒"),
+        ("0 元", "API 費", "內網自有 GPU，每句 0.7 秒"),
         ("R1–R8", "每項可回溯原句", "命中規則與機率一起標出，每句回得到去識別原句"),
     ]
     gap_x, gap_y = 0.14, 0.10
@@ -1939,7 +1944,7 @@ def build_p11(slide, y):
         [cell_text(h, WHITE, True) for h in ("", "只看客訴", "本案")],
         [cell_text("沒抱怨就走", INK, True), cell_text("看不到這群人"), cell_text("靜默出走者 128 人，替代 55% 到一般外廠")],
         [cell_text("分數", INK, True), cell_text("沒有原因"), cell_text("機率 6 成＋規則 4 成；高 74%、低 1.8%")],
-        [cell_text("在哪裡算", INK, True), cell_text("資料得出門"), cell_text("8 GB 本機，每句 0.7 秒，F1 0.685，API 費 0")],
+        [cell_text("在哪裡算", INK, True), cell_text("資料得出門"), cell_text("內網自有 GPU，每句 0.7 秒，F1 0.685，API 費 0")],
         [cell_text("四個客群", INK, True), cell_text("主觀標籤"), cell_text("ARI 0.08；只有靜默出走者被資料獨立支持")],
     ]
     table_h = BOT - table_y
@@ -2051,7 +2056,8 @@ def build_p13(slide, y):
             [("人工逐句篩 2.1 萬句約需 106 人時（估）；本機模型 4.1 小時跑完。人力改花在審名單與話術。", INK, False, 14)],
         ], 2.00, BLUE),
         ("風險", [[("五項主要風險，對策與責任人見右表。", INK, False, 15)]], 0.70, None),
-        ("怎麼讀右表", [[("技術：寫錯條款只引用 76 條並人工審；模糊句多報就當初篩。資料註明論壇母體，上線改 CRM。法規只用去識別版。客群寫成可回溯原句的規則。", INK, False, 15)]], 1.26, None),
+        # v4.2：最後一句加「跨部門月審」（與右表組織列、附錄 A6 一致）。
+        ("怎麼讀右表", [[("技術：寫錯條款只引用 76 條並人工審；模糊句多報就當初篩。資料註明論壇母體，上線改 CRM。法規只用去識別版。客群寫成可回溯規則，跨部門月審。", INK, False, 15)]], 1.26, None),
     ]
     gap = 0.08
     avail = BOT - y - gap * (len(items) - 1)
@@ -2074,7 +2080,7 @@ def build_p13(slide, y):
         ("技術", "模型在模糊句多報（困難層 F1 ≤ 0.51，精確率 0.34）", "定位成「初篩＋人工複核」", "A"),
         ("資料", "論壇代表性（正例 67% 來自 Mobile01，母體是論壇發言者）", "分析頁註明母體與來源構成；上線改用 CRM 資料", "B"),
         ("法規", "個資與再識別", "去識別流程，簡報與 Demo 只用去識別版", "A"),
-        ("組織", "Persona（客群輪廓）被質疑主觀（ARI 0.08）", "寫成「規則定義、每項可回溯原句」", "B"),
+        ("組織", "Persona（客群輪廓）被質疑主觀（ARI 0.08）", "規則定義、可回溯原句；每月跨部門工作小組覆核", "B"),
     ]
     rows = []
     for i, cols in enumerate(risks):
@@ -2122,7 +2128,7 @@ def build_p14(slide, y):
         [
             [("數據護城河：三項資產，全部留在和泰內網", BLUE, True, 17)],
             [("語料：2.1 萬句標註＋300 句人工金標。每季重標，審核回饋持續再訓練。", INK, False, 15)],
-            [("模型：自有 4B 模型，8 GB 顯卡 5 小時可重訓。推論零 API 費，資料不出門。", INK, False, 15)],
+            [("模型：自有 4B 模型，地端部署、API 封裝；GPU 伺服器建議規格見附錄 A6，零 API 費。", INK, False, 15)],
             [("知識庫：76 條官方條款＋每則話術查核紀錄。價格與保固只引用這 76 條。", INK, False, 15)],
         ],
         size=15, anchor="ctr",
@@ -2133,7 +2139,7 @@ def build_p14(slide, y):
         ("模型校準", 5, 8, "重標 300 句金標，重驗 r4，再調觸發門檻"),
         ("單一據點試行", 9, 16, "一個服務廠跑完，專員審核後投遞，未核准不發出"),
         ("擴大至全台", 17, 24, "依試行調話術與渠道分批上線，不一次開全台"),
-        ("持續監控", 9, None, "日監控、週收樣本、月重評客群輪廓、季重驗模型"),
+        ("持續監控", 9, None, "日／週／月／季監控；不達標即重訓（附錄 A6）"),  # v4.2：改引附錄 A6
     ]
     gy = moat_y + moat_h + 0.10
     gh = BOT - gy
@@ -2380,6 +2386,14 @@ SLIDES.append({
     "reports": ["客訴關懷策略_草稿.md", "knowledge/generated_examples.md"],
     "figures": [],
 })
+# v4.2：附錄 A6 部署架構與 MLOps 閉環（iPAS 指引 5.2），插在 A5 之後、A1 之前。
+SLIDES.append({
+    "id": "A6",
+    "section": "附錄 A6 部署與閉環（不計入 15 頁）",
+    "title": "地端部署、四級監控、不達標即重訓：監控到再訓練閉環",
+    "reports": ["L7運作流程_草稿.md", "iPAS骨架頁_草稿.md", "iPAS導入對照_2026-09-25.md", "reports/T16_cost_notes.md"],
+    "figures": [],
+})
 # v3.6：使用者把術語表移到最後一頁。代號仍是 A1，只換順序。
 SLIDES.append({
     "id": "A1",
@@ -2395,7 +2409,7 @@ def build_a1(slide, y):
         ("ETL", "Extract-Transform-Load：擷取、清洗轉換、載入。與 ELT（先載入再轉換）不同", "爬蟲擷取→去重、切句、售後關鍵詞篩選→寫入 jsonl；23.6 萬句留 21,183 句"),
         ("弱監督標註（LLM-as-labeler）", "用模型而非人工產生訓練標籤，事後以人工樣本驗證品質", "Haiku 初篩＋Sonnet／GPT 帶上下文複核；人工 300 句驗證"),
         ("監督式學習／監督式微調 SFT", "用「輸入＋正確答案」訓練；SFT 是在預訓練模型上以標籤資料微調，非從零訓練", "以 21,183 句 LLM 標籤微調 Qwen3-4B"),
-        ("QLoRA（NF4 4-bit、LoRA r=16）", "把基底模型量化成 4 位元，只訓練低秩附加參數，省顯存", "8 GB 顯卡 5 小時完成；adapter 約數十 MB"),
+        ("QLoRA（NF4 4-bit、LoRA r=16）", "把基底模型量化成 4 位元，只訓練低秩附加參數，省顯存", "單張 GPU 數小時可重訓；adapter 約數十 MB"),
         ("GroupSplit／資料洩漏", "依群組（文章）切分訓練與測試，避免同篇句子兩邊都出現而高估", "600 句測試集所在 421 篇整篇排除訓練"),
         ("類別不平衡／過採樣", "正例太少時重複抽樣正例，避免模型全猜負例", "流失句 7.9% → 訓練時提高到四成"),
         ("Prefill-only（System-One 決策）", "只讀 prompt 取下一個 token 在候選選項上的機率，不生成文字，快且可控", "流失四級與立場各成 yes/no 候選題；每句 0.7 秒"),
@@ -2611,7 +2625,128 @@ def build_a5(slide, y):
                   footnote="【】為專員填寫欄位，刻意保留")
 
 
-BUILDERS = [build_toc, build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15, build_a2, build_a2b, build_a3, build_a4, build_a5, build_a1]
+def build_a6(slide, y):
+    """v4.2 附錄 A6：部署架構與 MLOps 閉環（對照 iPAS 指引 5.2）。全部 pptx 原生形狀。
+    左：部署架構四段（位置與建議規格、服務封裝、權限、版本管理）；右上：監控→門檻→重訓→分批替換的閉環，
+    紅色回頭線回到監控，下方日／週／月／季監控表；底：四部門分工橫條。只有 F1 0.8、κ 0.6 是定案門檻，
+    其餘門檻寫「超門檻」。數字（0.7 秒、300 句、12 個月、r4）都是本冊已有的；建議規格依 T48b。"""
+    foot_h = 0.24
+    foot_y = BOT - foot_h
+    # ---- 底區：跨部門分工橫條（外框卡含四張小卡，外框不列入留白檢查）----
+    dept_h = 1.46
+    dept_y = foot_y - 0.06 - dept_h
+    add_card(slide, ML, dept_y, CW, dept_h, fill="F4F7FB")
+    add_text(slide, ML + 0.14, dept_y + 0.06, CW - 0.28, 0.30,
+             [[("跨部門分工　", NAVY, True, 15),
+               ("每月跨部門工作小組；共同指標＝高風險車主 12 個月回廠率（上線後母體是 CRM 車主）", INK, False, 14)]],
+             size=14, margin=0.0, anchor="ctr")
+    depts = [
+        ("業務行銷", "定三層 KPI 與客群策略，每月審高風險名單。"),
+        ("服務廠／客服", "審核與投遞話術，回收退件與客訴案例（Human-in-the-Loop）。"),
+        ("法務風險", "去識別流程、條款引用、拒收名單與頻率上限審查。"),
+        ("資訊", "地端部署、API、權限、備援與版本替換。"),
+    ]
+    d_gap = 0.10
+    d_w = (CW - 0.28 - 3 * d_gap) / 4
+    d_y = dept_y + 0.42
+    d_h = dept_y + dept_h - 0.08 - d_y
+    for i, (head, body) in enumerate(depts):
+        dx = ML + 0.14 + i * (d_w + d_gap)
+        card_text(slide, dx, d_y, d_w, d_h,
+                  [[(head, BLUE, True, 14)], [(body, INK, False, 13)]],
+                  size=13, fill="EAF1F8", pad_x=0.12, pad_y=0.05, anchor="ctr")
+    add_text(slide, ML, foot_y, CW, foot_h,
+             [[("以上為導入設計，尚未實作；週期與門檻取自 L7 運作流程草稿第 6 節。", MUTED, False, 12)]],
+             size=12, margin=0.0, anchor="ctr")
+
+    # ---- 左區：部署架構（外框卡含四張小卡）----
+    top_h = dept_y - 0.10 - y
+    left_w = 5.60
+    add_card(slide, ML, y, left_w, top_h, fill="F4F7FB")
+    add_text(slide, ML + 0.14, y + 0.06, left_w - 0.28, 0.30,
+             [[("部署架構", NAVY, True, 16)]], size=16, margin=0.0, anchor="ctr")
+    arch = [
+        ("部署位置", "和泰內網地端（私有雲），資料不出門；論壇文字只做研究語料，上線改用工單與客訴文字。"
+                   "建議規格：GPU 伺服器 2 台（主＋備援），各 2× L40S 48 GB、256 GB RAM、2 TB NVMe；試行可先用 1 台。"),
+        ("服務封裝", "自有 4B 模型（r4）包成內網 API，四個端點：流失判斷、風險分、Persona（客群輪廓）、RAG 話術。"
+                   "CRM／DMS 每日批次呼叫，溝通佇列即時呼叫；每句約 0.7 秒。"),
+        ("權限", "Dashboard 依角色分權：服務廠專員只審核與投遞，AI 團隊調門檻與重訓，法務查條款引用與拒收名單。"
+                 "投遞紀錄寫回 CRM：時間、渠道、話術版本、審核人。"),
+        ("版本管理", "每版記錄資料版本、金標 F1／κ、校準表（r4 → r5…）；單張 GPU 數小時可重訓。"
+                   "新版先換單一據點試行，再換全台。"),
+    ]
+    a_x = ML + 0.12
+    a_w = left_w - 0.24
+    a_gap = 0.05
+    a_top = y + 0.36
+    a_avail = y + top_h - 0.06 - a_top - a_gap * (len(arch) - 1)
+    text_w = a_w - 2 * 0.12 - 0.08
+    need = [0.25 + est_lines(body, text_w, 12) * (12 / 72.0 * 1.15) + 2 / 72.0 + 0.12 for _, body in arch]
+    scale = a_avail / sum(need)
+    if scale < 1.0:
+        raise SystemExit(f"A6 部署架構四段估計高度 {sum(need):.2f} 超過可用 {a_avail:.2f}")
+    yy = a_top
+    for (head, body), h0 in zip(arch, need):
+        h = h0 * scale
+        card_text(slide, a_x, yy, a_w, h,
+                  [[(head, BLUE, True, 14)], [(body, INK, False, 12)]],
+                  size=12, fill="EAF1F8", pad_x=0.12, pad_y=0.05, anchor="ctr")
+        yy += h + a_gap
+
+    # ---- 右上區：監控到再訓練閉環 ----
+    r_x = ML + left_w + 0.14
+    r_w = CW - left_w - 0.14
+    add_text(slide, r_x, y, r_w, 0.30,
+             [[("監控到再訓練閉環", NAVY, True, 16),
+               ("　不達標就重訓、分批替換，再回到監控", MUTED, False, 13)]],
+             size=16, margin=0.0, anchor="ctr")
+    steps = ["監控", "觸發門檻", "再訓練／更新", "分批替換"]
+    box_y = y + 0.36
+    box_h = 0.50
+    arrow_w = 0.34
+    box_w = (r_w - 3 * arrow_w) / 4
+    centers = []
+    for i, text in enumerate(steps):
+        bx = r_x + i * (box_w + arrow_w)
+        shape = add_card(slide, bx, box_y, box_w, box_h, fill="2F5D9F", radius=0.12)
+        tf = shape.text_frame
+        for side in ("margin_left", "margin_right", "margin_top", "margin_bottom"):
+            setattr(tf, side, Inches(0.02))
+        set_tf(tf, [[(text, WHITE, True, 14)]], 14, align=PP_ALIGN.CENTER, anchor="ctr")
+        centers.append(bx + box_w / 2)
+        if i < 3:
+            add_arrow(slide, bx + box_w + 0.03, box_y + box_h / 2, bx + box_w + arrow_w - 0.03, box_y + box_h / 2)
+    # 回頭線（紅）：分批替換 → 下方 → 回到監控；標籤放在回頭線上方的中段。
+    loop_y = box_y + box_h + 0.34
+    add_arrow(slide, centers[3], box_y + box_h + 0.02, centers[3], loop_y, color=F8_HUMAN_EDGE, head=False)
+    add_arrow(slide, centers[3], loop_y, centers[0], loop_y, color=F8_HUMAN_EDGE, head=False)
+    add_arrow(slide, centers[0], loop_y, centers[0], box_y + box_h + 0.02, color=F8_HUMAN_EDGE, head=True)
+    add_text(slide, centers[0] + 0.30, box_y + box_h + 0.06, centers[3] - centers[0] - 0.60, 0.24,
+             [[("替換後回到監控；不達標再進下一輪", F8_HUMAN_EDGE, False, 12)]],
+             size=12, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.0)
+    # 四級監控表
+    header = ["週期", "監控什麼", "觸發門檻", "動作"]
+    body = [
+        ("每日", "投遞量、查核失敗率、投遞失敗", "查核失敗率異常", "暫停該接觸點，人工檢查"),
+        ("每週", "退回與修改的話術樣本", "退件集中於同一條目", "更新提示詞與知識庫條目"),
+        ("每月", "高風險名單命中率（R7 回驗）、輸入句分布漂移（KS 檢定）", "命中率下降或分布差異超門檻", "調觸發門檻、重評 Persona（客群輪廓）"),
+        ("每季", "300 句人工金標：F1、κ", "F1 < 0.8 或 κ < 0.6", "重訓下一版，先試行據點再全台"),
+    ]
+    rows = [[cell_text(h, WHITE, True) for h in header]]
+    for cyc, what, thr, act in body:
+        rows.append([cell_text(cyc, INK, True), cell_text(what), cell_text(thr), cell_text(act)])
+    col_w = [0.70, 2.56, 1.70, r_w - 0.70 - 2.56 - 1.70]  # v4.3：監控什麼欄加寬，每日列不再孤字
+    t_y = loop_y + 0.10
+    t_h = y + top_h - t_y
+    est, total = table_row_heights(rows, col_w, 12, header_h=0.34, pad=0.10, min_h=0.40)
+    if total > t_h:
+        raise SystemExit(f"A6 監控表估計高度 {total:.2f} 超過可用 {t_h:.2f}")
+    extra = (t_h - total) / (len(rows) - 1)
+    row_h = [est[0]] + [h + extra for h in est[1:]]
+    add_table(slide, r_x, t_y, r_w, t_h, rows, col_w, font=12, row_h=row_h)
+
+
+BUILDERS = [build_toc, build_p1, build_p2, build_p3, build_p4, build_p5, build_p6, build_p7, build_p8, build_p9, build_p10, build_p11, build_p12, build_p13, build_p14, build_p15, build_a2, build_a2b, build_a3, build_a4, build_a5, build_a6, build_a1]
 
 
 def set_notes(slide, text: str) -> None:
@@ -2640,6 +2775,8 @@ def collect_placeholders(prs):
 
 
 def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
+    appendix_ids = [m["id"] for m in SLIDES if m["id"].startswith("A")]
+    appendix_n = len(appendix_ids)
     lines = [
         f"# 初賽簡報 v{version}",
         "",
@@ -2659,8 +2796,8 @@ def write_readme(prs, placeholders, preview_note: str, version: str) -> None:
         "",
         f"- 投影片共 {1 + len(SLIDES)} 張，沒有封面：提案摘要 1（第 1 頁，不計入）、大綱 1（第 2 頁，計入 15 頁）、內容 "
         f"{sum(1 for m in SLIDES if m['id'].startswith('P'))}（第 3–16 頁，P1–P14）、附錄 "
-        f"{sum(1 for m in SLIDES if m['id'].startswith('A'))}（第 17–23 頁，依序 A0 Dashboard 示意、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪、A1 術語表；代號不改，只換順序）。",
-        "- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。提案摘要與附錄 7 張不計入。",
+        f"{appendix_n}（第 {page_span(appendix_ids)} 頁，依序 A0 Dashboard 示意、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪、A6 部署與閉環、A1 術語表；代號不改，只換順序）。",
+        f"- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。提案摘要與附錄 {appendix_n} 張不計入。",
         "- 依據：主辦方信寫「提案摘要須置於簡報第一頁，並於同一頁內完整呈現」「請繳交 15 頁內的提案簡報，提案摘要及附錄不計入頁數」。官方模板第 1 張是「2026和泰AI黑客松」規則說明頁，沒有團隊名與作品名，不是封面；建置時刪掉它，提案摘要成為第 1 頁。團隊名與作品名在摘要表第 1、2 列。",
         "- 待料通知與客訴回訪話術分兩頁：A3 兩則待料、A5 兩則客訴。四則全文塞不進同一頁。",
         "- 備案：若主辦方仍判定超過 15 頁，下一步是第 4 頁痛點併入第 5 頁，或第 13 頁差異化併入第 12 頁，內容頁減為 13。",
@@ -2887,14 +3024,14 @@ def main() -> None:
         set_notes(slide, NOTES[page - 1])
     delete_slide(prs, 0)
     expected = 1 + len(SLIDES)
-    if expected != 23:
-        raise SystemExit(f"總張數應為 23（摘要 1＋大綱 1＋內容 14＋附錄 7），SLIDES 給出 {expected}")
+    if expected != 24:
+        raise SystemExit(f"總張數應為 24（摘要 1＋大綱 1＋內容 14＋附錄 8），SLIDES 給出 {expected}")
     if len(prs.slides) != expected:
         raise SystemExit(f"頁數應為 {expected}，實際 {len(prs.slides)}")
     content = sum(1 for m in SLIDES if m["id"].startswith("P"))
     appendix = sum(1 for m in SLIDES if m["id"].startswith("A"))
-    if content != 14 or appendix != 7:
-        raise SystemExit(f"內容頁應為 14、附錄應為 7，實際內容 {content}、附錄 {appendix}")
+    if content != 14 or appendix != 8:
+        raise SystemExit(f"內容頁應為 14、附錄應為 8，實際內容 {content}、附錄 {appendix}")
     for i, slide in enumerate(prs.slides, 1):
         note = slide.notes_slide.notes_text_frame.text.strip()
         if not note:

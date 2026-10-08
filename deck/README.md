@@ -1,23 +1,22 @@
-# 初賽簡報 v4.1
+# 初賽簡報 v4.3
 
-和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v4.1.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
+和泰 AI 黑客松題 3 初賽簡報。數字轉抄自報告，未在產生腳本裡重算。本版檔名是 `初賽簡報_v4.3.pptx`，最新複本是 `初賽簡報_latest.pptx`。占位若還有，是橘色字，形式為 `【待補：說明】`。
 
 ## 版本
 
-- 目前版號：v4.1。
-- 檔名規則：`deck/初賽簡報_v4.1.pptx`、`deck/preview/初賽簡報_v4.1.pdf`、`deck/preview/v4.1/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
+- 目前版號：v4.3。
+- 檔名規則：`deck/初賽簡報_v4.3.pptx`、`deck/preview/初賽簡報_v4.3.pdf`、`deck/preview/v4.3/slide-NN.png`。每次建置用新版號，不覆蓋舊版檔。
 - 怎麼升號：小改 +0.1；PO 審過的里程碑升整數。改 `DECK_VERSION` 或傳 `--version X.Y`。`deck/versions/` 已有同版號且未加 `--force` 時，建置中止。
 - 變更紀錄：`deck/CHANGELOG.md`（新的一列在表格最上方）。
 - 最新複本：`deck/初賽簡報_latest.pptx` 與 `deck/preview/初賽簡報_latest.pdf` 是本次建置的複本，給 Issue 連結用，每次建置覆寫這兩個檔。
 
 ## 頁數怎麼算
 
-- 投影片共 23 張，沒有封面：提案摘要 1（第 1 頁，不計入）、大綱 1（第 2 頁，計入 15 頁）、內容 14（第 3–16 頁，P1–P14）、附錄 7（第 17–23 頁，依序 A0 Dashboard 示意、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪、A1 術語表；代號不改，只換順序）。
-- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。提案摘要與附錄 7 張不計入。
+- 投影片共 24 張，沒有封面：提案摘要 1（第 1 頁，不計入）、大綱 1（第 2 頁，計入 15 頁）、內容 14（第 3–16 頁，P1–P14）、附錄 8（第 17–24 頁，依序 A0 Dashboard 示意、A2 與 A2b 補充圖表、A3 待料通知、A4 CRM 觸發門檻、A5 客訴回訪、A6 部署與閉環、A1 術語表；代號不改，只換順序）。
+- 計入 15 頁上限的是大綱 1 張加內容頁 14 張，合計 15。提案摘要與附錄 8 張不計入。
 - 依據：主辦方信寫「提案摘要須置於簡報第一頁，並於同一頁內完整呈現」「請繳交 15 頁內的提案簡報，提案摘要及附錄不計入頁數」。官方模板第 1 張是「2026和泰AI黑客松」規則說明頁，沒有團隊名與作品名，不是封面；建置時刪掉它，提案摘要成為第 1 頁。團隊名與作品名在摘要表第 1、2 列。
 - 待料通知與客訴回訪話術分兩頁：A3 兩則待料、A5 兩則客訴。四則全文塞不進同一頁。
-- 2026-10-07 主辦方客服確認（B 致電）：第 1 頁直接放提案摘要、不放封面＝可以；大綱頁＝算進 15 頁。現行算法定案。
-- 備案（已無需啟用，留存）：若日後被判定超過 15 頁，第 4 頁痛點併入第 5 頁，或第 13 頁差異化併入第 12 頁，內容頁減為 13。
+- 備案：若主辦方仍判定超過 15 頁，下一步是第 4 頁痛點併入第 5 頁，或第 13 頁差異化併入第 12 頁，內容頁減為 13。
 
 ## 頁次對照
 
@@ -45,7 +44,8 @@
 | 20 | A3 | 附錄 A3 待料通知話術（不計入 15 頁） | 待料逾 7 天就主動通知 | — | `knowledge/generated_examples.md`、`reports/T14_generation_report.md` |
 | 21 | A4 | 附錄 A4 CRM 觸發門檻（不計入 15 頁） | 八條規則的欄位與門檻 | — | `reports/T10_risk_persona_report.md`、`L7運作流程_草稿.md` |
 | 22 | A5 | 附錄 A5 客訴回訪話術（不計入 15 頁） | 客訴結案第 7 天回訪，不推銷、不要求刪評 | — | `客訴關懷策略_草稿.md`、`knowledge/generated_examples.md` |
-| 23 | A1 | 附錄 A1 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
+| 23 | A6 | 附錄 A6 部署與閉環（不計入 15 頁） | 地端部署、四級監控、不達標即重訓：監控到再訓練閉環 | — | `L7運作流程_草稿.md`、`iPAS骨架頁_草稿.md`、`iPAS導入對照_2026-09-25.md`、`reports/T16_cost_notes.md` |
+| 24 | A1 | 附錄 A1 術語表（不計入 15 頁） | 本案用到的技術名詞：定義與在本案的用法 | — | `reports/T8_r4_report.md`、`reports/T9_human_eval.md`、`reports/T10_risk_persona_report.md` |
 
 報告欄是該頁數字轉抄的來源文件（專案文件，保留）；v3.7 起投影片頁腳不再印「來源：」列，頁碼在右下角。圖欄是該頁對應的報告圖。自 v3.3 起 F1–F6 與 F9_pipeline 在簡報裡用 pptx 原生形狀重畫，數字讀 `reports/figures/figure_values.json`（`python pipeline/make_figures.py --values-only` 產生，與 PNG 畫的值相同）；F8 在第 8 頁用原生形狀（`draw_f8`）；v3.6 起第 10 頁不再畫 F7（改風險等級對照表），附錄 A0 改五個 Dashboard 示意（原生形狀）；只有 F9 季趨勢仍貼 `reports/figures/F9.png`。PNG 原檔留在 `reports/figures/` 供報告用。
 
@@ -89,6 +89,6 @@ python deck/check_layout.py deck/初賽簡報_vX.Y.pptx
 
 ## 預覽
 
-已用 PowerPoint 匯出 `deck/preview/初賽簡報_v4.1.pdf` 與 `deck/preview/v4.1/slide-01.png`–`slide-23.png`。
+已用 PowerPoint 匯出 `deck/preview/初賽簡報_v4.3.pdf` 與 `deck/preview/v4.3/slide-01.png`–`slide-24.png`。
 
 例句取自 `reports/T10_risk_persona_report.md` §6 的去識別代表句，不讀論壇帳號。P7 沒用到的較長句（含店名者）沒有放上投影片。
