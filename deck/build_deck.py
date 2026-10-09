@@ -144,11 +144,12 @@ SUMMARY_RIGHT = {
     ]],
     # v3.7：使用者決定「改」的四點：+10 個百分點（假設值，基期實測校正）、三處「大於等於」改 ≥（k→κ）、
     # 「零本推論」改「零成本推論」。其餘字（含手改的標點與空格）不動。
+    # v4.5：零成本推論→零 API 費推論（B 驗收意見）。
     "benefit": [
         [("回廠成長 : 高風險車主回廠率 +10 個百分點（假設值，基期實測校正）", INK, False, 12)],
         [("工時提效 :名單篩選工時 -90%、話術核准率 ≥ 80%", INK, False, 12)],
         [("模型嚴謹: 隨機層F1 ≥ 0.8、κ ≥ 0.6（季驗 300 句）", INK, False, 12)],
-        [("零成本推論: 每句 0.7 秒 高速回應，達成 地端 0 API 費。", INK, False, 12)],
+        [("零 API 費推論: 每句 0.7 秒 高速回應，地端部署。", INK, False, 12)],
     ],
 }
 
@@ -1923,7 +1924,7 @@ def build_p11(slide, y):
     cards = [
         ("128 人", "靜默出走者", "沒抱怨就找出口；只看客訴看不到這群人"),
         ("74%", "高風險確有流失句", "高風險 1,049 人中 74% 有流失句，低風險 1.8%"),
-        ("0 元", "API 費", "內網自有 GPU，每句 0.7 秒"),
+        ("0 元", "API 費", "地端部署，每句 0.7 秒"),
         ("R1–R8", "每項可回溯原句", "命中規則與機率一起標出，每句回得到去識別原句"),
     ]
     gap_x, gap_y = 0.14, 0.10
@@ -1943,7 +1944,7 @@ def build_p11(slide, y):
         [cell_text(h, WHITE, True) for h in ("", "只看客訴", "本案")],
         [cell_text("沒抱怨就走", INK, True), cell_text("看不到這群人"), cell_text("靜默出走者 128 人，替代 55% 到一般外廠")],
         [cell_text("分數", INK, True), cell_text("沒有原因"), cell_text("機率 6 成＋規則 4 成；高 74%、低 1.8%")],
-        [cell_text("在哪裡算", INK, True), cell_text("資料得出門"), cell_text("內網自有 GPU，每句 0.7 秒，F1 0.685，API 費 0")],
+        [cell_text("在哪裡算", INK, True), cell_text("資料得出門"), cell_text("地端部署，每句 0.7 秒，F1 0.685，API 費 0")],
         [cell_text("四個客群", INK, True), cell_text("主觀標籤"), cell_text("ARI 0.08；只有靜默出走者被資料獨立支持")],
     ]
     table_h = BOT - table_y
@@ -2178,13 +2179,18 @@ def build_p14(slide, y):
             bar.fill.solid()
             bar.fill.fore_color.rgb = NAVY
             bar.line.fill.background()
+            # v4.5：桿身加粗（預設 0.5 → 0.80）、箭頭頭部縮短（0.5 → 0.30），讓「第 9 週起，不設終點」整行落在桿身內垂直置中。
+            bar.adjustments[0] = 0.80
+            bar.adjustments[1] = 0.30
             bar.name = "chart:gantt:bar"
             label = f"第 {start} 週起，不設終點"
+            label_dy = 0.012  # v4.5：預覽量得字高偏上約 1.5 px，文字框再下移一點點
         else:
             bar_w = wx(end) - bx
             add_rect(slide, bx, ry + 0.04, bar_w, bar_h, fill=BLUE, name="chart:gantt:bar")
             label = f"{start}–{end} 週"
-        add_text(slide, bx, ry + 0.04, min(bar_w, wx(24) - bx), bar_h, [[(label, WHITE, True, 12)]],
+            label_dy = 0.0
+        add_text(slide, bx, ry + 0.04 + label_dy, min(bar_w, wx(24) - bx), bar_h, [[(label, WHITE, True, 12)]],
                  size=12, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.0, name="chart:gantt:label")
         add_text(slide, desc_x, ry, desc_w, row_h, [[(desc, INK, False, 13)]],
                  size=13, anchor="ctr", margin=0.0)
