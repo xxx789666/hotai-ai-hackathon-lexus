@@ -2184,11 +2184,13 @@ def build_p14(slide, y):
             bar.adjustments[1] = 0.30
             bar.name = "chart:gantt:bar"
             label = f"第 {start} 週起，不設終點"
+            label_dy = 0.012  # v4.5：預覽量得字高偏上約 1.5 px，文字框再下移一點點
         else:
             bar_w = wx(end) - bx
             add_rect(slide, bx, ry + 0.04, bar_w, bar_h, fill=BLUE, name="chart:gantt:bar")
             label = f"{start}–{end} 週"
-        add_text(slide, bx, ry + 0.04, min(bar_w, wx(24) - bx), bar_h, [[(label, WHITE, True, 12)]],
+            label_dy = 0.0
+        add_text(slide, bx, ry + 0.04 + label_dy, min(bar_w, wx(24) - bx), bar_h, [[(label, WHITE, True, 12)]],
                  size=12, align=PP_ALIGN.CENTER, anchor="ctr", margin=0.0, name="chart:gantt:label")
         add_text(slide, desc_x, ry, desc_w, row_h, [[(desc, INK, False, 13)]],
                  size=13, anchor="ctr", margin=0.0)
